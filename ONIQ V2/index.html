@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ONIQ — Marketplace Logiciels BTP</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0A0A08;--deep:#060504;--paper:#F5F2EC;--dim:#EFEBE3;--linen:#E8E2D8;
+  --gold:#B89A5A;--gold-l:#D4B87A;--gold-dim:rgba(184,154,90,0.13);--gold-b:rgba(184,154,90,0.35);
+  --ivory:#FAF8F4;--stone:#8C8070;--sand:#B5A898;
+  --green:#4A7C59;--green-dim:rgba(74,124,89,0.13);
+  --amber:#C47B2B;--amber-dim:rgba(196,123,43,0.13);
+  --red:#A63C3C;--red-dim:rgba(166,60,60,0.13);
+  --sf:'Playfair Display',Georgia,serif;
+  --ss:'DM Sans','Helvetica Neue',sans-serif;
+}
+body{font-family:var(--ss);background:var(--paper);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:216px;background:var(--deep);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.05)}
+.main{flex:1;overflow-y:auto;background:var(--paper);display:flex;flex-direction:column}
+.sidebar-logo{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.logo-row{display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.logo-mark{width:28px;height:28px;border-radius:4px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--sf);font-size:13px;font-weight:900;color:var(--ink)}
+.logo-name{font-family:var(--sf);font-size:16px;font-weight:700;color:var(--ivory);letter-spacing:.08em}
+.logo-sub{font-family:var(--ss);font-size:9px;color:rgba(255,255,255,0.25);letter-spacing:.14em;text-transform:uppercase}
+.snav{flex:1;padding:10px 8px;overflow-y:auto}
+.nsec{font-family:var(--ss);font-size:8px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,0.18);padding:12px 8px 5px}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:4px;background:transparent;border:1px solid transparent;color:rgba(255,255,255,0.33);cursor:pointer;font-family:var(--ss);font-size:12px;font-weight:400;text-align:left;transition:all .15s;width:100%}
+.ni:hover{color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.04)}
+.ni.active{background:var(--gold-dim);border-color:var(--gold-b);color:var(--gold);font-weight:600}
+.ni.locked{color:rgba(255,255,255,0.18)}
+.ni.locked:hover{color:rgba(255,255,255,0.42);background:rgba(255,255,255,0.03)}
+.ng{font-size:10px;opacity:.5}.nl{font-size:9px;opacity:.4;margin-left:auto}
+.sfooter{padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05)}
+.su-row{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.su-av{width:26px;height:26px;border-radius:4px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--ink);font-family:var(--sf);flex-shrink:0}
+.su-name{font-family:var(--ss);font-size:11px;font-weight:600;color:var(--ivory);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.su-role{font-family:var(--ss);font-size:8px;letter-spacing:.1em;color:rgba(255,255,255,0.22);text-transform:uppercase}
+.btn-logout{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:7px;font-family:var(--ss);font-size:10px;font-weight:600;color:rgba(255,255,255,0.28);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.btn-logout:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)}
+.btn-reg{width:100%;background:var(--gold);border:none;border-radius:4px;padding:9px;font-family:var(--ss);font-size:10px;font-weight:800;color:var(--ink);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px;transition:opacity .15s}
+.btn-reg:hover{opacity:.9}
+.btn-log{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:7px;font-family:var(--ss);font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.btn-log:hover{background:rgba(255,255,255,0.09);color:rgba(255,255,255,0.7)}
+.view{display:none;padding:32px 36px;max-width:1060px;margin:0 auto}
+.view.active{display:block}
+#v-app-viewer{display:none;padding:0;max-width:none;height:100%;flex-direction:column}
+#v-app-viewer.active{display:flex}
+.app-bar{height:44px;background:var(--deep);display:flex;align-items:center;gap:12px;padding:0 16px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.08)}
+.app-bar-icon{font-size:16px}
+.app-bar-name{font-family:var(--sf);font-size:13px;font-weight:700;color:var(--ivory);flex:1}
+.app-bar-back{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:5px 12px;font-family:var(--ss);font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.app-bar-back:hover{background:rgba(255,255,255,0.13);color:var(--ivory)}
+#app-iframe{flex:1;border:none;width:100%;background:#fff}
+.ph{border-bottom:1px solid var(--linen);padding-bottom:18px;margin-bottom:26px;display:flex;justify-content:space-between;align-items:flex-end}
+.ph-sup{font-family:var(--ss);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);margin-bottom:4px}
+.ph h1{margin:0;font-family:var(--sf);font-size:30px;font-weight:700;color:var(--ink)}
+.ph-act{display:flex;gap:8px;align-items:center}
+.btn{border-radius:4px;padding:9px 18px;font-family:var(--ss);font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:all .2s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:var(--ink);color:var(--ivory)}.btn-p:hover{background:#1c1c18}
+.btn-g{background:var(--gold);color:var(--ink)}.btn-g:hover{background:var(--gold-l)}
+.btn-gh{background:transparent;color:var(--stone);border:1px solid var(--linen)}.btn-gh:hover{background:var(--dim)}
+.btn-r{background:var(--red-dim);color:var(--red);border:1px solid rgba(166,60,60,0.3)}
+.btn-sm{padding:6px 12px;font-size:10px}
+.btn-open{background:var(--gold);color:var(--ink);border:none;border-radius:4px;padding:6px 13px;font-family:var(--ss);font-size:10px;font-weight:800;cursor:pointer;letter-spacing:.07em;text-transform:uppercase;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s}
+.btn-open:hover{opacity:.85}
+.kgrid{display:grid;gap:14px;margin-bottom:22px}
+.k4{grid-template-columns:repeat(4,1fr)}.k3{grid-template-columns:repeat(3,1fr)}.k2{grid-template-columns:repeat(2,1fr)}
+.kbox{background:var(--paper);border:1px solid var(--linen);border-radius:6px;padding:20px 24px}
+.klbl{font-family:var(--ss);font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--stone);margin-bottom:8px}
+.kval{font-family:var(--sf);font-size:26px;font-weight:700;color:var(--ink);line-height:1}
+.ksub{font-family:var(--ss);font-size:11px;color:var(--stone);margin-top:6px}
+.ksub.acc{color:var(--gold)}.ksub.tr::before{content:"↑ ";color:var(--green)}.ksub.gr{color:var(--green)}
+.card{background:var(--paper);border:1px solid var(--linen);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.card-hd{padding:14px 18px;border-bottom:1px solid var(--linen);font-family:var(--sf);font-size:14px;font-weight:600;color:var(--ink);display:flex;justify-content:space-between;align-items:center}
+.card-bd{padding:18px}
+.bdg{display:inline-flex;align-items:center;padding:3px 10px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:var(--ss);white-space:nowrap;border:1px solid}
+.b-active{background:var(--green-dim);color:var(--green);border-color:rgba(74,124,89,0.3)}
+.b-trial{background:var(--gold-dim);color:var(--gold);border-color:rgba(184,154,90,0.3)}
+.b-overdue{background:var(--red-dim);color:var(--red);border-color:rgba(166,60,60,0.3)}
+.b-paid{background:var(--green-dim);color:var(--green);border-color:rgba(74,124,89,0.3)}
+.b-pending{background:var(--amber-dim);color:var(--amber);border-color:rgba(196,123,43,0.3)}
+.b-quoted{background:var(--gold-dim);color:var(--gold);border-color:rgba(184,154,90,0.3)}
+.hr{height:1px;background:linear-gradient(90deg,transparent,var(--linen),transparent);margin:0 18px}
+.mono{border-radius:4px;background:var(--ink);border:1px solid rgba(184,154,90,0.33);display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--gold);font-family:var(--sf);flex-shrink:0}
+.tbl-wrap{background:var(--paper);border:1px solid var(--linen);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.tbl-hd{display:grid;padding:9px 18px;background:var(--dim);border-bottom:1px solid var(--linen);gap:12px}
+.tbl-hd span{font-family:var(--ss);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--stone)}
+.tbl-row{display:grid;padding:12px 18px;gap:12px;align-items:center;transition:background .1s;cursor:pointer}
+.tbl-row:hover{background:var(--dim)}
+.trow-nc{cursor:default !important}.trow-nc:hover{background:transparent !important}
+.rn{font-family:var(--ss);font-weight:600;font-size:12px;color:var(--ink)}
+.rs{font-family:var(--ss);font-size:11px;color:var(--stone)}
+.rp{font-family:var(--sf);font-weight:700;font-size:13px;color:var(--ink)}
+.flbl{display:block;font-family:var(--ss);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--stone);margin-bottom:7px}
+.finp{width:100%;background:var(--paper);border:1px solid var(--linen);border-radius:4px;padding:11px 14px;font-family:var(--ss);font-size:13px;color:var(--ink);outline:none;transition:border-color .2s;box-sizing:border-box}
+.finp:focus{border-color:var(--gold)}
+.fg{margin-bottom:16px}
+.finp-dk{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:12px 14px;font-family:var(--ss);font-size:13px;color:var(--ivory);outline:none;box-sizing:border-box}
+.overlay{display:none;position:fixed;inset:0;background:rgba(5,5,4,0.75);z-index:300;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--ivory);border:1px solid var(--linen);border-radius:10px;padding:40px;width:420px;max-width:100%;max-height:90vh;overflow-y:auto}
+.modal.wide{width:600px}
+.modal-t{font-family:var(--sf);font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.modal-s{font-family:var(--ss);font-size:12px;color:var(--stone);margin-bottom:22px}
+.modal-act{display:flex;gap:10px;margin-top:20px}
+.auth-ov{display:none;position:fixed;inset:0;background:rgba(5,5,4,0.88);z-index:400;align-items:center;justify-content:center}
+.auth-ov.open{display:flex}
+.auth-box{background:var(--deep);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:44px 48px;width:380px;max-width:96vw;position:relative;max-height:92vh;overflow-y:auto}
+.auth-x{position:absolute;top:16px;right:20px;background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:18px;line-height:1}
+.auth-logo{font-family:var(--sf);font-size:22px;font-weight:700;color:var(--ivory);letter-spacing:4px;margin-bottom:4px}
+.auth-bar{height:1px;width:36px;background:var(--gold);margin-bottom:20px}
+.auth-tabs{display:flex;background:rgba(255,255,255,0.04);border-radius:6px;padding:4px;margin-bottom:24px}
+.auth-tab{flex:1;padding:10px;border-radius:4px;background:transparent;border:none;color:rgba(255,255,255,0.33);font-family:var(--ss);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.auth-tab.active{background:rgba(255,255,255,0.09);color:var(--ivory)}
+.alf{display:block;font-family:var(--ss);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:7px}
+.auth-fg{margin-bottom:12px}
+.auth-err{font-family:var(--ss);font-size:12px;color:#e87777;margin-bottom:12px;background:rgba(168,60,60,0.15);padding:10px 14px;border-radius:4px;display:none}
+.auth-err.show{display:block}
+.btn-auth{width:100%;background:var(--gold);border:none;border-radius:4px;padding:13px;font-family:var(--ss);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);cursor:pointer;margin-top:6px;transition:opacity .15s}
+.btn-auth:hover{opacity:.9}
+.toast{position:fixed;bottom:26px;right:26px;background:var(--ink);border:1px solid rgba(184,154,90,0.35);border-radius:8px;padding:16px 22px;z-index:500;display:flex;align-items:center;gap:12px;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1;pointer-events:auto}
+.banner{background:var(--gold-dim);border:1px solid rgba(184,154,90,0.35);border-radius:8px;padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.sw-card{background:var(--paper);border:1px solid var(--linen);border-radius:10px;padding:22px;transition:all .2s;cursor:pointer}
+.sw-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.08)}
+.sw-ico{width:42px;height:42px;border-radius:8px;background:var(--gold-dim);border:1px solid var(--gold-b);display:flex;align-items:center;justify-content:center;font-size:20px}
+.sw-pop{background:var(--gold);color:var(--ink);font-size:9px;font-weight:800;padding:3px 8px;border-radius:2px;letter-spacing:.1em;text-transform:uppercase}
+.sw-name{font-family:var(--sf);font-size:16px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.sw-desc{font-family:var(--ss);font-size:12px;color:var(--stone);line-height:1.6;margin-bottom:12px}
+.sw-feats{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.sw-feat{background:var(--dim);border:1px solid var(--linen);border-radius:3px;padding:3px 8px;font-family:var(--ss);font-size:10px;color:var(--stone)}
+.sw-foot{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--linen)}
+.sw-price{font-family:var(--sf);font-weight:700;font-size:20px;color:var(--gold)}
+.sw-price span{font-family:var(--ss);font-size:11px;font-weight:400;color:var(--stone)}
+.stars{display:inline-flex;gap:1px;align-items:center}
+.son{color:var(--gold)}.soff{color:var(--linen)}
+.scnt{font-family:var(--ss);font-size:11px;color:var(--stone);margin-left:4px}
+.dp-ov{display:none;position:fixed;inset:0;background:rgba(5,5,4,0.65);z-index:200}
+.dp-ov.open{display:block}
+.dp{position:fixed;right:0;top:0;bottom:0;width:420px;background:var(--ivory);border-left:1px solid var(--linen);overflow-y:auto;transform:translateX(100%);transition:transform .3s;z-index:201}
+.dp.open{transform:translateX(0)}
+.dp-head{background:var(--ink);padding:32px 28px 24px;position:relative}
+.dp-x{position:absolute;top:16px;right:18px;background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:18px}
+.dp-icon{width:52px;height:52px;border-radius:10px;background:var(--gold-dim);border:1px solid var(--gold-b);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px}
+.dp-name{font-family:var(--sf);font-size:22px;font-weight:700;color:var(--ivory);margin-bottom:4px}
+.dp-cat{font-family:var(--ss);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.dp-body{padding:24px 28px}
+.dp-stitle{font-family:var(--ss);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--stone);margin-bottom:10px}
+.dp-feat{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--linen);font-family:var(--ss);font-size:12px;color:var(--ink)}
+.dp-feat::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
+.sec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.sec-card{background:var(--paper);border:1px solid var(--linen);border-radius:8px;padding:18px 20px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:all .2s}
+.sec-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.tgold{background:var(--gold-dim);color:var(--gold);font-size:9px;padding:2px 7px;border-radius:2px;font-weight:700;font-family:var(--ss)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.empty{padding:22px 18px;font-family:var(--ss);font-size:13px;color:var(--stone);text-align:center}
+.spark{width:100%;height:60px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-row">
+        <div class="logo-mark">O</div>
+        <span class="logo-name">ONIQ</span>
+      </div>
+      <div class="logo-sub">Marketplace logiciels</div>
+    </div>
+    <nav class="snav" id="snav"></nav>
+    <div class="sfooter" id="sfooter"></div>
+  </aside>
+  <main class="main" id="main-area">
+    <div class="view" id="v-market">
+      <div class="ph"><div><div class="ph-sup">Catalogue</div><h1>Marketplace</h1></div><div class="ph-act" id="mkt-act"></div></div>
+      <div id="mkt-banner"></div>
+      <div id="mkt-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px"></div>
+    </div>
+    <div class="view" id="v-espace"><div id="esp-c"></div></div>
+    <div class="view" id="v-parrainage"><div id="par-c"></div></div>
+    <div class="view" id="v-devis"><div id="dev-c"></div></div>
+    <div class="view" id="v-secteurs">
+      <div class="ph"><div><div class="ph-sup">Référencement local</div><h1>Solutions par secteur</h1></div></div>
+      <div class="sec-grid" id="sec-grid"></div>
+      <div style="background:var(--ink);border-radius:8px;padding:22px 28px;display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-family:var(--sf);font-size:18px;font-weight:700;color:var(--ivory);margin-bottom:5px">Votre secteur n'est pas listé ?</div><div style="font-family:var(--ss);font-size:12px;color:rgba(255,255,255,0.4)">Devis sur mesure, réponse sous 48h.</div></div>
+        <button class="btn btn-g" onclick="rAuth('register')">Demander un devis</button>
+      </div>
+    </div>
+    <div class="view" id="v-apropos">
+      <div class="ph"><div><div class="ph-sup">ONIQ</div><h1>À propos</h1></div></div>
+      <div class="g2" style="margin-bottom:18px">
+        <div style="background:var(--ink);border-radius:8px;padding:26px">
+          <div style="font-family:var(--sf);font-size:18px;font-weight:700;color:var(--ivory);margin-bottom:10px">Notre mission</div>
+          <div style="font-family:var(--ss);font-size:13px;color:rgba(255,255,255,0.45);line-height:1.8;margin-bottom:20px">ONIQ démocratise l'accès aux logiciels professionnels pour les pros du BTP. Abonnement mensuel sans engagement, essai gratuit sur chaque logiciel.</div>
+          <div style="display:flex;gap:24px">
+            <div><div style="font-family:var(--sf);font-size:20px;font-weight:700;color:var(--gold)">500+</div><div style="font-family:var(--ss);font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px">Pros du BTP</div></div>
+            <div><div style="font-family:var(--sf);font-size:20px;font-weight:700;color:var(--gold)">4.9★</div><div style="font-family:var(--ss);font-size:10px;color:rgba(255,255,255,0.35);margin-top:3px">Note moy.</div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px" id="apropos-feats"></div>
+      </div>
+      <div style="background:var(--paper);border:1px solid var(--linen);border-radius:8px;padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+        <div><div style="font-family:var(--sf);font-size:17px;font-weight:700;color:var(--ink);margin-bottom:3px">Prêt à commencer ?</div><div style="font-family:var(--ss);font-size:12px;color:var(--stone)">7 jours gratuits sur BatiManager.</div></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-gh" onclick="openAuth('login')">Se connecter</button>
+          <button class="btn btn-g" onclick="openAuth('register')">Commencer gratuitement</button>
+        </div>
+      </div>
+    </div>
+    <div class="view" id="v-admin-dash"><div id="adm-dash"></div></div>
+    <div class="view" id="v-admin-clients"><div id="adm-cli"></div></div>
+    <div class="view" id="v-admin-clidet"><div id="adm-clidet"></div></div>
+    <div class="view" id="v-admin-sw"><div id="adm-sw"></div></div>
+    <div class="view" id="v-admin-devis"><div id="adm-dev"></div></div>
+    <div class="view" id="v-admin-fac"><div id="adm-fac"></div></div>
+    <div class="view" id="v-admin-ref"><div id="adm-ref"></div></div>
+    <div class="view" id="v-locked">
+      <div style="padding:80px 36px;text-align:center"><div style="max-width:380px;margin:0 auto">
+        <div style="font-size:38px;margin-bottom:14px">🔒</div>
+        <div style="font-family:var(--sf);font-size:22px;font-weight:700;color:var(--ink);margin-bottom:7px">Fonctionnalité pro</div>
+        <div id="locked-msg" style="font-family:var(--ss);font-size:13px;color:var(--stone);margin-bottom:26px;line-height:1.7"></div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-gh" onclick="openAuth('login')">Se connecter</button>
+          <button class="btn btn-g" onclick="openAuth('register')">Créer un compte gratuit</button>
+        </div>
+      </div></div>
+    </div>
+    <div id="v-app-viewer">
+      <div class="app-bar">
+        <span class="app-bar-icon" id="appbar-icon"></span>
+        <span class="app-bar-name" id="appbar-name"></span>
+        <button class="app-bar-back" onclick="closeAppViewer()">← Retour à la marketplace</button>
+      </div>
+      <iframe id="app-iframe" src="" allowfullscreen></iframe>
+    </div>
+  </main>
+</div>
+
+<!-- Detail panel -->
+<div class="dp-ov" id="dp-ov" onclick="closeDP()"></div>
+<div class="dp" id="dp"><div id="dp-c"></div></div>
+
+<!-- Auth -->
+<div class="auth-ov" id="auth-ov">
+  <div class="auth-box">
+    <button class="auth-x" onclick="closeAuth()">✕</button>
+    <div class="auth-logo">ONIQ</div>
+    <div class="auth-bar"></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="swTab('login')">Connexion</button>
+      <button class="auth-tab" id="tab-reg" onclick="swTab('register')">Inscription</button>
+    </div>
+    <div id="auth-login">
+      <div class="auth-fg"><label class="alf">Email</label><input class="finp-dk" id="lin-email" type="email" placeholder="vous@entreprise.fr" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="auth-fg"><label class="alf">Mot de passe</label><input class="finp-dk" id="lin-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="auth-err" id="lin-err"></div>
+      <button class="btn-auth" onclick="doLogin()">Se connecter</button>
+    </div>
+    <div id="auth-reg" style="display:none">
+      <div class="auth-fg"><label class="alf">Nom de l'entreprise</label><input class="finp-dk" id="reg-co" type="text" placeholder="Mon Entreprise BTP"/></div>
+      <div class="auth-fg"><label class="alf">Nom complet</label><input class="finp-dk" id="reg-nm" type="text" placeholder="Jean Dupont"/></div>
+      <div class="auth-fg"><label class="alf">Email</label><input class="finp-dk" id="reg-em" type="email" placeholder="vous@entreprise.fr"/></div>
+      <div class="auth-fg"><label class="alf">Secteur</label>
+        <select class="finp-dk" id="reg-sec" style="appearance:none">
+          <option value="">–</option>
+          <option>BTP</option><option>Construction</option><option>Maçonnerie</option><option>Plomberie</option><option>Électricité</option><option>Menuiserie</option><option>Artisanat</option><option>Peinture</option><option>Charpente</option><option>Couverture</option>
+        </select>
+      </div>
+      <div class="auth-fg"><label class="alf">Mot de passe</label><input class="finp-dk" id="reg-pw" type="password" placeholder="••••••••"/></div>
+      <div class="auth-fg"><label class="alf">Confirmer</label><input class="finp-dk" id="reg-pw2" type="password" placeholder="••••••••"/></div>
+      <div class="auth-err" id="reg-err"></div>
+      <button class="btn-auth" onclick="doRegister()">Créer mon compte</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span style="color:var(--gold)">✦</span>
+  <span id="toast-msg" style="font-family:var(--ss);font-size:13px;color:var(--ivory)"></span>
+  <button onclick="hideToast()" style="background:none;border:none;color:var(--stone);cursor:pointer;margin-left:8px">✕</button>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="mo" onclick="if(event.target===this)closeMo()">
+  <div class="modal" id="mo-box"><div id="mo-c"></div></div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const SW=[{id:1,name:"BatiManager",price:89,cat:"Bâtiment",icon:"🏗️",desc:"Gestion complète de chantiers BTP : budget, facturation, trésorerie prévisionnelle et suivi des postes.",features:["Suivi chantiers","Budget & facturation","Trésorerie prévisionnelle","Export Excel","Gestion frais généraux","Déboursés secs"],popular:true,rating:4.9,reviews:214,url:"batimanager.html"}];
+const SECS=[{s:"BTP",ic:"🏗️",t:"Gestion de chantiers, budget, trésorerie."},{s:"Construction",ic:"🏢",t:"Suivi chantiers, facturation, déboursés."},{s:"Maçonnerie",ic:"🧱",t:"Devis, planning et gestion de chantier."},{s:"Plomberie",ic:"🔧",t:"Suivi interventions, facturation et stocks."},{s:"Électricité",ic:"⚡",t:"Gestion chantiers et facturation client."},{s:"Menuiserie",ic:"🪵",t:"Devis, commandes et suivi de production."},{s:"Charpente",ic:"🏠",t:"Planning chantiers et gestion matériaux."},{s:"Peinture",ic:"🎨",t:"Devis, facturation et suivi équipes."},{s:"Artisanat",ic:"🔨",t:"Devis, facturation et suivi chantiers."}];
+let USERS=[
+  {id:1,role:"admin",name:"Admin ONIQ",company:"ONIQ",email:"admin@oniq.fr",password:"admin",avatar:"OA",subs:[],trials:{},since:"Jan 2020",status:"active",sector:"",referralCode:"ADMIN1",referrals:0,referralCredit:0},
+  {id:2,role:"client",name:"Jean Martin",company:"Construction Martin",email:"martin@construction.fr",password:"client",avatar:"CM",subs:[1],trials:{},since:"Jan 2024",status:"active",sector:"BTP",referralCode:"BM2024",referrals:2,referralCredit:2},
+  {id:3,role:"client",name:"Dupont & Fils",company:"Dupont & Fils BTP",email:"dupont@btp.fr",password:"client",avatar:"DF",subs:[1],trials:{},since:"Jun 2023",status:"active",sector:"Construction",referralCode:"DF2023",referrals:1,referralCredit:0},
+  {id:4,role:"client",name:"Plomberie Moreau",company:"Plomberie Moreau",email:"moreau@plomberie.fr",password:"client",avatar:"PM",subs:[],trials:{},since:"Mar 2024",status:"overdue",sector:"Plomberie",referralCode:"PM2024",referrals:0,referralCredit:0},
+  {id:5,role:"client",name:"Élec Soleil",company:"Élec Soleil",email:"soleil@elec.fr",password:"client",avatar:"ES",subs:[],trials:{1:Date.now()-2*86400000},since:"Nov 2024",status:"trial",sector:"Électricité",referralCode:"ES2024",referrals:0,referralCredit:1},
+];
+let DEVIS=[
+  {id:1,client:"Menuiserie Blanc",email:"blanc@menuiserie.fr",desc:"Logiciel gestion chantiers bois et suivi production.",date:"28 Nov 2024",status:"pending",amount:null},
+  {id:2,client:"BTP Rénovation Sud",email:"contact@btpsud.fr",desc:"Gestion chantiers rénovation + module trésorerie.",date:"02 Déc 2024",status:"quoted",amount:89},
+  {id:3,client:"Électricité Dubois",email:"dubois@elecdubois.fr",desc:"Suivi interventions clients et facturation automatique.",date:"04 Déc 2024",status:"pending",amount:null},
+];
+const MRR_H=[310,380,420,465,510,554],MRR_M=["Juil","Août","Sep","Oct","Nov","Déc"];
+
+// ── STATE ─────────────────────────────────────────────────────────
+let CU=null,CV="market",selCli=null;
+
+// ── HELPERS ───────────────────────────────────────────────────────
+const getMrr=s=>s.reduce((t,id)=>{const sw=SW.find(x=>x.id===id);return t+(sw?.price||0);},0);
+const gc=()=>Math.random().toString(36).slice(2,8).toUpperCase();
+const tdl=ts=>ts?Math.max(0,Math.ceil((new Date(ts+7*86400000)-Date.now())/86400000)):0;
+const isTA=ts=>ts&&tdl(ts)>0;
+const isAdm=()=>CU?.role==="admin";
+
+function strs(r,sm=false){
+  const sz=sm?11:13;
+  return`<span class="stars">${[1,2,3,4,5].map(i=>`<span class="${i<=Math.round(r)?'son':'soff'}" style="font-size:${sz}px">★</span>`).join('')}<span class="scnt" style="font-size:${sm?10:12}px">${r}</span></span>`;
+}
+function bdg(s){const m={active:"Actif",trial:"Essai",overdue:"Retard",paid:"Payé",pending:"En attente",quoted:"Devis envoyé"};return`<span class="bdg b-${s}">${m[s]||s}</span>`;}
+function mn(av,sz=36){return`<span class="mono" style="width:${sz}px;height:${sz}px;font-size:${sz*0.3}px">${av}</span>`;}
+function hr(){return'<div class="hr"></div>';}
+function kpi(l,v,s='',c=''){return`<div class="kbox"><div class="klbl">${l}</div><div class="kval">${v}</div>${s?`<div class="ksub ${c}">${s}</div>`:''}</div>`;}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+let tT;
+function showToast(m){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),4000);}
+function hideToast(){document.getElementById('toast').classList.remove('show');}
+
+// ── MODAL ─────────────────────────────────────────────────────────
+function openMo(html,wide=false){document.getElementById('mo-c').innerHTML=html;document.getElementById('mo-box').className='modal'+(wide?' wide':'');document.getElementById('mo').classList.add('open');}
+function closeMo(){document.getElementById('mo').classList.remove('open');}
+
+// ── AUTH ──────────────────────────────────────────────────────────
+function openAuth(m='login'){document.getElementById('auth-ov').classList.add('open');swTab(m);}
+function closeAuth(){document.getElementById('auth-ov').classList.remove('open');clrErr();}
+function clrErr(){['lin-err','reg-err'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='';e.classList.remove('show');}});}
+function showE(id,m){const e=document.getElementById(id);if(e){e.textContent=m;e.classList.add('show');}}
+function swTab(m){
+  document.getElementById('auth-login').style.display=m==='login'?'block':'none';
+  document.getElementById('auth-reg').style.display=m==='register'?'block':'none';
+  document.getElementById('tab-login').className='auth-tab'+(m==='login'?' active':'');
+  document.getElementById('tab-reg').className='auth-tab'+(m==='register'?' active':'');
+  clrErr();
+}
+function doLogin(){
+  const em=document.getElementById('lin-email').value.trim();
+  const pw=document.getElementById('lin-pass').value;
+  const u=USERS.find(u=>u.email===em&&u.password===pw);
+  if(!u){showE('lin-err','Email ou mot de passe incorrect.');return;}
+  loginU(u);
+}
+function doRegister(){
+  const co=document.getElementById('reg-co').value.trim();
+  const nm=document.getElementById('reg-nm').value.trim();
+  const em=document.getElementById('reg-em').value.trim();
+  const sec=document.getElementById('reg-sec').value;
+  const pw=document.getElementById('reg-pw').value;
+  const pw2=document.getElementById('reg-pw2').value;
+  if(!co||!em||!pw){showE('reg-err','Remplissez tous les champs.');return;}
+  if(pw!==pw2){showE('reg-err','Mots de passe différents.');return;}
+  const u={id:Date.now(),role:"client",name:nm||co,company:co,email:em,password:pw,avatar:co.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),subs:[],trials:{},since:new Date().toLocaleDateString("fr-FR",{month:"short",year:"numeric"}),status:"trial",sector:sec,referralCode:gc(),referrals:0,referralCredit:0};
+  USERS.push(u);loginU(u);showToast("🎉 Bienvenue sur ONIQ !");
+}
+function loginU(u){CU=u;closeAuth();renderSidebar();nav(u.role==='admin'?'admin-dash':'market');}
+function logout(){CU=null;renderSidebar();nav('market');}
+function rAuth(m='login'){if(!CU)openAuth(m);}
+
+// ── NAV ───────────────────────────────────────────────────────────
+function nav(v){
+  const prot=['espace','parrainage','devis'];
+  if(prot.includes(v)&&!CU){
+    document.getElementById('locked-msg').textContent={espace:"Gérez vos abonnements, essais et factures.",parrainage:"Parrainez des confrères, gagnez des mois offerts.",devis:"Décrivez votre besoin, on développe votre logiciel en 48h."}[v]||"";
+    CV='locked';
+  } else if(v.startsWith('admin-')&&!isAdm()){
+    nav('market');return;
+  } else {
+    CV=v;
+  }
+  renderSidebar();renderViews();
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────
+function renderSidebar(){
+  const PUB=[{id:'market',l:'Marketplace',g:'◈'},{id:'secteurs',l:'Par secteur',g:'◉'},{id:'apropos',l:'À propos',g:'◎'}];
+  const CLI=[{id:'espace',l:'Mon espace',g:'◧'},{id:'parrainage',l:'Parrainage',g:'◆'},{id:'devis',l:'Devis sur mesure',g:'◫'}];
+  const ADM=[{id:'admin-dash',l:'Dashboard',g:'◈'},{id:'admin-clients',l:'Clients',g:'◉'},{id:'admin-sw',l:'Logiciels',g:'◧'},{id:'admin-devis',l:'Devis',g:'◎'},{id:'admin-fac',l:'Factures',g:'◫'},{id:'admin-ref',l:'Parrainage',g:'◆'}];
+  let h='';
+  if(isAdm()){
+    ADM.forEach(i=>{h+=`<button class="ni${CV===i.id?' active':''}" onclick="nav('${i.id}')"><span class="ng">${i.g}</span>${i.l}</button>`;});
+  } else {
+    PUB.forEach(i=>{h+=`<button class="ni${CV===i.id?' active':''}" onclick="nav('${i.id}')"><span class="ng">${i.g}</span>${i.l}</button>`;});
+    if(CU){
+      h+='<div class="nsec">Espace pro</div>';
+      CLI.forEach(i=>{h+=`<button class="ni${CV===i.id?' active':''}" onclick="nav('${i.id}')"><span class="ng">${i.g}</span>${i.l}</button>`;});
+    } else {
+      h+='<div style="height:1px;background:rgba(255,255,255,0.05);margin:8px 6px"></div><div class="nsec">Espace pro</div>';
+      CLI.forEach(i=>{h+=`<button class="ni locked" onclick="openAuth('register')"><span class="ng">${i.g}</span><span style="flex:1">${i.l}</span><span class="nl">🔒</span></button>`;});
+    }
+  }
+  document.getElementById('snav').innerHTML=h;
+  const f=document.getElementById('sfooter');
+  if(CU){
+    f.innerHTML=`<div class="su-row"><div class="su-av">${CU.avatar}</div><div><div class="su-name">${CU.company}</div><div class="su-role">${isAdm()?'Admin':'Client'}</div></div></div><button class="btn-logout" onclick="logout()">Déconnexion</button>`;
+  } else {
+    f.innerHTML=`<button class="btn-reg" onclick="openAuth('register')">Créer un compte</button><button class="btn-log" onclick="openAuth('login')">Se connecter</button>`;
+  }
+}
+
+// ── VIEW ROUTER ───────────────────────────────────────────────────
+const VMP={market:'v-market',espace:'v-espace',parrainage:'v-parrainage',devis:'v-devis',secteurs:'v-secteurs',apropos:'v-apropos',locked:'v-locked','admin-dash':'v-admin-dash','admin-clients':'v-admin-clients','admin-clidet':'v-admin-clidet','admin-sw':'v-admin-sw','admin-devis':'v-admin-devis','admin-fac':'v-admin-fac','admin-ref':'v-admin-ref','app-viewer':'v-app-viewer'};
+const VRD={market:rMkt,espace:rEsp,parrainage:rPar,devis:rDev,secteurs:rSec,'admin-dash':rADash,'admin-clients':rACli,'admin-clidet':rACliDet,'admin-sw':rASw,'admin-devis':rADev,'admin-fac':rAFac,'admin-ref':rARef};
+function renderViews(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const vid=VMP[CV];if(vid)document.getElementById(vid).classList.add('active');
+  if(VRD[CV])VRD[CV]();
+}
+
+// ── MARKETPLACE ───────────────────────────────────────────────────
+function rMkt(){
+  document.getElementById('mkt-act').innerHTML=!CU?`<button class="btn btn-g" onclick="openAuth('register')">Créer un compte</button>`:'';
+  document.getElementById('mkt-banner').innerHTML=!CU?`<div class="banner"><div><span style="color:var(--gold);margin-right:8px">✦</span><span style="font-family:var(--ss);font-size:12px;color:var(--ink)">Créez un compte gratuit pour activer les <strong>essais 7 jours</strong> et accéder à votre espace pro.</span></div><div style="display:flex;gap:8px;flex-shrink:0"><button class="btn btn-gh btn-sm" onclick="openAuth('login')">Connexion</button><button class="btn btn-p btn-sm" onclick="openAuth('register')">S'inscrire</button></div></div>`:'';
+  document.getElementById('mkt-grid').innerHTML=SW.map(sw=>{
+    const isSub=CU?.subs?.includes(sw.id);
+    const isTrial=CU&&isTA(CU.trials?.[sw.id]);
+    let act='';
+    if(isSub) act=`<button class="btn-open" onclick="openAppViewer(${sw.id})">Ouvrir →</button>`;
+    else if(isTrial) act=`<span style="font-family:var(--ss);font-size:11px;color:var(--gold);font-weight:700">${tdl(CU.trials[sw.id])}j d'essai</span><button class="btn btn-p btn-sm" onclick="subscribe(${sw.id})">S'abonner</button>`;
+    else act=`<button class="btn btn-gh btn-sm" onclick="startTrial(${sw.id})">Essayer 7j gratuit</button><button class="btn btn-g btn-sm" onclick="subscribe(${sw.id})">Abonnement</button>`;
+    return`<div class="sw-card" onclick="openDP(${sw.id})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px"><div class="sw-ico">${sw.icon}</div>${sw.popular?'<span class="sw-pop">Populaire</span>':''}</div>
+      <div class="sw-name">${sw.name}</div>
+      <div style="margin:4px 0 8px">${strs(sw.rating,true)} <span style="font-family:var(--ss);font-size:11px;color:var(--stone);margin-left:4px">${sw.reviews} avis</span></div>
+      <div class="sw-desc">${sw.desc}</div>
+      <div class="sw-feats">${sw.features.map(f=>`<span class="sw-feat">${f}</span>`).join('')}</div>
+      <div class="sw-foot" onclick="event.stopPropagation()">
+        <div class="sw-price">${sw.price}€<span>/mois</span></div>
+        <div style="display:flex;gap:8px;align-items:center">${act}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function startTrial(id){
+  if(!CU){openAuth('register');return;}
+  if(!CU.trials)CU.trials={};
+  CU.trials[id]=Date.now();
+  const sw=SW.find(s=>s.id===id);
+  syncUser();showToast(`✓ Essai 7 jours activé pour ${sw?.name} !`);rMkt();
+}
+function subscribe(id){
+  if(!CU){openAuth('register');return;}
+  if(!CU.subs.includes(id)){CU.subs.push(id);if(CU.trials?.[id])delete CU.trials[id];}
+  syncUser();const sw=SW.find(s=>s.id===id);showToast(`🎉 Abonnement activé pour ${sw?.name} !`);rMkt();
+}
+function syncUser(){const i=USERS.findIndex(u=>u.id===CU.id);if(i>=0)USERS[i]=CU;}
+
+// ── DETAIL PANEL ──────────────────────────────────────────────────
+function openDP(id){
+  const sw=SW.find(s=>s.id===id);if(!sw)return;
+  const isSub=CU?.subs?.includes(sw.id);
+  const isTrial=CU&&isTA(CU.trials?.[sw.id]);
+  let act='';
+  if(isSub) act=`<button class="btn-open" onclick="closeDP();openAppViewer(${sw.id})" style="width:100%;justify-content:center;padding:12px">Ouvrir BatiManager →</button>`;
+  else if(isTrial) act=`<div style="margin-bottom:10px;text-align:center;font-family:var(--ss);font-size:12px;color:var(--gold);font-weight:700">${tdl(CU.trials[sw.id])} jours d'essai restants</div><button class="btn btn-g" style="width:100%;justify-content:center" onclick="subscribe(${sw.id});closeDP()">S'abonner — ${sw.price}€/mois</button>`;
+  else act=`<button class="btn btn-g" style="width:100%;justify-content:center;margin-bottom:8px" onclick="startTrial(${sw.id});closeDP()">Essayer 7 jours gratuit</button><button class="btn btn-p" style="width:100%;justify-content:center" onclick="subscribe(${sw.id});closeDP()">S'abonner — ${sw.price}€/mois</button>`;
+  document.getElementById('dp-c').innerHTML=`
+    <div class="dp-head">
+      <button class="dp-x" onclick="closeDP()">✕</button>
+      <div class="dp-icon">${sw.icon}</div>
+      <div class="dp-name">${sw.name}</div>
+      <div class="dp-cat">${sw.cat}</div>
+    </div>
+    <div class="dp-body">
+      <div style="margin-bottom:16px">${strs(sw.rating)} <span style="font-family:var(--ss);font-size:12px;color:var(--stone);margin-left:4px">${sw.reviews} avis</span></div>
+      <div style="font-family:var(--ss);font-size:13px;color:var(--stone);line-height:1.7;margin-bottom:20px">${sw.desc}</div>
+      <div style="margin-bottom:20px"><div class="dp-stitle">Fonctionnalités incluses</div>${sw.features.map(f=>`<div class="dp-feat">${f}</div>`).join('')}</div>
+      <div style="margin:20px 0;padding:16px;background:var(--dim);border-radius:6px;text-align:center">
+        <div style="font-family:var(--ss);font-size:11px;color:var(--stone);margin-bottom:4px">Abonnement mensuel</div>
+        <div style="font-family:var(--sf);font-size:32px;font-weight:700;color:var(--ink)">${sw.price}€<span style="font-family:var(--ss);font-size:14px;font-weight:400;color:var(--stone)">/mois</span></div>
+        <div style="font-family:var(--ss);font-size:11px;color:var(--stone);margin-top:4px">Sans engagement · Résiliable à tout moment</div>
+      </div>
+      ${act}
+    </div>`;
+  document.getElementById('dp-ov').classList.add('open');
+  document.getElementById('dp').classList.add('open');
+}
+function closeDP(){document.getElementById('dp-ov').classList.remove('open');document.getElementById('dp').classList.remove('open');}
+
+// ── MON ESPACE ────────────────────────────────────────────────────
+function rEsp(){
+  if(!CU)return;
+  const myApps=SW.filter(s=>CU.subs?.includes(s.id));
+  const myT=SW.filter(s=>!CU.subs?.includes(s.id)&&isTA(CU.trials?.[s.id]));
+  const mrr=getMrr(CU.subs||[]);
+  const inv=[{id:"INV-2024-104",amt:mrr,date:"01 Déc 2024",s:"paid"},{id:"INV-2024-089",amt:Math.max(0,mrr-5),date:"01 Nov 2024",s:"paid"},{id:"INV-2024-074",amt:Math.max(0,mrr-5),date:"01 Oct 2024",s:"paid"}];
+  let appR=myApps.map((sw,i)=>`<div><div style="display:flex;align-items:center;gap:12px;padding:12px 18px"><div style="width:34px;height:34px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--gold-b);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${sw.icon}</div><div style="flex:1"><div style="font-family:var(--ss);font-weight:700;font-size:12px;color:var(--ink)">${sw.name}</div><div style="font-family:var(--ss);font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.07em">● Actif · ${sw.price}€/mois</div></div><button class="btn-open" onclick="openAppViewer(${sw.id})" style="margin-right:6px">Ouvrir →</button><button style="background:none;border:1px solid var(--linen);border-radius:4px;padding:5px 9px;font-family:var(--ss);font-size:10px;color:var(--stone);cursor:pointer" onclick="unsub(${sw.id})">✕</button></div>${i<myApps.length-1?hr():''}</div>`).join('');
+  let tR='';
+  if(myT.length>0){
+    tR=`<div style="padding:9px 18px;background:var(--gold-dim);border-top:1px solid var(--linen);font-family:var(--ss);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)">Essais en cours</div>`;
+    tR+=myT.map((sw,i)=>`<div><div style="display:flex;align-items:center;gap:12px;padding:11px 18px"><div style="width:34px;height:34px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--gold-b);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${sw.icon}</div><div style="flex:1"><div style="font-family:var(--ss);font-weight:700;font-size:12px;color:var(--ink)">${sw.name}</div><div style="font-family:var(--ss);font-size:10px;color:var(--gold);font-weight:700;margin-top:2px">${tdl(CU.trials[sw.id])} jours restants</div></div><button class="btn-open" onclick="openAppViewer(${sw.id})" style="background:var(--gold-dim);color:var(--gold);border:1px solid rgba(184,154,90,0.4);margin-right:6px">Ouvrir →</button><button class="btn btn-p btn-sm" onclick="subscribe(${sw.id})">S'abonner</button></div>${i<myT.length-1?hr():''}</div>`).join('');
+  }
+  document.getElementById('esp-c').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Mon espace</div><h1>Bonjour, ${CU.company} 👋</h1></div></div>
+    <div class="kgrid k3">${kpi("Abonnement mensuel",`${mrr} €`,`${myApps.length} logiciel${myApps.length>1?"s":""} actif${myApps.length>1?"s":""}`,"acc")}${kpi("Essais actifs",myT.length,myT.length>0?myT.map(s=>s.name).join(', '):'Aucun essai en cours')}${kpi("Client depuis",CU.since||"2024","Membre ONIQ")}</div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hd">Mes logiciels</div>
+        ${myApps.length===0&&myT.length===0?`<div class="empty">Aucun logiciel souscrit.<br><button class="btn btn-g btn-sm" style="margin-top:10px" onclick="nav('market')">Voir la marketplace</button></div>`:''}
+        ${appR}${tR}
+        <div style="padding:11px 18px;border-top:1px solid var(--linen);display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--ss);font-size:10px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.08em">Total mensuel</span><span style="font-family:var(--sf);font-weight:700;font-size:15px;color:var(--ink)">${mrr} €</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Mes factures</div>
+        ${inv.map((i,idx)=>`<div><div style="display:flex;align-items:center;gap:10px;padding:12px 18px"><div style="flex:1"><div style="font-family:var(--ss);font-size:12px;font-weight:600;color:var(--ink)">${i.id}</div><div style="font-family:var(--ss);font-size:10px;color:var(--stone);margin-top:2px">${i.date}</div></div><span style="font-family:var(--sf);font-weight:700;font-size:13px;color:var(--ink);margin-right:10px">${i.amt} €</span>${bdg(i.s)}</div>${idx<inv.length-1?hr():''}</div>`).join('')}
+        <div style="padding:12px 18px;border-top:1px solid var(--linen)"><button class="btn btn-p" style="width:100%;justify-content:center">Payer maintenant · ${mrr} €</button></div>
+      </div>
+    </div>`;
+}
+function unsub(id){CU.subs=CU.subs.filter(x=>x!==id);syncUser();const sw=SW.find(s=>s.id===id);showToast(`Désabonnement de ${sw?.name} effectué.`);rEsp();}
+
+// ── PARRAINAGE ────────────────────────────────────────────────────
+function rPar(){
+  if(!CU)return;
+  document.getElementById('par-c').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Programme</div><h1>Parrainage</h1></div></div>
+    <div class="kgrid k3">${kpi("Parrainages","–","Invitez un confrère")}${kpi("Crédits gagnés",`${CU.referralCredit||0} mois`,"offerts","acc")}${kpi("Votre code",CU.referralCode||"–","À partager")}</div>
+    <div style="background:var(--ink);border:1px dashed rgba(184,154,90,0.4);border-radius:6px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div><div style="font-family:var(--ss);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:5px">Votre code de parrainage</div><div style="font-family:var(--sf);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:.2em">${CU.referralCode||"–"}</div></div>
+      <button class="btn btn-g" onclick="navigator.clipboard.writeText('${CU.referralCode||''}');showToast('✓ Code copié !')">Copier</button>
+    </div>
+    <div class="card"><div class="card-hd">Comment ça marche ?</div><div class="card-bd">
+      ${[["1","Partagez votre code","Envoyez votre code de parrainage à un confrère du BTP."],["2","Il s'inscrit","Il crée un compte avec votre code de parrainage."],["3","Vous gagnez","Vous recevez 1 mois offert dès qu'il souscrit un abonnement."]].map(([n,t,d])=>`<div style="display:flex;gap:14px;margin-bottom:16px;align-items:flex-start"><div style="width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--sf);font-size:13px;font-weight:700;color:var(--ink);flex-shrink:0">${n}</div><div><div style="font-family:var(--ss);font-weight:700;font-size:13px;color:var(--ink);margin-bottom:3px">${t}</div><div style="font-family:var(--ss);font-size:12px;color:var(--stone);line-height:1.5">${d}</div></div></div>`).join('')}
+    </div></div>`;
+}
+
+// ── DEVIS CLIENT ──────────────────────────────────────────────────
+function rDev(){
+  if(!CU)return;
+  document.getElementById('dev-c').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Sur mesure</div><h1>Demander un devis</h1></div></div>
+    <div class="card"><div class="card-hd">Décrivez votre besoin</div><div class="card-bd">
+      <div style="font-family:var(--ss);font-size:13px;color:var(--stone);line-height:1.7;margin-bottom:20px">Votre besoin est spécifique ? Décrivez-le, notre équipe vous répond sous 48h avec un devis.</div>
+      <div class="fg"><label class="flbl">Description du besoin</label><textarea class="finp" id="dv-desc" rows="5" placeholder="Ex : Je gère 15 ouvriers sur plusieurs chantiers et j'ai besoin d'un outil pour suivre les heures..." style="resize:vertical"></textarea></div>
+      <div class="fg"><label class="flbl">Budget estimé (€/mois)</label><input class="finp" id="dv-bgt" type="number" placeholder="ex: 120"/></div>
+      <button class="btn btn-g" onclick="submitDev()">Envoyer ma demande</button>
+    </div></div>`;
+}
+function submitDev(){
+  const d=document.getElementById('dv-desc').value.trim();
+  if(!d){showToast("⚠ Décrivez votre besoin.");return;}
+  DEVIS.push({id:Date.now(),client:CU.company,email:CU.email,desc:d,date:new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}),status:"pending",amount:null});
+  showToast("✅ Demande envoyée ! Réponse sous 48h.");nav('espace');
+}
+
+// ── SECTEURS ──────────────────────────────────────────────────────
+function rSec(){
+  document.getElementById('sec-grid').innerHTML=SECS.map(({s,ic,t})=>`<div class="sec-card"><span style="font-size:22px;flex-shrink:0">${ic}</span><div><div style="font-family:var(--sf);font-size:13px;font-weight:700;color:var(--ink);margin-bottom:3px">Logiciel ${s}</div><div style="font-family:var(--ss);font-size:11px;color:var(--stone);line-height:1.5;margin-bottom:6px">${t}</div><div style="font-family:var(--ss);font-size:11px;color:var(--gold);font-weight:700">Voir →</div></div></div>`).join('');
+}
+
+// ── SPARKLINE ─────────────────────────────────────────────────────
+function spark(data,months){
+  const w=300,h=60,p=6;
+  const max=Math.max(...data),min=Math.min(...data);
+  const x=i=>p+(i/(data.length-1))*(w-p*2);
+  const y=v=>h-p-((v-min)/(max-min||1))*(h-p*2);
+  const pts=data.map((v,i)=>`${x(i)},${y(v)}`).join(' ');
+  const area=`M${x(0)},${y(data[0])} ${data.map((v,i)=>`L${x(i)},${y(v)}`).join(' ')} L${x(data.length-1)},${h} L${x(0)},${h} Z`;
+  return`<svg class="spark" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B89A5A" stop-opacity=".25"/><stop offset="100%" stop-color="#B89A5A" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#g1)"/><polyline points="${pts}" fill="none" stroke="#B89A5A" stroke-width="2" stroke-linejoin="round"/>${data.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="#B89A5A"/><text x="${x(i)}" y="${h}" text-anchor="middle" style="font-size:8px;font-family:sans-serif;fill:#8C8070">${months[i]}</text>`).join('')}</svg>`;
+}
+
+// ── ADMIN DASH ────────────────────────────────────────────────────
+function rADash(){
+  const cli=USERS.filter(u=>u.role==='client');
+  const mrr=cli.reduce((s,c)=>s+getMrr(c.subs),0);
+  const ov=cli.filter(c=>c.status==='overdue');
+  const tr=cli.filter(c=>c.status==='trial');
+  const pq=DEVIS.filter(d=>d.status==='pending');
+  const cv=Math.round((cli.filter(c=>c.status==='active').length/Math.max(1,cli.length))*100);
+  document.getElementById('adm-dash').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Vue générale</div><h1>Tableau de bord</h1></div></div>
+    <div class="kgrid k4">${kpi("MRR",`${mrr} €`,"+12% ce mois","tr acc")}${kpi("Clients actifs",cli.filter(c=>c.status==='active').length,`${cli.length} total`)}${kpi("Conversion",`${cv}%`,"Trial → Actif","tr")}${kpi("Devis en attente",pq.length,"à traiter")}</div>
+    <div style="background:var(--paper);border:1px solid var(--linen);border-radius:6px;padding:18px 22px;margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-family:var(--sf);font-size:14px;font-weight:600;color:var(--ink)">Évolution MRR</span><span style="font-family:var(--sf);font-weight:700;font-size:16px;color:var(--gold)">${mrr} €/mois</span></div>${spark(MRR_H,MRR_M)}</div>
+    <div class="g2">
+      <div class="tbl-wrap"><div style="padding:13px 18px;border-bottom:1px solid var(--linen);display:flex;justify-content:space-between"><span style="font-family:var(--sf);font-size:13px;font-weight:600;color:var(--ink)">Clients récents</span><button style="background:none;border:none;color:var(--gold);cursor:pointer;font-family:var(--ss);font-size:10px;font-weight:700;letter-spacing:.1em" onclick="nav('admin-clients')">VOIR TOUT →</button></div>
+      ${cli.slice(0,5).map((c,i)=>`<div><div style="display:flex;align-items:center;gap:12px;padding:11px 18px">${mn(c.avatar,28)}<div style="flex:1"><div style="font-family:var(--ss);font-weight:600;font-size:12px;color:var(--ink)">${c.company}</div><div style="font-family:var(--ss);font-size:11px;color:var(--stone)">${c.subs.length} logiciel${c.subs.length>1?"s":""}</div></div><div style="text-align:right"><div style="font-family:var(--sf);font-weight:700;font-size:12px;color:var(--ink)">${getMrr(c.subs)} €</div><div style="margin-top:3px">${bdg(c.status)}</div></div></div>${i<4?hr():''}</div>`).join('')}</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="tbl-wrap"><div style="padding:12px 16px;border-bottom:1px solid var(--linen)"><span style="font-family:var(--sf);font-size:13px;font-weight:600;color:var(--ink)">Notifications</span></div><div>${pq.length>0?`<div style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--linen)"><span style="color:var(--amber)">◎</span><div style="font-family:var(--ss);font-size:12px;font-weight:600;color:var(--ink)">${pq.length} devis en attente</div></div>`:''}${ov.length>0?`<div style="display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--linen)"><span style="color:var(--red)">⚠</span><div style="font-family:var(--ss);font-size:12px;font-weight:600;color:var(--ink)">${ov.length} paiement${ov.length>1?"s":""} en retard</div></div>`:''}${tr.length>0?`<div style="display:flex;gap:10px;padding:10px 14px"><span style="color:var(--gold)">✦</span><div style="font-family:var(--ss);font-size:12px;font-weight:600;color:var(--ink)">${tr.length} client${tr.length>1?"s":""} en essai</div></div>`:''}${!pq.length&&!ov.length&&!tr.length?'<div class="empty">✓ Tout est à jour</div>':''}</div></div>
+        <div class="tbl-wrap"><div style="padding:12px 16px;border-bottom:1px solid var(--linen)"><span style="font-family:var(--sf);font-size:13px;font-weight:600;color:var(--ink)">Top logiciels</span></div><div style="padding:12px 16px">${SW.map(s=>{const cnt=cli.filter(c=>c.subs.includes(s.id)).length;return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px"><span style="font-size:13px">${s.icon}</span><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-family:var(--ss);font-size:11px;font-weight:600;color:var(--ink)">${s.name}</span><span style="font-family:var(--ss);font-size:11px;color:var(--stone)">${cnt}</span></div><div style="height:3px;background:var(--linen);border-radius:2px;margin-top:3px"><div style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--gold-l));width:${(cnt/Math.max(1,cli.length))*100}%"></div></div></div></div>`;}).join('')}</div></div>
+      </div>
+    </div>`;
+}
+
+// ── ADMIN CLIENTS ─────────────────────────────────────────────────
+function rACli(){
+  const cli=USERS.filter(u=>u.role==='client');
+  document.getElementById('adm-cli').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Gestion</div><h1>Clients</h1></div><div class="ph-act"><button class="btn btn-p" onclick="openAddCli()">+ Nouveau client</button></div></div>
+    <div class="tbl-wrap"><div class="tbl-hd" style="grid-template-columns:2fr 2fr 1fr 2fr 1fr 1fr">${["Entreprise","Email","Secteur","Logiciels","MRR","Statut"].map(h=>`<span>${h}</span>`).join('')}</div>
+    ${cli.map((c,i)=>`<div><div class="tbl-row" style="grid-template-columns:2fr 2fr 1fr 2fr 1fr 1fr" onclick="openCliDet(${c.id})"><div style="display:flex;align-items:center;gap:8px">${mn(c.avatar,26)}<span class="rn">${c.company}</span></div><span class="rs">${c.email}</span><span class="rs">${c.sector||'–'}</span><div style="display:flex;gap:4px;flex-wrap:wrap">${c.subs.slice(0,2).map(id=>{const sw=SW.find(x=>x.id===id);return sw?`<span class="tgold">${sw.name}</span>`:''}).join('')}${c.subs.length>2?`<span style="color:var(--stone);font-size:10px">+${c.subs.length-2}</span>`:''}</div><span class="rp">${getMrr(c.subs)} €</span><span>${bdg(c.status)}</span></div>${i<cli.length-1?hr():''}</div>`).join('')}</div>`;
+}
+function openAddCli(){
+  openMo(`<div class="modal-t">Nouveau client</div><div class="modal-s">Ajouter un client manuellement</div><div class="fg"><label class="flbl">Nom de l'entreprise</label><input class="finp" id="nc-co" placeholder="Entreprise BTP"/></div><div class="fg"><label class="flbl">Email</label><input class="finp" id="nc-em" type="email" placeholder="contact@entreprise.fr"/></div><div class="fg"><label class="flbl">Secteur</label><select class="finp" id="nc-sec"><option value="">–</option>${SECS.map(s=>`<option>${s.s}</option>`).join('')}</select></div><div class="modal-act"><button class="btn btn-gh" onclick="closeMo()">Annuler</button><button class="btn btn-g" onclick="addCli()">Créer</button></div>`);
+}
+function addCli(){
+  const co=document.getElementById('nc-co').value.trim();
+  const em=document.getElementById('nc-em').value.trim();
+  const sec=document.getElementById('nc-sec').value;
+  if(!co||!em){showToast("⚠ Remplissez les champs.");return;}
+  USERS.push({id:Date.now(),role:"client",name:co,company:co,email:em,password:"client",avatar:co.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),subs:[],trials:{},since:new Date().toLocaleDateString("fr-FR",{month:"short",year:"numeric"}),status:"trial",sector:sec,referralCode:gc(),referrals:0,referralCredit:0});
+  closeMo();showToast("✅ Client ajouté.");rACli();
+}
+function openCliDet(id){selCli=id;nav('admin-clidet');}
+
+// ── ADMIN CLIENT DETAIL ───────────────────────────────────────────
+function rACliDet(){
+  const c=USERS.find(u=>u.id===selCli);if(!c){nav('admin-clients');return;}
+  document.getElementById('adm-clidet').innerHTML=`
+    <div class="ph"><div><div class="ph-sup"><button style="background:none;border:none;color:var(--stone);cursor:pointer;font-family:var(--ss);font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:0" onclick="nav('admin-clients')">← Clients</button></div><h1>${c.company}</h1></div>
+    <div class="ph-act">${bdg(c.status)}<select class="finp" style="width:auto;padding:7px 12px;font-size:11px" onchange="chgStat(${c.id},this.value)">${["active","trial","overdue"].map(s=>`<option value="${s}"${c.status===s?" selected":""}>${{active:"Actif",trial:"Essai",overdue:"Retard"}[s]}</option>`).join('')}</select></div></div>
+    <div class="kgrid k3">${kpi("MRR",`${getMrr(c.subs)} €/mois`,`${c.subs.length} logiciel${c.subs.length>1?"s":""}`,"acc")}${kpi("Depuis",c.since||"–","Membre ONIQ")}${kpi("Secteur",c.sector||"–","Activité")}</div>
+    <div class="g2">
+      <div class="card"><div class="card-hd">Logiciels souscrits<button class="btn btn-g btn-sm" onclick="openAddSub(${c.id})">+ Ajouter</button></div>
+        ${c.subs.length===0?'<div class="empty">Aucun logiciel.</div>':c.subs.map((id,i)=>{const sw=SW.find(x=>x.id===id);return sw?`<div><div style="display:flex;align-items:center;gap:12px;padding:11px 18px"><span style="font-size:18px">${sw.icon}</span><div style="flex:1"><div style="font-family:var(--ss);font-weight:700;font-size:12px;color:var(--ink)">${sw.name}</div><div style="font-family:var(--ss);font-size:10px;color:var(--green);font-weight:700">● ${sw.price}€/mois</div></div><button class="btn btn-r btn-sm" onclick="admUnsub(${c.id},${sw.id})">Retirer</button></div>${i<c.subs.length-1?hr():''}</div>`:''}).join('')}
+      </div>
+      <div class="card"><div class="card-hd">Informations</div><div class="card-bd">
+        ${[["Email",c.email],["Code parrainage",c.referralCode],["Parrainages",c.referrals||0],["Crédits",`${c.referralCredit||0} mois`]].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--linen)"><span style="font-family:var(--ss);font-size:11px;color:var(--stone)">${k}</span><span style="font-family:var(--ss);font-size:12px;font-weight:600;color:var(--ink)">${v}</span></div>`).join('')}
+      </div></div>
+    </div>`;
+}
+function chgStat(uid,s){const i=USERS.findIndex(u=>u.id===uid);if(i>=0)USERS[i].status=s;showToast("✅ Statut mis à jour.");rACliDet();}
+function admUnsub(uid,swid){const i=USERS.findIndex(u=>u.id===uid);if(i>=0)USERS[i].subs=USERS[i].subs.filter(x=>x!==swid);showToast("✅ Désabonnement effectué.");rACliDet();}
+function openAddSub(uid){
+  const c=USERS.find(u=>u.id===uid);
+  const av=SW.filter(s=>!c.subs.includes(s.id));
+  if(!av.length){showToast("Tous les logiciels sont déjà souscrits.");return;}
+  openMo(`<div class="modal-t">Ajouter un logiciel</div><div class="modal-s">${c.company}</div><div class="fg"><label class="flbl">Logiciel</label><select class="finp" id="as-sw">${av.map(s=>`<option value="${s.id}">${s.name} — ${s.price}€/mois</option>`).join('')}</select></div><div class="modal-act"><button class="btn btn-gh" onclick="closeMo()">Annuler</button><button class="btn btn-g" onclick="confAddSub(${uid})">Ajouter</button></div>`);
+}
+function confAddSub(uid){
+  const sid=parseInt(document.getElementById('as-sw').value);
+  const i=USERS.findIndex(u=>u.id===uid);
+  if(i>=0&&!USERS[i].subs.includes(sid))USERS[i].subs.push(sid);
+  closeMo();showToast("✅ Logiciel ajouté.");rACliDet();
+}
+
+// ── ADMIN SOFTWARE ────────────────────────────────────────────────
+function rASw(){
+  document.getElementById('adm-sw').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Catalogue</div><h1>Logiciels</h1></div></div>
+    <div class="tbl-wrap"><div class="tbl-hd" style="grid-template-columns:2.5fr 1fr 1fr 1fr 1fr">${["Logiciel","Catégorie","Prix","Note","Abonnés"].map(h=>`<span>${h}</span>`).join('')}</div>
+    ${SW.map((sw,i)=>{const cnt=USERS.filter(u=>u.role==='client'&&u.subs.includes(sw.id)).length;return`<div><div class="tbl-row trow-nc" style="grid-template-columns:2.5fr 1fr 1fr 1fr 1fr"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:18px">${sw.icon}</span><div><div class="rn">${sw.name}</div>${sw.popular?`<span class="tgold">Populaire</span>`:''}</div></div><span class="rs">${sw.cat}</span><span class="rp">${sw.price}€/mois</span><span>${strs(sw.rating,true)}</span><span class="rs">${cnt} client${cnt>1?"s":""}</span></div>${i<SW.length-1?hr():''}</div>`;}).join('')}</div>`;
+}
+
+// ── ADMIN DEVIS ───────────────────────────────────────────────────
+function rADev(){
+  document.getElementById('adm-dev').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Sur mesure</div><h1>Demandes de devis</h1></div></div>
+    <div class="kgrid k3">${kpi("En attente",DEVIS.filter(d=>d.status==='pending').length,"à traiter")}${kpi("Devis envoyés",DEVIS.filter(d=>d.status==='quoted').length,"ce mois")}${kpi("Total",DEVIS.length,"demandes")}</div>
+    <div class="tbl-wrap"><div class="tbl-hd" style="grid-template-columns:1.5fr 2fr 1fr 1fr 1fr">${["Client","Description","Date","Montant","Statut"].map(h=>`<span>${h}</span>`).join('')}</div>
+    ${DEVIS.map((d,i)=>`<div><div class="tbl-row" style="grid-template-columns:1.5fr 2fr 1fr 1fr 1fr" onclick="openDevDet(${d.id})"><div><div class="rn">${d.client}</div><div class="rs">${d.email}</div></div><span class="rs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.desc}</span><span class="rs">${d.date}</span><span class="rp">${d.amount?d.amount+' €':'–'}</span><span>${bdg(d.status)}</span></div>${i<DEVIS.length-1?hr():''}</div>`).join('')}</div>`;
+}
+function openDevDet(id){
+  const d=DEVIS.find(x=>x.id===id);
+  openMo(`<div class="modal-t">Demande de devis</div><div style="background:var(--dim);border:1px solid var(--linen);border-radius:6px;padding:14px;margin-bottom:16px"><div style="font-family:var(--ss);font-weight:700;font-size:13px;color:var(--ink)">${d.client}</div><div style="font-family:var(--ss);font-size:11px;color:var(--stone);margin-bottom:5px">${d.email} — ${d.date}</div><div style="font-family:var(--ss);font-size:13px;color:var(--ink);line-height:1.6">${d.desc}</div></div><div class="fg"><label class="flbl">Tarif mensuel proposé (€)</label><input class="finp" id="da-amt" type="number" placeholder="ex: 89" value="${d.amount||''}"/></div><div class="modal-act"><button class="btn btn-gh" onclick="closeMo()">Fermer</button><button class="btn btn-g" onclick="sendDev(${d.id})">Envoyer le devis</button></div>`);
+}
+function sendDev(id){
+  const a=document.getElementById('da-amt').value;
+  const i=DEVIS.findIndex(d=>d.id===id);
+  if(i>=0){DEVIS[i].status='quoted';DEVIS[i].amount=a?parseInt(a):null;}
+  closeMo();showToast("✅ Devis envoyé.");rADev();
+}
+
+// ── ADMIN FACTURES ────────────────────────────────────────────────
+function rAFac(){
+  const cli=USERS.filter(u=>u.role==='client');
+  const rows=cli.map(c=>({...c,mrr:getMrr(c.subs),inv:`INV-2024-${String(80+c.id).padStart(3,"0")}`,date:"01 Déc 2024",ps:c.status==='overdue'?'overdue':c.status==='trial'?'pending':'paid'}));
+  const paid=rows.filter(r=>r.ps==='paid').reduce((s,r)=>s+r.mrr,0);
+  const pend=rows.filter(r=>r.ps!=='paid').reduce((s,r)=>s+r.mrr,0);
+  document.getElementById('adm-fac').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Finance</div><h1>Factures</h1></div></div>
+    <div class="kgrid k3">${kpi("Encaissé",`${paid} €`,'','acc')}${kpi("En attente",`${pend} €`)}${kpi("Total",rows.length,'factures')}</div>
+    <div class="tbl-wrap"><div class="tbl-hd" style="grid-template-columns:1.2fr 2fr 1.5fr 1fr 1fr 1fr">${["N° Facture","Client","Logiciels","Montant","Date","Statut"].map(h=>`<span>${h}</span>`).join('')}</div>
+    ${rows.map((r,i)=>`<div><div class="tbl-row trow-nc" style="grid-template-columns:1.2fr 2fr 1.5fr 1fr 1fr 1fr"><span style="font-family:var(--ss);font-size:11px;color:var(--gold);font-weight:600">${r.inv}</span><div style="display:flex;align-items:center;gap:8px">${mn(r.avatar,22)}<span class="rn">${r.company}</span></div><span class="rs">${r.subs.length} logiciel${r.subs.length>1?"s":""}</span><span class="rp">${r.mrr} €</span><span class="rs">${r.date}</span><span>${bdg(r.ps)}</span></div>${i<rows.length-1?hr():''}</div>`).join('')}</div>`;
+}
+
+// ── ADMIN REFERRALS ───────────────────────────────────────────────
+function rARef(){
+  const cli=USERS.filter(u=>u.role==='client');
+  const tot=cli.reduce((s,c)=>s+(c.referrals||0),0);
+  const top=cli.filter(c=>c.referrals>0).sort((a,b)=>b.referrals-a.referrals);
+  document.getElementById('adm-ref').innerHTML=`
+    <div class="ph"><div><div class="ph-sup">Croissance</div><h1>Programme de parrainage</h1></div></div>
+    <div class="kgrid k3">${kpi("Parrainages total",tot,"clients référencés","tr")}${kpi("Crédits distribués",`${cli.reduce((s,c)=>s+(c.referralCredit||0),0)} mois`,'',"acc")}${kpi("Taux participation",`${Math.round((cli.filter(c=>c.referrals>0).length/Math.max(1,cli.length))*100)}%`,"clients actifs")}</div>
+    <div class="tbl-wrap"><div style="padding:13px 18px;border-bottom:1px solid var(--linen)"><span style="font-family:var(--sf);font-size:13px;font-weight:600;color:var(--ink)">Top parrains</span></div>
+    ${top.length===0?'<div class="empty">Aucun parrainage encore.</div>':top.map((c,i)=>`<div><div style="display:flex;align-items:center;gap:14px;padding:12px 18px">${mn(c.avatar,28)}<div style="flex:1"><div style="font-family:var(--ss);font-weight:600;font-size:13px;color:var(--ink)">${c.company}</div><div style="font-family:var(--ss);font-size:11px;color:var(--stone)">Code : ${c.referralCode}</div></div><div style="text-align:right"><div style="font-family:var(--sf);font-weight:700;font-size:15px;color:var(--gold)">${c.referrals} parrainage${c.referrals>1?"s":""}</div><div style="font-family:var(--ss);font-size:11px;color:var(--stone)">${c.referralCredit||0} mois de crédit</div></div></div>${i<top.length-1?hr():''}</div>`).join('')}</div>`;
+}
+
+// ── APROPOS FEATS (static) ────────────────────────────────────────
+document.getElementById('apropos-feats').innerHTML=[["🆓","Essai 7 jours gratuit","Sans carte bancaire ni engagement."],["💳","Abonnement mensuel","Résiliable à tout moment."],["🛠️","Sur mesure possible","Votre besoin n'existe pas ? On le développe."],["💬","Support inclus","Email et téléphone dans chaque abonnement."]].map(([ic,t,d])=>`<div style="background:var(--paper);border:1px solid var(--linen);border-radius:8px;padding:13px 16px;display:flex;gap:10px;align-items:flex-start"><span style="font-size:18px;flex-shrink:0">${ic}</span><div><div style="font-family:var(--ss);font-weight:700;font-size:12px;color:var(--ink);margin-bottom:2px">${t}</div><div style="font-family:var(--ss);font-size:11px;color:var(--stone);line-height:1.5">${d}</div></div></div>`).join('');
+
+// ── APP VIEWER (iframe) ───────────────────────────────────────────
+let prevView='market';
+function openAppViewer(swId){
+  const sw=SW.find(s=>s.id===swId);if(!sw)return;
+  prevView=CV;
+  document.getElementById('appbar-icon').textContent=sw.icon;
+  document.getElementById('appbar-name').textContent=sw.name;
+  document.getElementById('app-iframe').src=sw.url||'';
+  // Switch main to no-scroll for iframe
+  document.getElementById('main-area').style.overflow='hidden';
+  CV='app-viewer';
+  renderSidebar();
+  renderViews();
+}
+function closeAppViewer(){
+  document.getElementById('app-iframe').src='';
+  document.getElementById('main-area').style.overflow='';
+  nav(prevView||'market');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+renderSidebar();
+nav('market');
+</script>
+</body>
+</html>
