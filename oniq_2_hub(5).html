@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ONIQ Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+const C = {
+  ink:"#0A0A08",deep:"#060504",paper:"#F5F2EC",dim:"#EFEBE3",linen:"#E8E2D8",
+  gold:"#B89A5A",goldL:"#D4B87A",goldDim:"rgba(184,154,90,0.13)",goldB:"rgba(184,154,90,0.35)",
+  ivory:"#FAF8F4",stone:"#8C8070",sand:"#B5A898",
+  green:"#4A7C59",greenDim:"rgba(74,124,89,0.13)",
+  amber:"#C47B2B",amberDim:"rgba(196,123,43,0.13)",
+  red:"#A63C3C",redDim:"rgba(166,60,60,0.13)",
+};
+const SF="'Playfair Display',Georgia,serif";
+const SS="'DM Sans','Helvetica Neue',sans-serif";
+
+const SW_DB=[
+  {id:1,name:"POS Manager",    price:49,cat:"Commerce",   sector:"Boulangerie,Épicerie,Boutique",  icon:"🏪",desc:"Caisse & point de vente complet.",        features:["Caisse tactile","Multi-postes","Rapports","Export comptable"],popular:true, rating:4.8,reviews:127},
+  {id:2,name:"Stock Pro",      price:29,cat:"Gestion",    sector:"Boulangerie,Pharmacie,Commerce", icon:"📦",desc:"Stocks, alertes de seuil, inventaires.",  features:["Stock temps réel","Alertes","Codes-barres","Fournisseurs"],   popular:false,rating:4.6,reviews:89},
+  {id:3,name:"Appointments AI",price:39,cat:"Services",   sector:"Coiffure,Beauté,Médecine",       icon:"📅",desc:"Rendez-vous intelligents, rappels SMS.",  features:["Résa en ligne","Rappels SMS","Agenda sync","Fidélité"],       popular:true, rating:4.9,reviews:203},
+  {id:4,name:"CaisseX",        price:35,cat:"Commerce",   sector:"Restauration,Commerce,Marché",   icon:"💳",desc:"Caisse simplifiée pour petits commerces.",features:["Interface simple","Reçus numériques","Sans contact","Stats"],  popular:false,rating:4.5,reviews:64},
+  {id:5,name:"RepairDesk",     price:45,cat:"Artisanat",  sector:"Garage,Réparation,Électronique", icon:"🔧",desc:"Gestion atelier & réparations client.",   features:["Fiches réparation","Suivi pièces","SMS client","Devis"],      popular:false,rating:4.7,reviews:41},
+  {id:6,name:"DriveManager",   price:39,cat:"Auto-école", sector:"Auto-école,Formation",           icon:"🚗",desc:"Élèves, moniteurs, planning auto.",       features:["Planning","Suivi élèves","Examens","Facturation"],            popular:false,rating:4.6,reviews:33},
+  {id:7,name:"RestoFlow",      price:44,cat:"Restauration",sector:"Restaurant,Café,Traiteur",      icon:"🍽️",desc:"Salle, commandes cuisine, réservations.",features:["Plan de salle","Commandes","Cuisine","Réservations"],          popular:true, rating:4.7,reviews:88},
+  {id:8,name:"BeautyBook",     price:32,cat:"Beauté",     sector:"Coiffure,Institut,Spa",          icon:"✂️",desc:"Agenda beauté, fidélité, vente.",        features:["Agenda","Fidélité","Vente produits","Insta sync"],            popular:false,rating:4.8,reviews:156},
+];
+
+const SECTORS=["Boulangerie","Coiffure","Garage","Restaurant","Auto-école","Pharmacie","Commerce","Beauté","Artisanat","Médecine"];
+
+const USERS_DB=[
+  {id:1,role:"admin", name:"Admin ONIQ",         company:"ONIQ",              email:"admin@oniq.fr",         password:"admin", avatar:"OA",subs:[],   trials:{},since:"Jan 2020",status:"active", sector:"",           referralCode:"ADMIN1",referrals:0,referralCredit:0},
+  {id:2,role:"client",name:"Jean Martin",         company:"Boulangerie Martin",email:"martin@boulangerie.fr",password:"client",avatar:"BM",subs:[1,2], trials:{},since:"Jan 2024",status:"active", sector:"Boulangerie",referralCode:"BM2024",referrals:2,referralCredit:2},
+  {id:3,role:"client",name:"Coiffure Éléonore",  company:"Coiffure Éléonore", email:"eleonore@coiff.fr",    password:"client",avatar:"CE",subs:[3,4,2],trials:{},since:"Jun 2023",status:"active", sector:"Coiffure",   referralCode:"CE2023",referrals:1,referralCredit:0},
+  {id:4,role:"client",name:"Garage Dupont",       company:"Garage Dupont",     email:"dupont@garage.fr",     password:"client",avatar:"GD",subs:[5],   trials:{},since:"Mar 2024",status:"overdue",sector:"Garage",     referralCode:"GD2024",referrals:0,referralCredit:0},
+  {id:5,role:"client",name:"Restaurant Le Soleil",company:"Restaurant Soleil", email:"soleil@resto.fr",      password:"client",avatar:"RS",subs:[7],   trials:{},since:"Nov 2024",status:"trial",  sector:"Restaurant", referralCode:"RS2024",referrals:0,referralCredit:1},
+];
+
+const DEVIS_DB=[
+  {id:1,client:"Menuiserie Blanc", email:"blanc@menuiserie.fr",desc:"Logiciel gestion chantiers et devis bâtiment.",   date:"28 Nov 2024",status:"pending",amount:null},
+  {id:2,client:"Salon Beauté Rose",email:"rose@salon.fr",      desc:"App fidélité clients avec points et récompenses.",date:"02 Déc 2024",status:"quoted", amount:38},
+  {id:3,client:"Pressing Dubois", email:"dubois@pressing.fr",  desc:"Suivi articles en lavage, SMS automatiques.",     date:"04 Déc 2024",status:"pending",amount:null},
+];
+
+const MRR_HIST=[310,380,420,465,510,554];
+const MRR_MONTHS=["Juil","Août","Sep","Oct","Nov","Déc"];
+
+const getMrr=(subs)=>subs.reduce((s,id)=>{const sw=SW_DB.find(x=>x.id===id);return s+(sw?.price||0);},0);
+const genCode=()=>Math.random().toString(36).slice(2,8).toUpperCase();
+const trialDaysLeft=(ts)=>ts?Math.max(0,Math.ceil((new Date(ts+7*86400000)-Date.now())/86400000)):0;
+const isTrialActive=(ts)=>ts&&trialDaysLeft(ts)>0;
+
+// ── Atoms ──────────────────────────────────────────────────────────────────
+const HR=({s})=><div style={{height:1,background:`linear-gradient(90deg,transparent,${C.linen},transparent)`,...s}}/>;
+
+const Stars=({r,sm})=>(
+  <span style={{display:"inline-flex",gap:1,alignItems:"center"}}>
+    {[1,2,3,4,5].map(i=><span key={i} style={{color:i<=Math.round(r)?C.gold:C.linen,fontSize:sm?11:13}}>★</span>)}
+    <span style={{fontFamily:SS,fontSize:sm?10:12,color:C.stone,marginLeft:3}}>{r}</span>
+  </span>
+);
+
+const Badge=({status})=>{
+  const m={active:{l:"Actif",bg:C.greenDim,c:C.green},trial:{l:"Essai",bg:C.goldDim,c:C.gold},overdue:{l:"Retard",bg:C.redDim,c:C.red},paid:{l:"Payé",bg:C.greenDim,c:C.green},pending:{l:"En attente",bg:C.amberDim,c:C.amber},quoted:{l:"Devis envoyé",bg:C.goldDim,c:C.gold}};
+  const s=m[status]||m.active;
+  return <span style={{background:s.bg,color:s.c,border:`1px solid ${s.c}44`,padding:"3px 10px",borderRadius:3,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",fontFamily:SS,whiteSpace:"nowrap"}}>{s.l}</span>;
+};
+
+const Mono=({i,size=36})=>(
+  <div style={{width:size,height:size,borderRadius:4,background:C.ink,border:`1px solid ${C.gold}55`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.3,fontWeight:700,color:C.gold,fontFamily:SF,flexShrink:0}}>{i}</div>
+);
+
+const Btn=({children,v="primary",onClick,style:{},disabled})=>{
+  const vs={primary:{background:C.ink,color:C.ivory,border:"none"},ghost:{background:"transparent",color:C.stone,border:`1px solid ${C.linen}`},gold:{background:C.gold,color:C.ink,border:"none"},red:{background:C.redDim,color:C.red,border:`1px solid ${C.red}44`}};
+  return <button onClick={disabled?undefined:onClick} style={{borderRadius:4,padding:"9px 20px",fontFamily:SS,fontSize:11,fontWeight:700,cursor:disabled?"not-allowed":"pointer",letterSpacing:"0.1em",textTransform:"uppercase",transition:"all 0.2s",opacity:disabled?0.5:1,...vs[v],...style}}>{children}</button>;
+};
+
+const KPI=({label,value,sub,accent,trend})=>(
+  <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:"20px 24px"}}>
+    <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:C.stone,marginBottom:8}}>{label}</div>
+    <div style={{fontFamily:SF,fontSize:26,fontWeight:700,color:C.ink,lineHeight:1}}>{value}</div>
+    {sub&&<div style={{fontFamily:SS,fontSize:11,color:accent?C.gold:trend?C.green:C.stone,marginTop:6}}>{trend&&<span style={{color:C.green}}>↑ </span>}{sub}</div>}
+  </div>
+);
+
+const PH=({section,title,action})=>(
+  <div style={{borderBottom:`1px solid ${C.linen}`,paddingBottom:18,marginBottom:26,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+    <div>
+      <div style={{fontFamily:SS,fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:C.stone,marginBottom:4}}>{section}</div>
+      <h1 style={{margin:0,fontFamily:SF,fontSize:30,fontWeight:700,color:C.ink}}>{title}</h1>
+    </div>
+    {action}
+  </div>
+);
+
+const FL=({label})=><label style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone,display:"block",marginBottom:7}}>{label}</label>;
+
+const TI=({label,value,onChange,type="text",placeholder="",mb=16})=>(
+  <div style={{marginBottom:mb}}>
+    {label&&<label style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone,display:"block",marginBottom:7}}>{label}</label>}
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder} style={{width:"100%",background:C.paper,border:`1px solid ${C.linen}`,borderRadius:4,padding:"11px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box"}}/>
+  </div>
+);
+
+const Overlay=({title,subtitle,onClose,children,wide})=>(
+  <div style={{position:"fixed",inset:0,background:"rgba(5,5,4,0.7)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:10,padding:40,width:wide?600:420,maxHeight:"90vh",overflowY:"auto"}}>
+      <div style={{fontFamily:SF,fontSize:20,fontWeight:700,color:C.ink,marginBottom:subtitle?6:22}}>{title}</div>
+      {subtitle&&<div style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:22}}>{subtitle}</div>}
+      {children}
+    </div>
+  </div>
+);
+
+const Toast=({msg,onClose})=>(
+  <div style={{position:"fixed",bottom:26,right:26,background:C.ink,border:`1px solid ${C.gold}44`,borderRadius:8,padding:"16px 22px",zIndex:500,display:"flex",alignItems:"center",gap:12}}>
+    <span style={{color:C.gold}}>✦</span>
+    <span style={{fontFamily:SS,fontSize:13,color:C.ivory}}>{msg}</span>
+    <button onClick={onClose} style={{background:"none",border:"none",color:C.stone,cursor:"pointer",marginLeft:8}}>✕</button>
+  </div>
+);
+
+const Sparkline=({data})=>{
+  const max=Math.max(...data),min=Math.min(...data),w=300,h=60,p=6;
+  const x=(i)=>p+(i/(data.length-1))*(w-p*2);
+  const y=(v)=>h-p-((v-min)/(max-min||1))*(h-p*2);
+  const pts=data.map((v,i)=>`${x(i)},${y(v)}`).join(" ");
+  const area=`M${x(0)},${y(data[0])} ${data.map((v,i)=>`L${x(i)},${y(v)}`).join(" ")} L${x(data.length-1)},${h} L${x(0)},${h} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{width:"100%",height:60}}>
+      <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.gold} stopOpacity="0.25"/><stop offset="100%" stopColor={C.gold} stopOpacity="0"/></linearGradient></defs>
+      <path d={area} fill="url(#g1)"/>
+      <polyline points={pts} fill="none" stroke={C.gold} strokeWidth="2" strokeLinejoin="round"/>
+      {data.map((v,i)=>(
+        <g key={i}>
+          <circle cx={x(i)} cy={y(v)} r="3" fill={C.gold}/>
+          <text x={x(i)} y={h} textAnchor="middle" style={{fontSize:8,fontFamily:SS,fill:C.stone}}>{MRR_MONTHS[i]}</text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+const AuthModal=({onLogin,initMode,onClose})=>{
+  const [mode,setMode]=useState(initMode||"login");
+  const [step,setStep]=useState(1);
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
+  const [reg,setReg]=useState({company:"",name:"",email:"",sector:"",pass:"",pass2:""});
+  const [err,setErr]=useState("");
+  const is={width:"100%",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:4,padding:"12px 14px",fontFamily:SS,fontSize:13,color:C.ivory,outline:"none",boxSizing:"border-box"};
+  const ls={fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",display:"block",marginBottom:7};
+  const doLogin=()=>{
+    const u=USERS_DB.find(u=>u.email===email&&u.password===pass);
+    if(!u){setErr("Email ou mot de passe incorrect.");return;}
+    onLogin(u,false);
+  };
+  const doRegister=()=>{
+    if(!reg.company||!reg.email||!reg.pass){setErr("Remplissez tous les champs.");return;}
+    if(reg.pass!==reg.pass2){setErr("Mots de passe différents.");return;}
+    const u={id:Date.now(),role:"client",name:reg.name||reg.company,company:reg.company,email:reg.email,password:reg.pass,avatar:reg.company.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),subs:[],trials:{},since:new Date().toLocaleDateString("fr-FR",{month:"short",year:"numeric"}),status:"trial",sector:reg.sector,referralCode:genCode(),referrals:0,referralCredit:0};
+    onLogin(u,true);
+  };
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(5,5,4,0.88)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:C.deep,border:"1px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"44px 48px",width:380,position:"relative"}}>
+        <button onClick={onClose} style={{position:"absolute",top:16,right:20,background:"none",border:"none",color:"rgba(255,255,255,0.3)",cursor:"pointer",fontSize:18}}>✕</button>
+        <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ivory,letterSpacing:4,marginBottom:4}}>ONIQ</div>
+        <div style={{height:1,width:36,background:C.gold,marginBottom:20}}/>
+        <div style={{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:6,padding:4,marginBottom:24}}>
+          {[["login","Connexion"],["register","Inscription"]].map(([k,l])=>(
+            <button key={k} onClick={()=>{setMode(k);setStep(1);setErr("");}} style={{flex:1,padding:10,borderRadius:4,background:mode===k?"rgba(255,255,255,0.09)":"transparent",border:"none",color:mode===k?C.ivory:"rgba(255,255,255,0.33)",fontFamily:SS,fontSize:12,fontWeight:600,cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
+        {mode==="login"&&(
+          <>
+            <div style={{marginBottom:12}}><label style={ls}>Email</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} placeholder="vous@entreprise.fr" style={is}/></div>
+            <div style={{marginBottom:18}}><label style={ls}>Mot de passe</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} placeholder="••••••••" style={is}/></div>
+            {err&&<div style={{fontFamily:SS,fontSize:12,color:"#e87777",marginBottom:12,background:"rgba(168,60,60,0.15)",padding:"10px 14px",borderRadius:4}}>{err}</div>}
+            <button onClick={doLogin} style={{width:"100%",background:C.gold,border:"none",borderRadius:4,padding:13,fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.ink,cursor:"pointer"}}>Se connecter</button>
+            <div style={{fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.18)",marginTop:16,lineHeight:1.8}}>Démo : admin@oniq.fr / admin<br/>Client : martin@boulangerie.fr / client</div>
+          </>
+        )}
+        {mode==="register"&&step===1&&(
+          <>
+            <div style={{fontFamily:SF,fontSize:14,color:C.ivory,marginBottom:16}}>Étape 1 / 2 — Votre entreprise</div>
+            {[["Nom de l'entreprise","company","text"],["Votre nom","name","text"],["Email professionnel","email","email"]].map(([l,k,t])=>(
+              <div key={k} style={{marginBottom:11}}><label style={ls}>{l}</label><input type={t} value={reg[k]} onChange={e=>setReg(p=>({...p,[k]:e.target.value}))} style={is}/></div>
+            ))}
+            <div style={{marginBottom:14}}>
+              <label style={ls}>Secteur</label>
+              <select value={reg.sector} onChange={e=>setReg(p=>({...p,sector:e.target.value}))} style={{...is,cursor:"pointer"}}>
+                <option value="">Choisir…</option>{SECTORS.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <button onClick={()=>setStep(2)} style={{width:"100%",background:C.gold,border:"none",borderRadius:4,padding:13,fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",letterSpacing:"0.14em",textTransform:"uppercase"}}>Continuer →</button>
+          </>
+        )}
+        {mode==="register"&&step===2&&(
+          <>
+            <div style={{fontFamily:SF,fontSize:14,color:C.ivory,marginBottom:16}}>Étape 2 / 2 — Mot de passe</div>
+            {[["Mot de passe","pass","password"],["Confirmer","pass2","password"]].map(([l,k,t])=>(
+              <div key={k} style={{marginBottom:11}}><label style={ls}>{l}</label><input type={t} value={reg[k]} onChange={e=>setReg(p=>({...p,[k]:e.target.value}))} style={is}/></div>
+            ))}
+            {err&&<div style={{fontFamily:SS,fontSize:12,color:"#e87777",marginBottom:12,background:"rgba(168,60,60,0.15)",padding:"10px 14px",borderRadius:4}}>{err}</div>}
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setStep(1)} style={{flex:1,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:4,padding:13,fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.45)",cursor:"pointer",fontWeight:600}}>← Retour</button>
+              <button onClick={doRegister} style={{flex:2,background:C.gold,border:"none",borderRadius:4,padding:13,fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",letterSpacing:"0.12em",textTransform:"uppercase"}}>Créer mon compte</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Onboarding ─────────────────────────────────────────────────────────────
+const Onboarding=({user,onDone})=>{
+  const [step,setStep]=useState(0);
+  const [picks,setPicks]=useState([]);
+  const relevant=SW_DB.filter(sw=>user.sector&&sw.sector.includes(user.sector));
+  const shown=relevant.length>0?relevant:SW_DB.slice(0,4);
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(5,5,4,0.82)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:12,padding:"44px 48px",width:520,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{display:"flex",gap:8,marginBottom:28}}>{[0,1,2].map(i=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=step?C.gold:C.linen,transition:"background 0.3s"}}/>)}</div>
+        <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.2em",textTransform:"uppercase",color:C.gold,marginBottom:6}}>Étape {step+1} / 3</div>
+        {step===0&&(
+          <>
+            <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink,marginBottom:6}}>Bienvenue sur ONIQ !</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone,marginBottom:22,lineHeight:1.6}}>Votre compte <strong>{user.company}</strong> est créé. Configurons votre espace.</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
+              {[["🎯","Marketplace","Explorer +8 logiciels métier"],["🆓","7 jours gratuits","Essayez sans carte bancaire"],["✦","Sur mesure","Devis pour vos besoins"],["💬","Support inclus","Aide disponible toujours"]].map(([ic,t,d])=>(
+                <div key={t} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:"14px 12px",display:"flex",gap:10}}>
+                  <span style={{fontSize:16}}>{ic}</span>
+                  <div><div style={{fontFamily:SS,fontWeight:700,fontSize:12,color:C.ink}}>{t}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{d}</div></div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {step===1&&(
+          <>
+            <div style={{fontFamily:SF,fontSize:20,fontWeight:700,color:C.ink,marginBottom:5}}>Choisissez vos logiciels</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone,marginBottom:18,lineHeight:1.6}}>Sélectionnez les logiciels qui vous intéressent — 7 jours gratuits sur chacun.</div>
+            {shown.map(sw=>{const sel=picks.includes(sw.id);return(
+              <div key={sw.id} onClick={()=>setPicks(p=>sel?p.filter(x=>x!==sw.id):[...p,sw.id])} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:sel?C.goldDim:C.paper,border:`1px solid ${sel?C.gold+"66":C.linen}`,borderRadius:8,marginBottom:8,cursor:"pointer"}}>
+                <span style={{fontSize:20}}>{sw.icon}</span>
+                <div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:700,fontSize:13,color:C.ink}}>{sw.name}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{sw.desc}</div></div>
+                <div style={{textAlign:"right"}}><div style={{fontFamily:SF,fontWeight:700,fontSize:13,color:C.gold}}>{sw.price}€/mois</div></div>
+                <div style={{width:18,height:18,borderRadius:3,background:sel?C.gold:C.linen,display:"flex",alignItems:"center",justifyContent:"center",color:sel?C.ink:"transparent",fontWeight:800,fontSize:11,flexShrink:0}}>{sel?"✓":""}</div>
+              </div>
+            );})}
+          </>
+        )}
+        {step===2&&(
+          <div style={{textAlign:"center",padding:"24px 0"}}>
+            <div style={{fontSize:48,marginBottom:14}}>🎉</div>
+            <div style={{fontFamily:SF,fontSize:20,fontWeight:700,color:C.ink,marginBottom:6}}>{picks.length>0?`${picks.length} essai${picks.length>1?"s":""} activé${picks.length>1?"s":""}  !`:"Votre espace est prêt !"}</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone}}>Explorez la marketplace et découvrez tous nos logiciels.</div>
+          </div>
+        )}
+        <div style={{display:"flex",gap:10,marginTop:8}}>
+          {step>0&&<button onClick={()=>setStep(p=>p-1)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"10px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>Retour</button>}
+          <button onClick={()=>{if(step<2)setStep(p=>p+1);else onDone(picks);}} style={{flex:2,background:C.gold,border:"none",borderRadius:4,padding:"10px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>
+            {step===0?"Commencer →":step===1?(picks.length>0?`Activer ${picks.length} essai${picks.length>1?"s":""}  →`:"Passer →"):"Accéder à mon espace →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Marketplace ────────────────────────────────────────────────────────────
+const Marketplace=({user,setUser,software,setView,onAuth})=>{
+  const [cat,setCat]=useState("Tous");
+  const [search,setSearch]=useState("");
+  const [sort,setSort]=useState("popular");
+  const [cart,setCart]=useState([]);
+  const [detail,setDetail]=useState(null);
+  const [showCart,setShowCart]=useState(false);
+  const [showPay,setShowPay]=useState(false);
+  const [toast,setToast]=useState(null);
+  const [aiQ,setAiQ]=useState("");
+  const [aiLoad,setAiLoad]=useState(false);
+  const [aiRes,setAiRes]=useState(null);
+  const [showAi,setShowAi]=useState(false);
+
+  const CATS=["Tous",...Array.from(new Set(software.map(s=>s.cat)))];
+  let list=software.filter(s=>(cat==="Tous"||s.cat===cat)&&s.name.toLowerCase().includes(search.toLowerCase()));
+  if(sort==="popular")list=[...list].sort((a,b)=>b.reviews-a.reviews);
+  if(sort==="rating")list=[...list].sort((a,b)=>b.rating-a.rating);
+  if(sort==="price_asc")list=[...list].sort((a,b)=>a.price-b.price);
+  if(sort==="price_desc")list=[...list].sort((a,b)=>b.price-a.price);
+
+  const isSub=id=>user?.subs?.includes(id);
+  const isTrial=id=>user&&isTrialActive(user.trials?.[id]);
+  const isCart=id=>cart.includes(id);
+
+  const startTrial=id=>{
+    if(!user){onAuth("register");return;}
+    setUser(u=>({...u,trials:{...u.trials,[id]:Date.now()}}));
+    const sw=software.find(s=>s.id===id);
+    setToast(`✓ Essai 7 jours activé pour ${sw?.name} !`);
+    setTimeout(()=>setToast(null),4000);
+    setDetail(null);
+  };
+  const toggleCart=id=>{if(!user){onAuth("register");return;}setCart(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);};
+  const cartItems=software.filter(s=>cart.includes(s.id));
+  const cartTotal=cartItems.reduce((s,x)=>s+x.price,0);
+  const pay=()=>{setUser(u=>({...u,subs:[...new Set([...u.subs,...cart])]}));setCart([]);setShowPay(false);setToast("🎉 Abonnements activés !");setTimeout(()=>setToast(null),4000);};
+
+  const runAi=async()=>{
+    if(!user){onAuth("register");return;}
+    if(!aiQ.trim())return;
+    setAiLoad(true);setAiRes(null);
+    try{
+      const catalog=software.map(s=>`id:${s.id} ${s.name}(${s.price}€): ${s.desc}`).join("\n");
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:`Catalogue:\n${catalog}\n\nBesoin: "${aiQ}"\n\nRéponds UNIQUEMENT en JSON sans markdown:\n{"message":"réponse courte","matches":[{"id":1,"reason":"raison"}],"noMatch":false}`}]})});
+      const data=await res.json();
+      const txt=data.content?.map(b=>b.text||"").join("")||"{}";
+      setAiRes(JSON.parse(txt.replace(/```json|```/g,"").trim()));
+    }catch(e){setAiRes({message:"Une erreur est survenue, réessayez.",matches:[],noMatch:true});}
+    setAiLoad(false);
+  };
+  const aiMatches=aiRes?software.filter(s=>aiRes.matches?.some(m=>m.id===s.id)):[];
+
+  return (
+    <div style={{padding:"28px 36px"}}>
+      {/* Header */}
+      <div style={{marginBottom:20}}>
+        <div style={{fontFamily:SS,fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:C.stone,marginBottom:4}}>Catalogue</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+          <h1 style={{margin:0,fontFamily:SF,fontSize:30,fontWeight:700,color:C.ink}}>Marketplace</h1>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <button onClick={()=>{if(!user){onAuth("register");return;}setShowAi(p=>!p);}} style={{display:"flex",alignItems:"center",gap:7,background:showAi?C.goldDim:"transparent",border:`1px solid ${showAi?C.gold+"66":C.linen}`,borderRadius:6,padding:"8px 14px",fontFamily:SS,fontSize:11,fontWeight:600,color:showAi?C.gold:C.stone,cursor:"pointer"}}>
+              <span>✦</span> Recherche IA
+              {!user&&<span style={{fontSize:9,background:C.gold,color:C.ink,borderRadius:2,padding:"1px 5px",fontWeight:800,marginLeft:2}}>PRO</span>}
+            </button>
+            {user&&cart.length>0&&<button onClick={()=>setShowCart(true)} style={{background:C.gold,border:"none",borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer"}}>🛒 {cart.length} · {cartTotal}€/mois</button>}
+            {!user&&<button onClick={()=>onAuth("register")} style={{background:C.gold,border:"none",borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:"pointer",letterSpacing:"0.08em",textTransform:"uppercase"}}>Créer un compte</button>}
+          </div>
+        </div>
+      </div>
+
+      {/* Bannière visiteur */}
+      {!user&&(
+        <div style={{background:C.goldDim,border:`1px solid ${C.gold}44`,borderRadius:8,padding:"12px 18px",marginBottom:18,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{color:C.gold}}>✦</span>
+            <span style={{fontFamily:SS,fontSize:12,color:C.ink}}>Créez un compte gratuit pour activer les <strong>essais 7 jours</strong> et accéder à votre espace pro.</span>
+          </div>
+          <div style={{display:"flex",gap:8,flexShrink:0}}>
+            <button onClick={()=>onAuth("login")} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"6px 14px",fontFamily:SS,fontSize:11,fontWeight:600,color:C.stone,cursor:"pointer"}}>Connexion</button>
+            <button onClick={()=>onAuth("register")} style={{background:C.ink,border:"none",borderRadius:4,padding:"6px 14px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",letterSpacing:"0.06em",textTransform:"uppercase"}}>S'inscrire</button>
+          </div>
+        </div>
+      )}
+
+      {/* IA */}
+      {showAi&&user&&(
+        <div style={{background:C.paper,border:`1.5px solid ${C.gold}55`,borderRadius:10,padding:"18px 22px",marginBottom:18,position:"relative"}}>
+          <div style={{position:"absolute",top:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${C.gold},${C.goldL},transparent)`,borderRadius:"10px 10px 0 0"}}/>
+          <div style={{fontFamily:SF,fontSize:14,fontWeight:700,color:C.ink,marginBottom:10}}>Décrivez votre besoin</div>
+          <div style={{display:"flex",gap:10}}>
+            <input value={aiQ} onChange={e=>setAiQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&runAi()} placeholder='Ex : "gérer mes rendez-vous et envoyer des rappels SMS"' style={{flex:1,background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:6,padding:"10px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none"}}/>
+            <button onClick={runAi} disabled={aiLoad||!aiQ.trim()} style={{background:C.ink,border:"none",borderRadius:6,padding:"10px 20px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",opacity:!aiQ.trim()?0.5:1,letterSpacing:"0.08em",textTransform:"uppercase",minWidth:100}}>
+              {aiLoad?"…":"Chercher"}
+            </button>
+          </div>
+          {aiRes&&(
+            <div style={{marginTop:14,borderTop:`1px solid ${C.linen}`,paddingTop:12}}>
+              <div style={{fontFamily:SS,fontSize:12,color:C.ink,marginBottom:aiMatches.length>0?12:0}}>✦ {aiRes.message}</div>
+              {aiMatches.length>0&&(
+                <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(aiMatches.length,3)},1fr)`,gap:10}}>
+                  {aiMatches.map(sw=>{const m=aiRes.matches.find(x=>x.id===sw.id);return(
+                    <div key={sw.id} style={{background:C.ivory,border:`1px solid ${C.gold}44`,borderRadius:8,padding:"13px 15px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:6}}><span style={{fontSize:18}}>{sw.icon}</span><div><div style={{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink}}>{sw.name}</div><div style={{fontFamily:SS,fontSize:10,color:C.gold,fontWeight:700}}>{sw.price}€/mois</div></div></div>
+                      {m?.reason&&<div style={{fontFamily:SS,fontSize:11,color:C.stone,fontStyle:"italic",marginBottom:8}}>"{m.reason}"</div>}
+                      {isSub(sw.id)||isTrial(sw.id)?<div style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.green}}>✓ {isSub(sw.id)?"Abonné":"Essai actif"}</div>:<button onClick={()=>startTrial(sw.id)} style={{width:"100%",background:C.goldDim,border:`1px solid ${C.gold}55`,borderRadius:4,padding:"6px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.gold,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em"}}>Essayer 7j gratuit</button>}
+                    </div>
+                  );})}
+                </div>
+              )}
+              {aiRes.noMatch&&<button onClick={()=>setView("c-devis")} style={{marginTop:8,background:C.gold,border:"none",borderRadius:6,padding:"8px 20px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.08em"}}>Demander un logiciel sur mesure →</button>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Filtres */}
+      <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{position:"relative",flex:1,minWidth:180}}>
+          <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:C.sand}}>⌕</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher…" style={{width:"100%",background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:"9px 12px 9px 30px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box"}}/>
+        </div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {CATS.map(c=><button key={c} onClick={()=>setCat(c)} style={{background:cat===c?C.ink:"transparent",border:`1px solid ${cat===c?C.ink:C.linen}`,borderRadius:20,padding:"6px 13px",color:cat===c?C.ivory:C.stone,cursor:"pointer",fontFamily:SS,fontSize:11,fontWeight:600}}>{c}</button>)}
+        </div>
+        <select value={sort} onChange={e=>setSort(e.target.value)} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 12px",fontFamily:SS,fontSize:12,color:C.ink,outline:"none",cursor:"pointer"}}>
+          <option value="popular">Plus populaires</option>
+          <option value="rating">Mieux notés</option>
+          <option value="price_asc">Prix croissant</option>
+          <option value="price_desc">Prix décroissant</option>
+        </select>
+      </div>
+
+      {/* Grille */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:22}}>
+        {list.map(sw=>{
+          const sub=isSub(sw.id),trial=isTrial(sw.id),inC=isCart(sw.id);
+          return (
+            <div key={sw.id} style={{background:C.paper,border:`1px solid ${sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen}`,borderRadius:8,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",transition:"transform 0.18s,box-shadow 0.18s",cursor:"pointer"}}
+              onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.07)";}}
+              onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}
+            >
+              {sw.popular&&!sub&&!trial&&<div style={{position:"absolute",top:10,right:10,background:C.gold,color:C.ink,fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:2,letterSpacing:"0.1em",textTransform:"uppercase"}}>Populaire</div>}
+              {sub&&<div style={{position:"absolute",top:10,right:10,background:C.greenDim,color:C.green,fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:2,border:`1px solid ${C.green}44`}}>Abonné</div>}
+              {trial&&!sub&&<div style={{position:"absolute",top:10,right:10,background:C.goldDim,color:C.gold,fontSize:9,fontWeight:700,padding:"3px 7px",borderRadius:2,border:`1px solid ${C.gold}44`}}>Essai · {trialDaysLeft(user.trials[sw.id])}j</div>}
+              <div style={{padding:"16px 16px 0"}}>
+                <div style={{fontSize:24,marginBottom:8}}>{sw.icon}</div>
+                <div style={{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,marginBottom:1}}>{sw.name}</div>
+                <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:C.stone,marginBottom:5}}>{sw.cat}</div>
+                <Stars r={sw.rating} sm/><div style={{fontFamily:SS,fontSize:10,color:C.stone,marginTop:2,marginBottom:8}}>{sw.reviews} avis</div>
+                <div style={{fontFamily:SS,fontSize:11,color:C.stone,lineHeight:1.5,marginBottom:10}}>{sw.desc}</div>
+              </div>
+              <div style={{flex:1}}/>
+              <div style={{padding:"0 16px 14px"}}>
+                <HR s={{marginBottom:10}}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <span style={{fontFamily:SF,fontWeight:700,fontSize:15,color:C.ink}}>{sw.price}€<span style={{fontSize:10,fontWeight:400,color:C.stone}}>/mois</span></span>
+                  <button onClick={()=>setDetail(sw)} style={{background:"none",border:"none",color:C.gold,cursor:"pointer",fontFamily:SS,fontSize:11,fontWeight:600,padding:0}}>Détails →</button>
+                </div>
+                {sub&&<div style={{textAlign:"center",fontFamily:SS,fontSize:11,fontWeight:700,color:C.green,padding:"6px 0"}}>✓ Abonné</div>}
+                {!sub&&trial&&<button onClick={()=>toggleCart(sw.id)} style={{width:"100%",background:inC?C.ink:C.paper,border:`1px solid ${inC?C.ink:C.linen}`,borderRadius:4,padding:"7px",fontFamily:SS,fontSize:10,fontWeight:700,color:inC?C.ivory:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em"}}>{inC?"✓ Dans le panier":"S'abonner"}</button>}
+                {!sub&&!trial&&user&&(
+                  <div style={{display:"flex",gap:6}}>
+                    <button onClick={()=>startTrial(sw.id)} style={{flex:1,background:C.greenDim,border:`1px solid ${C.green}44`,borderRadius:4,padding:"7px",fontFamily:SS,fontSize:9,fontWeight:700,color:C.green,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.06em"}}>7j gratuit</button>
+                    <button onClick={()=>toggleCart(sw.id)} style={{flex:1,background:inC?C.ink:C.paper,border:`1px solid ${inC?C.ink:C.linen}`,borderRadius:4,padding:"7px",fontFamily:SS,fontSize:9,fontWeight:700,color:inC?C.ivory:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.06em"}}>{inC?"✓":"+ Ajouter"}</button>
+                  </div>
+                )}
+                {!sub&&!trial&&!user&&<button onClick={()=>setDetail(sw)} style={{width:"100%",background:C.dim,border:`1px solid ${C.linen}`,borderRadius:4,padding:"7px",fontFamily:SS,fontSize:10,fontWeight:600,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em"}}>Voir le logiciel</button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CTA devis */}
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:"20px 26px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:20}}>
+        <div>
+          <div style={{fontFamily:SF,fontSize:16,fontWeight:700,color:C.ink,marginBottom:3}}>Votre logiciel n'existe pas encore ?</div>
+          <div style={{fontFamily:SS,fontSize:12,color:C.stone}}>Développement sur mesure · Devis gratuit sous 48h · Support inclus</div>
+        </div>
+        <button onClick={()=>user?setView("c-devis"):onAuth("register")} style={{background:C.ink,border:"none",borderRadius:6,padding:"10px 22px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.1em",textTransform:"uppercase",color:C.ivory,cursor:"pointer",whiteSpace:"nowrap"}}>{user?"Demander un devis →":"Créer un compte →"}</button>
+      </div>
+
+      {/* Detail modal */}
+      {detail&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(5,5,4,0.7)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:10,padding:36,width:420,maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}><span style={{fontSize:32}}>{detail.icon}</span><button onClick={()=>setDetail(null)} style={{background:"none",border:"none",color:C.stone,cursor:"pointer",fontSize:18}}>✕</button></div>
+            <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:2}}>{detail.name}</div>
+            <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.stone,marginBottom:9}}>{detail.cat}</div>
+            <Stars r={detail.rating}/><div style={{fontFamily:SS,fontSize:11,color:C.stone,marginTop:3,marginBottom:13}}>{detail.reviews} avis</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone,lineHeight:1.6,marginBottom:14}}>{detail.desc}</div>
+            {detail.features?.length>0&&(
+              <div style={{marginBottom:14}}>
+                <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone,marginBottom:9}}>Fonctionnalités</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                  {detail.features.map(f=><div key={f} style={{display:"flex",gap:6}}><span style={{color:C.gold,fontSize:11}}>✦</span><span style={{fontFamily:SS,fontSize:12,color:C.ink}}>{f}</span></div>)}
+                </div>
+              </div>
+            )}
+            <HR s={{marginBottom:14}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <span style={{fontFamily:SF,fontWeight:700,fontSize:20,color:C.ink}}>{detail.price}€<span style={{fontSize:11,fontWeight:400,color:C.stone}}>/mois</span></span>
+              {isSub(detail.id)&&<span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.green}}>✓ Abonné</span>}
+              {isTrial(detail.id)&&!isSub(detail.id)&&<span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.gold}}>Essai · {trialDaysLeft(user.trials[detail.id])}j</span>}
+              {!isSub(detail.id)&&!isTrial(detail.id)&&user&&<button onClick={()=>startTrial(detail.id)} style={{background:C.greenDim,border:`1px solid ${C.green}44`,borderRadius:4,padding:"7px 14px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.green,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em"}}>Essayer 7j gratuit</button>}
+              {!user&&<button onClick={()=>onAuth("register")} style={{background:C.gold,border:"none",borderRadius:4,padding:"7px 14px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em"}}>Créer un compte</button>}
+            </div>
+            {user&&!isSub(detail.id)&&<button onClick={()=>{toggleCart(detail.id);setDetail(null);}} style={{width:"100%",background:isCart(detail.id)?C.ink:C.paper,border:`1px solid ${isCart(detail.id)?C.ink:C.linen}`,borderRadius:4,padding:"10px",fontFamily:SS,fontSize:11,fontWeight:700,color:isCart(detail.id)?C.ivory:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.08em"}}>{isCart(detail.id)?"✓ Dans le panier":"+ Ajouter au panier"}</button>}
+          </div>
+        </div>
+      )}
+
+      {/* Panier */}
+      {showCart&&(
+        <Overlay title="Mon panier" subtitle="Vos logiciels sélectionnés" onClose={()=>setShowCart(false)}>
+          {cartItems.map((sw,i)=>(
+            <div key={sw.id}><div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0"}}>
+              <span style={{fontSize:20}}>{sw.icon}</span>
+              <div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:700,fontSize:13,color:C.ink}}>{sw.name}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{sw.cat}</div></div>
+              <span style={{fontFamily:SF,fontWeight:700,fontSize:14,color:C.ink}}>{sw.price}€/mois</span>
+              <button onClick={()=>toggleCart(sw.id)} style={{background:"none",border:"none",color:C.stone,cursor:"pointer"}}>✕</button>
+            </div>{i<cartItems.length-1&&<HR/>}</div>
+          ))}
+          <HR s={{margin:"12px 0"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:18}}>
+            <span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,textTransform:"uppercase",letterSpacing:"0.08em"}}>Total mensuel</span>
+            <span style={{fontFamily:SF,fontWeight:700,fontSize:17,color:C.ink}}>{cartTotal} €</span>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setShowCart(false)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>Continuer</button>
+            <button onClick={()=>{setShowCart(false);setShowPay(true);}} style={{flex:2,background:C.gold,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>Passer au paiement</button>
+          </div>
+        </Overlay>
+      )}
+
+      {/* Paiement */}
+      {showPay&&(
+        <Overlay title="Paiement" subtitle="Abonnement mensuel · résiliable à tout moment" onClose={()=>setShowPay(false)}>
+          <div style={{background:C.dim,border:`1px solid ${C.linen}`,borderRadius:6,padding:13,marginBottom:14}}>
+            {cartItems.map(sw=><div key={sw.id} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",fontFamily:SS,fontSize:12}}><span style={{color:C.ink}}>{sw.icon} {sw.name}</span><span style={{color:C.gold,fontWeight:700}}>{sw.price}€</span></div>)}
+            <HR s={{margin:"9px 0"}}/>
+            <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,textTransform:"uppercase"}}>Total / mois</span><span style={{fontFamily:SF,fontWeight:700,fontSize:14,color:C.ink}}>{cartTotal} €</span></div>
+          </div>
+          <TI label="Numéro de carte" value="" onChange={()=>{}} placeholder="1234 5678 9012 3456"/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <TI label="Expiration" value="" onChange={()=>{}} placeholder="MM / AA"/>
+            <TI label="CVV" value="" onChange={()=>{}} placeholder="•••"/>
+          </div>
+          <div style={{background:C.greenDim,border:`1px solid ${C.green}33`,borderRadius:4,padding:"8px 13px",marginBottom:14,fontFamily:SS,fontSize:11,color:C.green}}>🔒 Paiement sécurisé</div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setShowPay(false)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>Annuler</button>
+            <button onClick={pay} style={{flex:2,background:C.gold,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>Confirmer · {cartTotal}€/mois</button>
+          </div>
+        </Overlay>
+      )}
+
+      {toast&&<Toast msg={toast} onClose={()=>setToast(null)}/>}
+    </div>
+  );
+};
+
+// ── Mon Espace ─────────────────────────────────────────────────────────────
+const MonEspace=({user,setUser,software})=>{
+  const myApps=software.filter(s=>user.subs.includes(s.id));
+  const myTrials=software.filter(s=>!user.subs.includes(s.id)&&isTrialActive(user.trials?.[s.id]));
+  const mrr=myApps.reduce((s,x)=>s+x.price,0);
+  const [unsub,setUnsub]=useState(null);
+  const [toast,setToast]=useState(null);
+  const doUnsub=()=>{setUser(u=>({...u,subs:u.subs.filter(x=>x!==unsub)}));setUnsub(null);setToast("Désabonnement effectué.");setTimeout(()=>setToast(null),3000);};
+  const invoices=[{id:"INV-2024-104",amount:mrr,date:"01 Déc 2024",status:"paid"},{id:"INV-2024-089",amount:Math.max(0,mrr-5),date:"01 Nov 2024",status:"paid"},{id:"INV-2024-074",amount:Math.max(0,mrr-5),date:"01 Oct 2024",status:"paid"}];
+  return (
+    <div style={{padding:"28px 36px"}}>
+      <div style={{marginBottom:22}}>
+        <div style={{fontFamily:SS,fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:C.stone,marginBottom:4}}>Mon espace</div>
+        <h1 style={{margin:0,fontFamily:SF,fontSize:30,fontWeight:700,color:C.ink}}>Bonjour, {user.company} 👋</h1>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:22}}>
+        <KPI label="Abonnement mensuel" value={`${mrr} €`} sub={`${myApps.length} logiciel${myApps.length>1?"s":""} actif${myApps.length>1?"s":""}`} accent/>
+        <KPI label="Essais actifs" value={myTrials.length} sub={myTrials.length>0?myTrials.map(s=>s.name).join(", "):"Aucun essai en cours"}/>
+        <KPI label="Client depuis" value={user.since||"2024"} sub="Membre ONIQ"/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+        <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+          <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:14,fontWeight:600,color:C.ink}}>Mes logiciels</span></div>
+          {myApps.length===0&&<div style={{padding:"22px 18px",fontFamily:SS,fontSize:13,color:C.stone,textAlign:"center"}}>Aucun logiciel souscrit.</div>}
+          {myApps.map((sw,i)=>(
+            <div key={sw.id}><div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 18px"}}>
+              <div style={{width:34,height:34,borderRadius:6,background:C.goldDim,border:`1px solid ${C.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{sw.icon}</div>
+              <div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:700,fontSize:12,color:C.ink}}>{sw.name}</div><div style={{fontFamily:SS,fontSize:10,color:C.green,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em"}}>● Actif · {sw.price}€/mois</div></div>
+              <button onClick={()=>setUnsub(sw.id)} style={{background:"none",border:`1px solid ${C.linen}`,borderRadius:4,padding:"5px 9px",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer"}}>✕</button>
+            </div>{i<myApps.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+          ))}
+          {myTrials.length>0&&(
+            <>
+              <div style={{padding:"9px 18px",background:C.goldDim,borderTop:`1px solid ${C.linen}`,fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.gold}}>Essais en cours</div>
+              {myTrials.map((sw,i)=>(
+                <div key={sw.id}><div style={{display:"flex",alignItems:"center",gap:12,padding:"11px 18px"}}>
+                  <div style={{width:34,height:34,borderRadius:6,background:C.goldDim,border:`1px solid ${C.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{sw.icon}</div>
+                  <div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:700,fontSize:12,color:C.ink}}>{sw.name}</div><div style={{fontFamily:SS,fontSize:10,color:C.gold,fontWeight:700,marginTop:2}}>{trialDaysLeft(user.trials[sw.id])} jours restants</div></div>
+                  <button style={{background:C.ink,border:"none",borderRadius:4,padding:"5px 12px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.ivory,cursor:"pointer",letterSpacing:"0.06em",textTransform:"uppercase"}}>S'abonner</button>
+                </div>{i<myTrials.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+              ))}
+            </>
+          )}
+          <div style={{padding:"11px 18px",borderTop:`1px solid ${C.linen}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,textTransform:"uppercase",letterSpacing:"0.08em"}}>Total mensuel</span>
+            <span style={{fontFamily:SF,fontWeight:700,fontSize:15,color:C.ink}}>{mrr} €</span>
+          </div>
+        </div>
+        <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+          <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:14,fontWeight:600,color:C.ink}}>Mes factures</span></div>
+          {invoices.map((inv,i)=>(
+            <div key={inv.id}><div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 18px"}}>
+              <div style={{flex:1}}><div style={{fontFamily:SS,fontSize:12,fontWeight:600,color:C.ink}}>{inv.id}</div><div style={{fontFamily:SS,fontSize:10,color:C.stone,marginTop:2}}>{inv.date}</div></div>
+              <span style={{fontFamily:SF,fontWeight:700,fontSize:13,color:C.ink,marginRight:10}}>{inv.amount} €</span>
+              <Badge status={inv.status}/>
+            </div>{i<invoices.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+          ))}
+          <div style={{padding:"12px 18px",borderTop:`1px solid ${C.linen}`}}>
+            <button style={{width:"100%",background:C.ink,border:"none",borderRadius:4,padding:11,fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.ivory,cursor:"pointer"}}>Payer maintenant · {mrr} €</button>
+          </div>
+        </div>
+      </div>
+      {unsub&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(5,5,4,0.65)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:8,padding:36,width:320,textAlign:"center"}}>
+            <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink,marginBottom:7}}>Se désabonner ?</div>
+            <div style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:22}}>Vous perdrez l'accès à <strong>{software.find(s=>s.id===unsub)?.name}</strong> fin du mois.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setUnsub(null)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Annuler</button>
+              <button onClick={doUnsub} style={{flex:1,background:C.redDim,border:`1px solid ${C.red}44`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.red,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Confirmer</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {toast&&<Toast msg={toast} onClose={()=>setToast(null)}/>}
+    </div>
+  );
+};
+
+
+// ── Hub logiciels ──────────────────────────────────────────────────────────
+const teamMembersKey=(ownerId)=>`oniq_team_members_${ownerId}`;
+const teamSessionKey=(ownerId)=>`oniq_team_session_${ownerId}`;
+const loadTeamMembers=(ownerId)=>{
+  try{
+    const raw=localStorage.getItem(teamMembersKey(ownerId));
+    const data=raw?JSON.parse(raw):[];
+    return Array.isArray(data)?data:[];
+  }catch(e){return [];}
+};
+const saveTeamMembers=(ownerId,members)=>{
+  try{localStorage.setItem(teamMembersKey(ownerId),JSON.stringify(members));}catch(e){}
+};
+const teamInviteLink=(payload)=>`${window.location.origin}${window.location.pathname}?team=1&owner=${encodeURIComponent(payload.ownerId)}&data=${encodeURIComponent(encodeTeamPayload(payload))}`;
+
+const SoftwareHub=({user,software})=>{
+  const myApps=software.filter(s=>user?.subs?.includes(s.id));
+  const total=myApps.reduce((s,x)=>s+x.price,0);
+  const storageKey=`oniq_logo_${user.id}`;
+  const [copied,setCopied]=useState(false);
+  const [logo,setLogo]=useState(()=>{
+    try{return localStorage.getItem(storageKey)||"";}catch(e){return "";}
+  });
+  const [tab,setTab]=useState("apps");
+  const [members,setMembers]=useState(()=>loadTeamMembers(user.id));
+  const [inviteCopied,setInviteCopied]=useState(false);
+
+  useEffect(()=>{saveTeamMembers(user.id,members);},[user.id,members]);
+
+  const onLogoChange=(e)=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const result=typeof reader.result==="string"?reader.result:"";
+      setLogo(result);
+      try{localStorage.setItem(storageKey,result);}catch(err){}
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo=()=>{
+    setLogo("");
+    try{localStorage.removeItem(storageKey);}catch(err){}
+  };
+
+  const payload={ownerId:user?.id,company:user?.company||"Client ONIQ",logo:logo||"",subs:user?.subs||[]};
+  const inviteLink=teamInviteLink(payload);
+
+  const copyTeamLink=async()=>{
+    try{await navigator.clipboard.writeText(inviteLink);setCopied(true);setTimeout(()=>setCopied(false),2500);}catch(e){}
+  };
+
+  const toggleMemberApp=(memberId,appId)=>{
+    setMembers(prev=>prev.map(m=>m.id!==memberId?m:{...m,assignedSubs:m.assignedSubs.includes(appId)?m.assignedSubs.filter(x=>x!==appId):[...m.assignedSubs,appId]}));
+  };
+  const toggleMemberStatus=(memberId)=>{
+    setMembers(prev=>prev.map(m=>m.id!==memberId?m:{...m,status:m.status==="active"?"paused":"active"}));
+  };
+  const removeMember=(memberId)=>{
+    setMembers(prev=>prev.filter(m=>m.id!==memberId));
+    try{localStorage.removeItem(teamSessionKey(user.id));}catch(e){}
+  };
+  const copyInviteAgain=async()=>{
+    try{await navigator.clipboard.writeText(inviteLink);setInviteCopied(true);setTimeout(()=>setInviteCopied(false),2500);}catch(e){}
+  };
+
+  return (
+    <div style={{padding:"28px 36px"}}>
+      <PH section="Équipe client" title="Nos logiciels" action={<div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.gold}}>{myApps.length} logiciel{myApps.length>1?"s":""} actif{myApps.length>1?"s":""}</div>}/>
+
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:"18px 22px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:18,flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink,marginBottom:4}}>Tous les logiciels souscrits par {user.company}</div>
+          <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.6}}>Le dirigeant garde son abonnement principal. Les membres de l'équipe créent leur propre accès puis vous leur attribuez les logiciels autorisés.</div>
+        </div>
+        <div style={{display:"flex",gap:18,alignItems:"center",flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.stone,marginBottom:3}}>Logiciels actifs</div>
+            <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink}}>{myApps.length}</div>
+          </div>
+          <div>
+            <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.stone,marginBottom:3}}>Membres équipe</div>
+            <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.gold}}>{members.length}</div>
+          </div>
+          <div>
+            <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.stone,marginBottom:3}}>Valeur mensuelle</div>
+            <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.gold}}>{total} €</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${C.linen}`,marginBottom:20}}>
+        {[["apps","Nos logiciels"],["team","Gérer mon équipe"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)} style={{background:"none",border:"none",borderBottom:`2px solid ${tab===k?C.gold:"transparent"}`,padding:"10px 18px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:tab===k?C.gold:C.stone,cursor:"pointer",marginBottom:-1}}>{l}</button>
+        ))}
+      </div>
+
+      {tab==="apps"&&(
+        <>
+          <div style={{display:"grid",gridTemplateColumns:"1.25fr 0.95fr",gap:18,marginBottom:20}}>
+            <div style={{background:C.deep,borderRadius:10,padding:"22px 22px 18px",border:`1px solid rgba(255,255,255,0.05)`}}>
+              <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",marginBottom:6}}>Accès équipe</div>
+              <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ivory,marginBottom:8}}>Inviter votre équipe à créer un accès</div>
+              <div style={{fontFamily:SS,fontSize:12,color:"rgba(255,255,255,0.62)",lineHeight:1.7,marginBottom:14}}>Partagez ce lien. Chaque collaborateur doit ensuite s'inscrire ou se connecter. Après création du compte, vous choisissez dans l'onglet <strong style={{color:C.ivory}}>Gérer mon équipe</strong> quels logiciels lui attribuer.</div>
+              <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"12px 14px",fontFamily:SS,fontSize:13,color:C.ivory,wordBreak:"break-all",marginBottom:14}}>{inviteLink}</div>
+              <button onClick={copyTeamLink} style={{width:"100%",background:copied?C.greenDim:C.gold,border:`1px solid ${copied?C.green+"44":"transparent"}`,borderRadius:6,padding:"11px 14px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",color:copied?C.green:C.ink,cursor:"pointer"}}>{copied?"✓ Lien copié":"Copier le lien équipe"}</button>
+            </div>
+
+            <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:"22px"}}>
+              <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:C.stone,marginBottom:6}}>Identité visuelle</div>
+              <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink,marginBottom:8}}>Logo de l'entreprise</div>
+              <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.7,marginBottom:14}}>Ajoutez un logo pour personnaliser l'espace équipe.</div>
+              <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16}}>
+                <div style={{width:72,height:72,borderRadius:12,background:C.ivory,border:`1px solid ${C.linen}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+                  {logo?<img src={logo} alt="Logo entreprise" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>:<span style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.gold}}>{(user.company||"O").slice(0,1).toUpperCase()}</span>}
+                </div>
+                <div style={{flex:1}}>
+                  <label style={{display:"inline-flex",alignItems:"center",justifyContent:"center",background:C.ink,border:"none",borderRadius:6,padding:"10px 14px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:C.ivory,cursor:"pointer",marginBottom:8}}>
+                    Upload logo
+                    <input type="file" accept="image/*" onChange={onLogoChange} style={{display:"none"}}/>
+                  </label>
+                  {logo&&<button onClick={removeLogo} style={{display:"block",background:"transparent",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 12px",fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:C.stone,cursor:"pointer"}}>Retirer le logo</button>}
+                </div>
+              </div>
+              <div style={{fontFamily:SS,fontSize:10,color:C.stone,lineHeight:1.6}}>Le logo est sauvegardé localement dans cette démo navigateur.</div>
+            </div>
+          </div>
+
+          {myApps.length===0?(
+            <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:28,textAlign:"center"}}>
+              <div style={{fontSize:34,marginBottom:10}}>📭</div>
+              <div style={{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink,marginBottom:6}}>Aucun logiciel actif</div>
+              <div style={{fontFamily:SS,fontSize:13,color:C.stone}}>Ce client n'a pas encore de logiciel sous abonnement.</div>
+            </div>
+          ):(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:16}}>
+              {myApps.map(sw=>(
+                <div key={sw.id} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:20,display:"flex",flexDirection:"column",minHeight:230,boxShadow:"0 8px 24px rgba(10,10,8,0.04)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:14}}>
+                    <div style={{width:52,height:52,borderRadius:10,background:C.goldDim,border:`1px solid ${C.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{sw.icon}</div>
+                    <span style={{background:C.greenDim,color:C.green,border:`1px solid ${C.green}44`,padding:"4px 9px",borderRadius:4,fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",whiteSpace:"nowrap"}}>Actif</span>
+                  </div>
+                  <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>{sw.name}</div>
+                  <div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.stone,marginBottom:10}}>{sw.cat}</div>
+                  <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.6,marginBottom:14}}>{sw.desc}</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
+                    {(sw.features||[]).slice(0,3).map(f=>(<span key={f} style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:20,padding:"5px 9px",fontFamily:SS,fontSize:10,color:C.ink}}>{f}</span>))}
+                  </div>
+                  <div style={{marginTop:"auto"}}>
+                    <HR s={{marginBottom:12}}/>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                      <div>
+                        <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.stone,marginBottom:3}}>Abonnement patron</div>
+                        <div style={{fontFamily:SF,fontSize:16,fontWeight:700,color:C.gold}}>{sw.price}€<span style={{fontSize:11,fontWeight:400,color:C.stone}}>/mois</span></div>
+                      </div>
+                      <Stars r={sw.rating} sm/>
+                    </div>
+                    <button style={{width:"100%",background:C.ink,border:"none",borderRadius:6,padding:"10px 12px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:C.ivory,cursor:"pointer"}}>Ouvrir le logiciel</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab==="team"&&(
+        <div style={{display:"grid",gridTemplateColumns:"0.95fr 1.35fr",gap:18}}>
+          <div style={{background:C.deep,borderRadius:10,padding:"22px",border:`1px solid rgba(255,255,255,0.05)`,alignSelf:"start"}}>
+            <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",marginBottom:6}}>Gestion équipe</div>
+            <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ivory,marginBottom:10}}>Invitez puis attribuez les accès</div>
+            <div style={{fontFamily:SS,fontSize:12,color:"rgba(255,255,255,0.62)",lineHeight:1.7,marginBottom:14}}>1. Le collaborateur crée son compte via le lien.<br/>2. Son profil apparaît ici.<br/>3. Vous activez les logiciels autorisés.</div>
+            <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"12px 14px",fontFamily:SS,fontSize:13,color:C.ivory,wordBreak:"break-all",marginBottom:14}}>{inviteLink}</div>
+            <button onClick={copyInviteAgain} style={{width:"100%",background:inviteCopied?C.greenDim:C.gold,border:`1px solid ${inviteCopied?C.green+"44":"transparent"}`,borderRadius:6,padding:"11px 14px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",color:inviteCopied?C.green:C.ink,cursor:"pointer"}}>{inviteCopied?"✓ Lien copié":"Copier le lien d'invitation"}</button>
+          </div>
+
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:"22px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,gap:12,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>Gérer mon équipe</div>
+                <div style={{fontFamily:SS,fontSize:12,color:C.stone}}>Attribuez les logiciels pris dans votre abonnement aux membres de l'équipe.</div>
+              </div>
+              <div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.stone}}>{members.length} membre{members.length>1?"s":""}</div>
+            </div>
+            {members.length===0?(
+              <div style={{background:C.ivory,border:`1px dashed ${C.linen}`,borderRadius:10,padding:26,textAlign:"center"}}>
+                <div style={{fontSize:30,marginBottom:10}}>👥</div>
+                <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:6}}>Aucun membre inscrit</div>
+                <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.7}}>Partagez le lien d'invitation. Dès qu'un collaborateur crée son accès, vous pourrez lui attribuer ses logiciels ici.</div>
+              </div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                {members.map(member=>(
+                  <div key={member.id} style={{border:`1px solid ${C.linen}`,borderRadius:10,padding:"16px 18px",background:C.ivory}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginBottom:14,flexWrap:"wrap"}}>
+                      <div>
+                        <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink}}>{member.name}</div>
+                        <div style={{fontFamily:SS,fontSize:12,color:C.stone,marginTop:4}}>{member.email}</div>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <span style={{background:member.status==="active"?C.greenDim:C.amberDim,color:member.status==="active"?C.green:C.amber,border:`1px solid ${member.status==="active"?C.green+"44":C.amber+"44"}`,padding:"4px 9px",borderRadius:4,fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>{member.status==="active"?"Actif":"Suspendu"}</span>
+                        <button onClick={()=>toggleMemberStatus(member.id)} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 10px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.08em"}}>{member.status==="active"?"Suspendre":"Réactiver"}</button>
+                        <button onClick={()=>removeMember(member.id)} style={{background:C.redDim,border:`1px solid ${C.red}44`,borderRadius:6,padding:"8px 10px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.red,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.08em"}}>Supprimer</button>
+                      </div>
+                    </div>
+                    <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.stone,marginBottom:10}}>Logiciels autorisés</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(2, minmax(0, 1fr))",gap:10}}>
+                      {myApps.map(sw=>{
+                        const checked=member.assignedSubs?.includes(sw.id);
+                        return (
+                          <label key={sw.id} style={{display:"flex",alignItems:"center",gap:10,background:C.paper,border:`1px solid ${checked?C.gold+"55":C.linen}`,borderRadius:8,padding:"10px 12px",cursor:"pointer"}}>
+                            <input type="checkbox" checked={checked} onChange={()=>toggleMemberApp(member.id,sw.id)}/>
+                            <span style={{fontSize:18}}>{sw.icon}</span>
+                            <span style={{flex:1,fontFamily:SS,fontSize:12,color:C.ink,fontWeight:600}}>{sw.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TeamSoftwareHub=({client,software})=>{
+  const ownerId=client.ownerId||client.id;
+  const [logo,setLogo]=useState(client?.logo||"");
+  const [mode,setMode]=useState("register");
+  const [members,setMembers]=useState(()=>loadTeamMembers(ownerId));
+  const [sessionMemberId,setSessionMemberId]=useState(()=>{
+    try{return localStorage.getItem(teamSessionKey(ownerId))||"";}catch(e){return "";}
+  });
+  const [registerForm,setRegisterForm]=useState({name:"",email:"",password:""});
+  const [loginForm,setLoginForm]=useState({email:"",password:""});
+  const [error,setError]=useState("");
+
+  useEffect(()=>{
+    try{setLogo(client?.logo||localStorage.getItem(`oniq_logo_${ownerId}`)||"");}catch(e){setLogo(client?.logo||"");}
+    setMembers(loadTeamMembers(ownerId));
+  },[client,ownerId]);
+
+  const currentMember=members.find(m=>String(m.id)===String(sessionMemberId));
+  const apps=software.filter(s=>(currentMember?.assignedSubs||[]).includes(s.id) && client?.subs?.includes(s.id));
+
+  const register=()=>{
+    if(!registerForm.name||!registerForm.email||!registerForm.password){setError("Remplissez tous les champs.");return;}
+    if(members.some(m=>m.email.toLowerCase()===registerForm.email.toLowerCase())){setError("Un membre avec cet email existe déjà.");return;}
+    const nextMember={id:`m_${Date.now()}`,name:registerForm.name,email:registerForm.email,password:registerForm.password,assignedSubs:[],status:"active",createdAt:Date.now()};
+    const next=[...members,nextMember];
+    setMembers(next);
+    saveTeamMembers(ownerId,next);
+    try{localStorage.setItem(teamSessionKey(ownerId),nextMember.id);}catch(e){}
+    setSessionMemberId(nextMember.id);
+    setError("");
+  };
+
+  const login=()=>{
+    const found=members.find(m=>m.email.toLowerCase()===loginForm.email.toLowerCase()&&m.password===loginForm.password);
+    if(!found){setError("Email ou mot de passe incorrect.");return;}
+    try{localStorage.setItem(teamSessionKey(ownerId),found.id);}catch(e){}
+    setSessionMemberId(found.id);
+    setError("");
+  };
+
+  const logout=()=>{
+    try{localStorage.removeItem(teamSessionKey(ownerId));}catch(e){}
+    setSessionMemberId("");
+  };
+
+  if(!currentMember){
+    return (
+      <div style={{minHeight:"100vh",background:C.dim,padding:"36px 28px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div style={{width:"100%",maxWidth:960}}>
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:14,padding:"26px 28px",marginBottom:22}}>
+            <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+              <div style={{width:72,height:72,borderRadius:14,background:C.ivory,border:`1px solid ${C.linen}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+                {logo?<img src={logo} alt="Logo entreprise" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>:<span style={{fontFamily:SF,fontSize:24,fontWeight:700,color:C.gold}}>{(client.company||"O").slice(0,1).toUpperCase()}</span>}
+              </div>
+              <div>
+                <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:C.stone,marginBottom:6}}>Espace équipe</div>
+                <div style={{fontFamily:SF,fontSize:34,fontWeight:700,color:C.ink,marginBottom:4}}>Nos logiciels</div>
+                <div style={{fontFamily:SS,fontSize:13,color:C.stone,lineHeight:1.7,maxWidth:620}}>Créez votre accès équipe pour rejoindre <strong style={{color:C.ink}}>{client.company}</strong>. Votre responsable vous attribuera ensuite les logiciels autorisés. Vous n'aurez accès qu'à cet espace.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{maxWidth:460,margin:"0 auto",background:C.paper,border:`1px solid ${C.linen}`,borderRadius:12,padding:"28px 30px"}}>
+            <div style={{display:"flex",background:C.ivory,borderRadius:6,padding:4,marginBottom:20}}>
+              
+            </div>
+            <div style={{display:"flex",background:C.ivory,borderRadius:6,padding:4,marginBottom:20}}>
+              {[ ["register","Créer mon accès"], ["login","Connexion"] ].map(([k,l])=>(
+                <button key={k} onClick={()=>{setMode(k);setError("");}} style={{flex:1,padding:10,borderRadius:4,background:mode===k?C.ink:"transparent",border:"none",color:mode===k?C.ivory:C.stone,fontFamily:SS,fontSize:12,fontWeight:700,cursor:"pointer"}}>{l}</button>
+              ))}
+            </div>
+
+            {mode==="register"&&(
+              <>
+                <TI label="Nom complet" value={registerForm.name} onChange={e=>setRegisterForm(p=>({...p,name:e.target.value}))}/>
+                <TI label="Email" type="email" value={registerForm.email} onChange={e=>setRegisterForm(p=>({...p,email:e.target.value}))}/>
+                <TI label="Mot de passe" type="password" value={registerForm.password} onChange={e=>setRegisterForm(p=>({...p,password:e.target.value}))}/>
+                {error&&<div style={{fontFamily:SS,fontSize:12,color:C.red,marginBottom:12}}>{error}</div>}
+                <button onClick={register} style={{width:"100%",background:C.gold,border:"none",borderRadius:6,padding:"12px 14px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",color:C.ink,cursor:"pointer"}}>Créer mon accès équipe</button>
+              </>
+            )}
+
+            {mode==="login"&&(
+              <>
+                <TI label="Email" type="email" value={loginForm.email} onChange={e=>setLoginForm(p=>({...p,email:e.target.value}))}/>
+                <TI label="Mot de passe" type="password" value={loginForm.password} onChange={e=>setLoginForm(p=>({...p,password:e.target.value}))}/>
+                {error&&<div style={{fontFamily:SS,fontSize:12,color:C.red,marginBottom:12}}>{error}</div>}
+                <button onClick={login} style={{width:"100%",background:C.ink,border:"none",borderRadius:6,padding:"12px 14px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",color:C.ivory,cursor:"pointer"}}>Se connecter</button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{minHeight:"100vh",background:C.dim,padding:"36px 28px"}}>
+      <div style={{maxWidth:1160,margin:"0 auto"}}>
+        <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:14,padding:"26px 28px",marginBottom:22}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:18,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:16}}>
+              <div style={{width:72,height:72,borderRadius:14,background:C.ivory,border:`1px solid ${C.linen}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0}}>
+                {logo?<img src={logo} alt="Logo entreprise" style={{maxWidth:"100%",maxHeight:"100%",objectFit:"contain"}}/>:<span style={{fontFamily:SF,fontSize:24,fontWeight:700,color:C.gold}}>{(client.company||"O").slice(0,1).toUpperCase()}</span>}
+              </div>
+              <div>
+                <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:C.stone,marginBottom:6}}>Espace équipe</div>
+                <div style={{fontFamily:SF,fontSize:34,fontWeight:700,color:C.ink,marginBottom:4}}>Nos logiciels</div>
+                <div style={{fontFamily:SS,fontSize:13,color:C.stone,lineHeight:1.6}}>Connecté en tant que <strong style={{color:C.ink}}>{currentMember.name}</strong> · accès limité à votre espace équipe.</div>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.stone,marginBottom:3}}>Logiciels autorisés</div>
+                <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink}}>{apps.length}</div>
+              </div>
+              <button onClick={logout} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:6,padding:"9px 12px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.08em"}}>Déconnexion</button>
+            </div>
+          </div>
+        </div>
+
+        {currentMember.status!=="active"?(
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:28,textAlign:"center"}}>
+            <div style={{fontSize:34,marginBottom:10}}>⏸️</div>
+            <div style={{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink,marginBottom:6}}>Accès suspendu</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone}}>Votre responsable a temporairement suspendu votre accès équipe.</div>
+          </div>
+        ):apps.length===0?(
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:28,textAlign:"center"}}>
+            <div style={{fontSize:34,marginBottom:10}}>🕓</div>
+            <div style={{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink,marginBottom:6}}>En attente d'attribution</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone}}>Votre compte est créé. Le responsable doit maintenant vous attribuer un ou plusieurs logiciels.</div>
+          </div>
+        ):(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:16}}>
+            {apps.map(sw=>(
+              <div key={sw.id} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:20,display:"flex",flexDirection:"column",minHeight:218}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:14}}>
+                  <div style={{width:52,height:52,borderRadius:10,background:C.goldDim,border:`1px solid ${C.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{sw.icon}</div>
+                  <span style={{background:C.greenDim,color:C.green,border:`1px solid ${C.green}44`,padding:"4px 9px",borderRadius:4,fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",whiteSpace:"nowrap"}}>Attribué</span>
+                </div>
+                <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}}>{sw.name}</div>
+                <div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:C.stone,marginBottom:10}}>{sw.cat}</div>
+                <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.6,marginBottom:14}}>{sw.desc}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
+                  {(sw.features||[]).slice(0,3).map(f=>(<span key={f} style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:20,padding:"5px 9px",fontFamily:SS,fontSize:10,color:C.ink}}>{f}</span>))}
+                </div>
+                <div style={{marginTop:"auto"}}>
+                  <button style={{width:"100%",background:C.ink,border:"none",borderRadius:6,padding:"10px 12px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:C.ivory,cursor:"pointer"}}>Ouvrir le logiciel</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Parrainage client ──────────────────────────────────────────────────────
+const Parrainage=({user})=>{
+  const [copied,setCopied]=useState(false);
+  return (
+    <div style={{padding:"28px 36px"}}>
+      <PH section="Avantages" title="Programme de parrainage"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:20}}>
+        <KPI label="Parrainages effectués" value={user.referrals||0} sub="clients référencés" trend/>
+        <KPI label="Mois offerts" value={user.referralCredit||0} sub="crédits accumulés" accent/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+        <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:24}}>
+          <div style={{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink,marginBottom:12}}>Votre lien de parrainage</div>
+          <div style={{background:C.goldDim,border:`1px solid ${C.goldB}`,borderRadius:6,padding:"12px 16px",fontFamily:SS,fontWeight:700,fontSize:14,color:C.gold,letterSpacing:"0.1em",marginBottom:11}}>oniq.fr/ref/{user.referralCode}</div>
+          <button onClick={()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);}} style={{width:"100%",background:copied?C.greenDim:C.ink,border:`1px solid ${copied?C.green+"44":"transparent"}`,borderRadius:4,padding:"10px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:copied?C.green:C.ivory,cursor:"pointer",transition:"all 0.3s"}}>{copied?"✓ Lien copié !":"Copier le lien"}</button>
+        </div>
+        <div style={{background:C.ink,borderRadius:8,padding:24}}>
+          <div style={{fontFamily:SF,fontSize:15,fontWeight:600,color:C.ivory,marginBottom:14}}>Comment ça marche ?</div>
+          {[["Partagez votre lien","Envoyez-le à vos confrères."],["Ils s'inscrivent","Avec votre code unique."],["1 mois offert","Pour vous deux à chaque parrainage."],["Sans limite","Parrainez autant que vous voulez !"]].map(([t,d],i)=>(
+            <div key={t} style={{display:"flex",gap:12,marginBottom:13}}>
+              <div style={{width:22,height:22,borderRadius:"50%",background:C.gold,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:C.ink,flexShrink:0}}>{i+1}</div>
+              <div><div style={{fontFamily:SS,fontSize:12,fontWeight:700,color:C.ivory,marginBottom:2}}>{t}</div><div style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Devis client ───────────────────────────────────────────────────────────
+const DevisClient=({user})=>{
+  const [form,setForm]=useState({desc:"",budget:""});
+  const [sent,setSent]=useState(false);
+  return (
+    <div style={{padding:"28px 36px"}}>
+      <PH section="Sur mesure" title="Demande de devis"/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:28}}>
+        <div>
+          {sent?(
+            <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:40,textAlign:"center"}}>
+              <div style={{fontFamily:SF,fontSize:32,color:C.gold,marginBottom:10}}>✦</div>
+              <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:6}}>Demande envoyée !</div>
+              <div style={{fontFamily:SS,fontSize:13,color:C.stone,marginBottom:20}}>Réponse sous 48h à <strong>{user.email}</strong>.</div>
+              <button onClick={()=>setSent(false)} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px 20px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Nouvelle demande</button>
+            </div>
+          ):(
+            <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:26}}>
+              <div style={{marginBottom:14}}>
+                <FL label="Décrivez votre besoin"/>
+                <textarea value={form.desc} onChange={e=>setForm(p=>({...p,desc:e.target.value}))} rows={5} placeholder="Ex: Je gère un pressing. J'ai besoin de suivre les articles en lavage…" style={{width:"100%",background:C.dim,border:`1px solid ${C.linen}`,borderRadius:4,padding:"11px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+              </div>
+              <div style={{marginBottom:14}}>
+                <FL label="Budget estimé"/>
+                <select value={form.budget} onChange={e=>setForm(p=>({...p,budget:e.target.value}))} style={{width:"100%",background:C.dim,border:`1px solid ${C.linen}`,borderRadius:4,padding:"11px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none"}}>
+                  <option value="">Non défini</option><option>{"<"} 50€/mois</option><option>50–100€/mois</option><option>100–200€/mois</option><option>{">"} 200€/mois</option>
+                </select>
+              </div>
+              <button onClick={()=>form.desc&&setSent(true)} style={{width:"100%",background:C.gold,border:"none",borderRadius:4,padding:12,fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.ink,cursor:"pointer",opacity:form.desc?1:0.5}}>Envoyer ma demande</button>
+            </div>
+          )}
+        </div>
+        <div style={{background:C.ink,borderRadius:8,padding:26}}>
+          <div style={{fontFamily:SF,fontSize:15,fontWeight:600,color:C.ivory,marginBottom:14}}>Comment ça marche ?</div>
+          {[["1","Envoyez votre demande","Décrivez votre besoin précisément."],["2","Analyse sous 48h","Notre équipe prépare une proposition."],["3","Devis personnalisé","Si ok, on lance le développement."],["4","Livraison & support","Intégré à votre espace ONIQ."]].map(([n,t,d])=>(
+            <div key={n} style={{display:"flex",gap:12,marginBottom:14}}>
+              <div style={{width:24,height:24,borderRadius:"50%",background:C.gold,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:C.ink,flexShrink:0}}>{n}</div>
+              <div><div style={{fontFamily:SS,fontSize:12,fontWeight:700,color:C.ivory,marginBottom:2}}>{t}</div><div style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.38)",lineHeight:1.5}}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Sections publiques ─────────────────────────────────────────────────────
+const Secteurs=({onSector,onAuth})=>(
+  <div style={{padding:"28px 36px"}}>
+    <PH section="Référencement local" title="Solutions par secteur"/>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:24}}>
+      {[["Boulangerie","🥖","Caisse, stocks, commandes fournisseurs."],["Coiffure","✂️","Rendez-vous, fidélité et agenda en ligne."],["Garage","🔧","Suivi réparations, pièces et facturation."],["Restaurant","🍽️","Salle, commandes cuisine et réservations."],["Auto-école","🚗","Planning moniteurs, suivi élèves, examens."],["Pharmacie","💊","Stocks médicaments et alertes péremption."],["Commerce","🏪","Caisse, inventaire et gestion commerciale."],["Beauté","💅","Agenda, fidélité et vente de produits."],["Artisanat","🔨","Devis, facturation et suivi chantiers."]].map(([s,ic,txt])=>(
+        <div key={s} onClick={()=>onSector(s)} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:"18px 20px",cursor:"pointer",display:"flex",gap:12,alignItems:"flex-start",transition:"all 0.2s"}}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=C.gold;e.currentTarget.style.transform="translateY(-2px)";}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=C.linen;e.currentTarget.style.transform="translateY(0)";}}
+        >
+          <span style={{fontSize:24,flexShrink:0}}>{ic}</span>
+          <div><div style={{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,marginBottom:3}}>Logiciel {s}</div><div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.5,marginBottom:7}}>{txt}</div><div style={{fontFamily:SS,fontSize:11,color:C.gold,fontWeight:700}}>Voir →</div></div>
+        </div>
+      ))}
+    </div>
+    <div style={{background:C.ink,borderRadius:8,padding:"22px 28px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div><div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ivory,marginBottom:5}}>Votre secteur n'est pas listé ?</div><div style={{fontFamily:SS,fontSize:12,color:"rgba(255,255,255,0.4)"}}>Devis sur mesure, réponse sous 48h.</div></div>
+      <button onClick={()=>onAuth("register")} style={{background:C.gold,border:"none",borderRadius:6,padding:"11px 24px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",color:C.ink,cursor:"pointer",whiteSpace:"nowrap"}}>Demander un devis</button>
+    </div>
+  </div>
+);
+
+const SectorDetail=({sector,onBack,onAuth,user,onTrial})=>{
+  const icons={Boulangerie:"🥖",Coiffure:"✂️",Garage:"🔧",Restaurant:"🍽️","Auto-école":"🚗",Pharmacie:"💊",Commerce:"🏪",Beauté:"💅",Artisanat:"🔨",Médecine:"🏥"};
+  const shown=SW_DB.filter(sw=>sw.sector.includes(sector));
+  const list=shown.length>0?shown:SW_DB.slice(0,3);
+  return (
+    <div style={{padding:"28px 36px"}}>
+      <button onClick={onBack} style={{background:"none",border:"none",color:C.stone,cursor:"pointer",fontFamily:SS,fontSize:10,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:18,padding:0}}>← Retour aux secteurs</button>
+      <div style={{background:`linear-gradient(135deg,${C.ink},#1c1409)`,borderRadius:10,padding:"32px 36px",marginBottom:22,textAlign:"center"}}>
+        <div style={{fontSize:42,marginBottom:10}}>{icons[sector]||"🛠️"}</div>
+        <div style={{fontFamily:SS,fontSize:9,letterSpacing:"0.22em",textTransform:"uppercase",color:C.gold,marginBottom:7}}>Logiciel {sector}</div>
+        <div style={{fontFamily:SF,fontSize:26,fontWeight:700,color:C.ivory,marginBottom:8}}>Le logiciel parfait pour votre {sector.toLowerCase()}.</div>
+        <div style={{fontFamily:SS,fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:20}}>Essai 7 jours gratuit · Sans carte bancaire</div>
+        <button onClick={()=>onAuth("register")} style={{background:C.gold,border:"none",borderRadius:6,padding:"11px 26px",fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:"0.12em",textTransform:"uppercase",color:C.ink,cursor:"pointer"}}>Commencer gratuitement</button>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+        {list.map(sw=>(
+          <div key={sw.id} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:24}}>{sw.icon}</span>{sw.popular&&<span style={{background:C.gold,color:C.ink,fontSize:9,fontWeight:800,padding:"3px 7px",borderRadius:2,letterSpacing:"0.1em",textTransform:"uppercase",alignSelf:"flex-start"}}>Populaire</span>}</div>
+            <div style={{fontFamily:SF,fontSize:14,fontWeight:700,color:C.ink,marginBottom:3}}>{sw.name}</div>
+            <Stars r={sw.rating} sm/><div style={{fontFamily:SS,fontSize:11,color:C.stone,marginTop:2,marginBottom:10}}>{sw.reviews} avis</div>
+            <HR s={{marginBottom:10}}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontFamily:SF,fontWeight:700,fontSize:17,color:C.gold}}>{sw.price}€<span style={{fontSize:11,fontWeight:400,color:C.stone}}>/mois</span></div>
+              <button onClick={()=>onAuth("register")} style={{background:C.ink,border:"none",borderRadius:4,padding:"6px 12px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.ivory,cursor:"pointer",letterSpacing:"0.08em",textTransform:"uppercase"}}>Essayer</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Apropos=({onAuth})=>(
+  <div style={{padding:"28px 36px"}}>
+    <PH section="ONIQ" title="À propos"/>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
+      <div style={{background:C.ink,borderRadius:8,padding:26}}>
+        <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ivory,marginBottom:10}}>Notre mission</div>
+        <div style={{fontFamily:SS,fontSize:13,color:"rgba(255,255,255,0.45)",lineHeight:1.8,marginBottom:20}}>ONIQ démocratise l'accès aux logiciels professionnels pour les TPE et indépendants. Abonnement mensuel sans engagement, essai gratuit sur chaque logiciel.</div>
+        <div style={{display:"flex",gap:24}}>
+          {[["500+","Professionnels"],["8+","Logiciels"],["4.8★","Note moy."]].map(([v,l])=>(
+            <div key={l}><div style={{fontFamily:SF,fontSize:20,fontWeight:700,color:C.gold}}>{v}</div><div style={{fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:3}}>{l}</div></div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {[["🆓","Essai 7 jours gratuit","Sans carte bancaire ni engagement."],["💳","Abonnement mensuel","Résiliable à tout moment."],["🛠️","Sur mesure possible","Votre besoin n'existe pas ? On le développe."],["💬","Support inclus","Email et téléphone dans chaque abonnement."]].map(([ic,t,d])=>(
+          <div key={t} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:"13px 16px",display:"flex",gap:10,alignItems:"flex-start"}}>
+            <span style={{fontSize:18,flexShrink:0}}>{ic}</span>
+            <div><div style={{fontFamily:SS,fontWeight:700,fontSize:12,color:C.ink,marginBottom:2}}>{t}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone,lineHeight:1.5}}>{d}</div></div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:"20px 26px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:20}}>
+      <div><div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink,marginBottom:3}}>Prêt à commencer ?</div><div style={{fontFamily:SS,fontSize:12,color:C.stone}}>7 jours gratuits sur tous les logiciels.</div></div>
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>onAuth("login")} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px 18px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Se connecter</button>
+        <button onClick={()=>onAuth("register")} style={{background:C.gold,border:"none",borderRadius:4,padding:"9px 18px",fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Commencer gratuitement</button>
+      </div>
+    </div>
+  </div>
+);
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+const AdminDash=({users,software,devis,setView})=>{
+  const clients=users.filter(u=>u.role==="client");
+  const totalMrr=clients.reduce((s,c)=>s+getMrr(c.subs),0);
+  const overdue=clients.filter(c=>c.status==="overdue");
+  const trials=clients.filter(c=>c.status==="trial");
+  const pendQ=devis.filter(d=>d.status==="pending");
+  const conv=Math.round((clients.filter(c=>c.status==="active").length/Math.max(1,clients.length))*100);
+  return (
+    <div>
+      <PH section="Vue générale" title="Tableau de bord"/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
+        <KPI label="MRR" value={`${totalMrr} €`} sub="+12% ce mois" trend accent/>
+        <KPI label="Clients actifs" value={clients.filter(c=>c.status==="active").length} sub={`${clients.length} total`}/>
+        <KPI label="Conversion" value={`${conv}%`} sub="Trial → Actif" trend/>
+        <KPI label="Devis en attente" value={pendQ.length} sub="à traiter"/>
+      </div>
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:"18px 22px",marginBottom:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{fontFamily:SF,fontSize:14,fontWeight:600,color:C.ink}}>Évolution MRR</div>
+          <div style={{fontFamily:SF,fontWeight:700,fontSize:16,color:C.gold}}>{totalMrr} €/mois</div>
+        </div>
+        <Sparkline data={MRR_HIST}/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16}}>
+        <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+          <div style={{padding:"13px 18px",borderBottom:`1px solid ${C.linen}`,display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink}}>Clients récents</span>
+            <button onClick={()=>setView("a-clients")} style={{background:"none",border:"none",color:C.gold,cursor:"pointer",fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.1em"}}>VOIR TOUT →</button>
+          </div>
+          {clients.slice(0,5).map((c,i)=>(
+            <div key={c.id}><div style={{display:"flex",alignItems:"center",gap:12,padding:"11px 18px"}}>
+              <Mono i={c.avatar} size={28}/>
+              <div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:600,fontSize:12,color:C.ink}}>{c.company}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{c.subs.length} logiciel{c.subs.length>1?"s":""}</div></div>
+              <div style={{textAlign:"right"}}><div style={{fontFamily:SF,fontWeight:700,fontSize:12,color:C.ink}}>{getMrr(c.subs)} €</div><div style={{marginTop:3}}><Badge status={c.status}/></div></div>
+            </div>{i<4&&<HR s={{margin:"0 18px"}}/>}</div>
+          ))}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink}}>Notifications</span></div>
+            <div>
+              {pendQ.length>0&&<div style={{display:"flex",gap:10,padding:"10px 14px",borderBottom:`1px solid ${C.linen}`}}><span style={{color:C.amber}}>◎</span><div><div style={{fontFamily:SS,fontSize:12,fontWeight:600,color:C.ink}}>{pendQ.length} devis en attente</div></div></div>}
+              {overdue.length>0&&<div style={{display:"flex",gap:10,padding:"10px 14px",borderBottom:`1px solid ${C.linen}`}}><span style={{color:C.red}}>⚠</span><div><div style={{fontFamily:SS,fontSize:12,fontWeight:600,color:C.ink}}>{overdue.length} paiement{overdue.length>1?"s":""} en retard</div></div></div>}
+              {trials.length>0&&<div style={{display:"flex",gap:10,padding:"10px 14px"}}><span style={{color:C.gold}}>✦</span><div><div style={{fontFamily:SS,fontSize:12,fontWeight:600,color:C.ink}}>{trials.length} client{trials.length>1?"s":""} en essai</div></div></div>}
+              {!pendQ.length&&!overdue.length&&!trials.length&&<div style={{padding:"14px",fontFamily:SS,fontSize:12,color:C.stone}}>✓ Tout est à jour</div>}
+            </div>
+          </div>
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink}}>Top logiciels</span></div>
+            <div style={{padding:"12px 16px"}}>
+              {software.slice(0,4).map(s=>{const cnt=clients.filter(c=>c.subs.includes(s.id)).length;return(
+                <div key={s.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:9}}>
+                  <span style={{fontSize:13}}>{s.icon}</span>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:SS,fontSize:11,fontWeight:600,color:C.ink}}>{s.name}</span><span style={{fontFamily:SS,fontSize:11,color:C.stone}}>{cnt}</span></div>
+                    <div style={{height:3,background:C.linen,borderRadius:2,marginTop:3}}><div style={{height:"100%",borderRadius:2,background:`linear-gradient(90deg,${C.gold},${C.goldL})`,width:`${(cnt/Math.max(1,clients.length))*100}%`}}/></div>
+                  </div>
+                </div>
+              );})}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminClients=({users,setUsers,software,setView,setSelClient})=>{
+  const clients=users.filter(u=>u.role==="client");
+  const [search,setSearch]=useState("");
+  const [filter,setFilter]=useState("all");
+  const [showAdd,setShowAdd]=useState(false);
+  const [form,setForm]=useState({company:"",email:"",sector:""});
+  const filtered=clients.filter(c=>{const q=search.toLowerCase();return(c.company.toLowerCase().includes(q)||c.email.toLowerCase().includes(q))&&(filter==="all"||c.status===filter);});
+  const add=()=>{if(!form.company||!form.email)return;setUsers(p=>[...p,{id:Date.now(),role:"client",name:form.company,company:form.company,email:form.email,password:"client",avatar:form.company.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(),subs:[],trials:{},since:new Date().toLocaleDateString("fr-FR",{month:"short",year:"numeric"}),status:"trial",sector:form.sector,referralCode:genCode(),referrals:0,referralCredit:0}]);setForm({company:"",email:"",sector:""});setShowAdd(false);};
+  return (
+    <div>
+      <PH section="Gestion" title="Clients" action={<button onClick={()=>setShowAdd(true)} style={{background:C.ink,border:"none",borderRadius:4,padding:"9px 18px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>+ Nouveau client</button>}/>
+      <div style={{display:"flex",gap:10,marginBottom:16}}>
+        <div style={{flex:1,position:"relative"}}>
+          <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",color:C.sand}}>⌕</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher…" style={{width:"100%",background:C.paper,border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px 12px 9px 30px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box"}}/>
+        </div>
+        {["all","active","trial","overdue"].map(f=>(
+          <button key={f} onClick={()=>setFilter(f)} style={{background:filter===f?C.ink:"transparent",border:`1px solid ${filter===f?C.ink:C.linen}`,borderRadius:4,padding:"8px 13px",color:filter===f?C.ivory:C.stone,cursor:"pointer",fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>
+            {{all:"Tous",active:"Actifs",trial:"Essai",overdue:"Retard"}[f]}
+          </button>
+        ))}
+      </div>
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 2fr 1fr 1fr",padding:"9px 18px",background:C.dim,borderBottom:`1px solid ${C.linen}`,gap:12}}>
+          {["Entreprise","Email","Secteur","Logiciels","MRR","Statut"].map(h=><div key={h} style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone}}>{h}</div>)}
+        </div>
+        {filtered.map((c,i)=>(
+          <div key={c.id}><div onClick={()=>{setSelClient(c);setView("a-client-detail");}} style={{display:"grid",gridTemplateColumns:"2fr 2fr 1fr 2fr 1fr 1fr",padding:"12px 18px",gap:12,cursor:"pointer",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.background=C.dim} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}><Mono i={c.avatar} size={26}/><span style={{fontFamily:SS,fontWeight:600,fontSize:12,color:C.ink}}>{c.company}</span></div>
+            <div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{c.email}</div>
+            <div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{c.sector||"–"}</div>
+            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+              {c.subs.slice(0,2).map(id=>{const sw=software.find(x=>x.id===id);return sw?<span key={id} style={{background:C.goldDim,color:C.gold,fontSize:9,padding:"2px 7px",borderRadius:2,fontWeight:700}}>{sw.name}</span>:null;})}
+              {c.subs.length>2&&<span style={{color:C.stone,fontSize:10}}>+{c.subs.length-2}</span>}
+            </div>
+            <div style={{fontFamily:SF,fontWeight:700,fontSize:13,color:C.ink}}>{getMrr(c.subs)} €</div>
+            <Badge status={c.status}/>
+          </div>{i<filtered.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+        ))}
+      </div>
+      {showAdd&&(
+        <Overlay title="Nouveau client" onClose={()=>setShowAdd(false)}>
+          <TI label="Nom de l'entreprise" value={form.company} onChange={e=>setForm(p=>({...p,company:e.target.value}))}/>
+          <TI label="Email" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} type="email"/>
+          <div style={{marginBottom:16}}>
+            <FL label="Secteur"/>
+            <select value={form.sector} onChange={e=>setForm(p=>({...p,sector:e.target.value}))} style={{width:"100%",background:C.paper,border:`1px solid ${C.linen}`,borderRadius:4,padding:"11px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none"}}>
+              <option value="">–</option>{SECTORS.map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setShowAdd(false)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Annuler</button>
+            <button onClick={add} style={{flex:2,background:C.ink,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Créer</button>
+          </div>
+        </Overlay>
+      )}
+    </div>
+  );
+};
+
+const AdminClientDetail=({client,setClient,users,setUsers,software,setView})=>{
+  const [tab,setTab]=useState("overview");
+  const [editSw,setEditSw]=useState(false);
+  const [tmpSw,setTmpSw]=useState(client?.subs||[]);
+  if(!client)return null;
+  const mrr=getMrr(client.subs);
+  const save=()=>{const u={...client,subs:tmpSw};setUsers(p=>p.map(x=>x.id===client.id?u:x));setClient(u);setEditSw(false);};
+  const updStatus=s=>{const u={...client,status:s};setUsers(p=>p.map(x=>x.id===client.id?u:x));setClient(u);};
+  return (
+    <div>
+      <button onClick={()=>setView("a-clients")} style={{background:"none",border:"none",color:C.stone,cursor:"pointer",fontFamily:SS,fontSize:10,letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:14,padding:0}}>← Retour</button>
+      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:18,paddingBottom:18,borderBottom:`1px solid ${C.linen}`}}>
+        <Mono i={client.avatar} size={44}/>
+        <div style={{flex:1}}><h1 style={{margin:0,fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink}}>{client.company}</h1><div style={{fontFamily:SS,fontSize:11,color:C.stone,marginTop:2}}>{client.email} · {client.sector||"–"} · Depuis {client.since}</div></div>
+        <select value={client.status} onChange={e=>updStatus(e.target.value)} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:4,padding:"7px 12px",fontFamily:SS,fontSize:12,color:C.ink,cursor:"pointer",outline:"none"}}>
+          <option value="active">Actif</option><option value="trial">Essai</option><option value="overdue">En retard</option>
+        </select>
+      </div>
+      <div style={{display:"flex",gap:0,borderBottom:`1px solid ${C.linen}`,marginBottom:20}}>
+        {[["overview","Résumé"],["subs","Abonnements"],["invoices","Factures"],["referral","Parrainage"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setTab(k)} style={{background:"none",border:"none",borderBottom:`2px solid ${tab===k?C.gold:"transparent"}`,padding:"8px 18px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:tab===k?C.gold:C.stone,cursor:"pointer",marginBottom:-1}}>{l}</button>
+        ))}
+      </div>
+      {tab==="overview"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}><KPI label="MRR" value={`${mrr} €`} accent/><KPI label="ARR" value={`${mrr*12} €`}/><KPI label="Logiciels" value={client.subs.length}/><KPI label="Parrainages" value={client.referrals||0}/></div>
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <span style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink}}>Logiciels actifs</span>
+              <button onClick={()=>{setTmpSw(client.subs);setEditSw(true);}} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"4px 10px",fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em"}}>Modifier</button>
+            </div>
+            {client.subs.map((id,i)=>{const sw=software.find(x=>x.id===id);if(!sw)return null;return(<div key={id}><div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0"}}><span>{sw.icon}</span><span style={{fontFamily:SS,fontSize:12,color:C.ink,flex:1}}>{sw.name}</span><span style={{fontFamily:SF,fontWeight:700,fontSize:12,color:C.gold}}>{sw.price}€/mois</span></div>{i<client.subs.length-1&&<HR/>}</div>);})}
+            {!client.subs.length&&<div style={{fontFamily:SS,fontSize:12,color:C.stone}}>Aucun logiciel souscrit.</div>}
+            <HR s={{margin:"10px 0 8px"}}/>
+            <div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,textTransform:"uppercase"}}>Total</span><span style={{fontFamily:SF,fontWeight:700,fontSize:14,color:C.ink}}>{mrr} €</span></div>
+          </div>
+        </div>
+      )}
+      {tab==="subs"&&(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+          {software.map(sw=>{const on=client.subs.includes(sw.id);return(<div key={sw.id} style={{background:on?C.paper:C.dim,border:`1px solid ${on?C.gold+"55":C.linen}`,borderRadius:6,padding:18,opacity:on?1:0.6}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:9}}><span style={{fontSize:20}}>{sw.icon}</span>{on&&<Badge status="active"/>}</div><div style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink,marginBottom:3}}>{sw.name}</div><Stars r={sw.rating} sm/><div style={{fontFamily:SF,fontWeight:700,fontSize:15,color:on?C.gold:C.stone,marginTop:7}}>{sw.price}€/mois</div></div>);})}
+        </div>
+      )}
+      {tab==="invoices"&&(
+        <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr 1fr 1fr",padding:"9px 18px",background:C.dim,borderBottom:`1px solid ${C.linen}`,gap:12}}>
+            {["N° Facture","Montant","Date","Statut"].map(h=><div key={h} style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone}}>{h}</div>)}
+          </div>
+          {[{id:"INV-2024-091",amount:mrr,date:"01 Déc 2024",status:"paid"},{id:"INV-2024-077",amount:mrr,date:"01 Nov 2024",status:"paid"},{id:"INV-2024-063",amount:mrr,date:"01 Oct 2024",status:"paid"}].map((inv,i)=>(
+            <div key={inv.id}><div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr 1fr 1fr",padding:"12px 18px",gap:12,alignItems:"center"}}><span style={{fontFamily:SS,fontSize:11,color:C.gold,fontWeight:600}}>{inv.id}</span><span style={{fontFamily:SF,fontWeight:700,fontSize:13,color:C.ink}}>{inv.amount} €</span><span style={{fontFamily:SS,fontSize:11,color:C.stone}}>{inv.date}</span><Badge status={inv.status}/></div>{i<2&&<HR s={{margin:"0 18px"}}/>}</div>
+          ))}
+        </div>
+      )}
+      {tab==="referral"&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <KPI label="Parrainages" value={client.referrals||0} sub="clients référencés"/>
+          <KPI label="Crédit" value={`${client.referralCredit||0} mois`} accent/>
+          <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:18,gridColumn:"span 2"}}>
+            <div style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink,marginBottom:10}}>Code de parrainage</div>
+            <div style={{background:C.goldDim,border:`1px solid ${C.goldB}`,borderRadius:4,padding:"10px 14px",fontFamily:SS,fontWeight:700,fontSize:15,color:C.gold,letterSpacing:"0.2em"}}>{client.referralCode||"–"}</div>
+          </div>
+        </div>
+      )}
+      {editSw&&(
+        <Overlay title="Modifier les logiciels" onClose={()=>setEditSw(false)} wide>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+            {software.map(sw=>{const on=tmpSw.includes(sw.id);return(<div key={sw.id} onClick={()=>setTmpSw(p=>on?p.filter(x=>x!==sw.id):[...p,sw.id])} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 13px",background:on?C.goldDim:C.paper,border:`1px solid ${on?C.gold+"66":C.linen}`,borderRadius:6,cursor:"pointer"}}><span>{sw.icon}</span><div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:700,fontSize:12,color:C.ink}}>{sw.name}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{sw.price}€/mois</div></div><div style={{width:17,height:17,borderRadius:3,background:on?C.gold:C.linen,display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontSize:10,fontWeight:700}}>{on?"✓":""}</div></div>);})}
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${C.linen}`,paddingTop:13}}>
+            <span style={{fontFamily:SS,fontSize:12,color:C.stone}}>Total : <strong style={{fontFamily:SF,color:C.ink}}>{getMrr(tmpSw)} €/mois</strong></span>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setEditSw(false)} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Annuler</button>
+              <button onClick={save} style={{background:C.ink,border:"none",borderRadius:4,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Enregistrer</button>
+            </div>
+          </div>
+        </Overlay>
+      )}
+    </div>
+  );
+};
+
+const AdminSoftware=({software,setSoftware})=>{
+  const [showAdd,setShowAdd]=useState(false);
+  const [form,setForm]=useState({name:"",price:"",cat:"Commerce",desc:"",icon:"🛠️",sector:""});
+  const ICONS=["🏪","📦","📅","💳","🔧","🚗","🏥","✂️","📱","🎓","🍽️","💊","📋","💅"];
+  const add=()=>{if(!form.name||!form.price)return;setSoftware(p=>[...p,{id:Date.now(),name:form.name,price:parseInt(form.price),cat:form.cat,desc:form.desc,icon:form.icon,sector:form.sector,popular:false,rating:0,reviews:0,features:[]}]);setForm({name:"",price:"",cat:"Commerce",desc:"",icon:"🛠️",sector:""});setShowAdd(false);};
+  return (
+    <div>
+      <PH section="Catalogue" title="Logiciels" action={<button onClick={()=>setShowAdd(true)} style={{background:C.ink,border:"none",borderRadius:4,padding:"9px 18px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>+ Nouveau logiciel</button>}/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+        {software.map(s=>(
+          <div key={s.id} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:20}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:9}}><span style={{fontSize:24}}>{s.icon}</span><button onClick={()=>setSoftware(p=>p.filter(x=>x.id!==s.id))} style={{background:"none",border:"none",color:C.stone,cursor:"pointer",fontSize:13}}>✕</button></div>
+            <div style={{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,marginBottom:2}}>{s.name}</div>
+            <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:C.stone,marginBottom:5}}>{s.cat}</div>
+            <Stars r={s.rating||0} sm/><div style={{fontFamily:SS,fontSize:11,color:C.stone,marginTop:2,marginBottom:10}}>{s.reviews||0} avis</div>
+            <HR s={{marginBottom:9}}/>
+            <div style={{fontFamily:SF,fontWeight:700,fontSize:16,color:C.gold}}>{s.price}€<span style={{fontSize:11,fontWeight:400,color:C.stone}}>/mois</span></div>
+          </div>
+        ))}
+        <div onClick={()=>setShowAdd(true)} style={{background:"transparent",border:`1.5px dashed ${C.linen}`,borderRadius:6,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:9,cursor:"pointer",minHeight:160}} onMouseEnter={e=>e.currentTarget.style.borderColor=C.gold} onMouseLeave={e=>e.currentTarget.style.borderColor=C.linen}>
+          <div style={{width:38,height:38,borderRadius:4,background:C.goldDim,border:`1px solid ${C.goldB}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:C.gold}}>+</div>
+          <span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,letterSpacing:"0.1em",textTransform:"uppercase"}}>Ajouter</span>
+        </div>
+      </div>
+      {showAdd&&(
+        <Overlay title="Nouveau logiciel" onClose={()=>setShowAdd(false)} wide>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+            <TI label="Nom" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))}/>
+            <TI label="Prix / mois (€)" value={form.price} onChange={e=>setForm(p=>({...p,price:e.target.value}))} type="number"/>
+          </div>
+          <TI label="Description" value={form.desc} onChange={e=>setForm(p=>({...p,desc:e.target.value}))}/>
+          <div style={{marginBottom:14}}>
+            <FL label="Icône"/>
+            <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
+              {ICONS.map(ic=><button key={ic} onClick={()=>setForm(p=>({...p,icon:ic}))} style={{width:36,height:36,borderRadius:6,background:form.icon===ic?C.goldDim:C.paper,border:`1px solid ${form.icon===ic?C.gold:C.linen}`,fontSize:17,cursor:"pointer"}}>{ic}</button>)}
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setShowAdd(false)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Annuler</button>
+            <button onClick={add} style={{flex:2,background:C.ink,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Créer</button>
+          </div>
+        </Overlay>
+      )}
+    </div>
+  );
+};
+
+const AdminDevis=({devis,setDevis})=>{
+  const [sel,setSel]=useState(null);
+  const [amount,setAmount]=useState("");
+  const upd=(id,status,amt)=>setDevis(p=>p.map(d=>d.id===id?{...d,status,amount:amt?parseFloat(amt):d.amount}:d));
+  return (
+    <div>
+      <PH section="Commercial" title="Demandes de devis"/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+        <KPI label="En attente" value={devis.filter(d=>d.status==="pending").length} accent/>
+        <KPI label="Devis envoyés" value={devis.filter(d=>d.status==="quoted").length}/>
+        <KPI label="Convertis" value={devis.filter(d=>d.status==="done").length}/>
+      </div>
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr 1fr 1fr 1fr",padding:"9px 18px",background:C.dim,borderBottom:`1px solid ${C.linen}`,gap:12}}>
+          {["Client","Description","Montant","Date","Statut"].map(h=><div key={h} style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone}}>{h}</div>)}
+        </div>
+        {devis.map((d,i)=>(
+          <div key={d.id}><div onClick={()=>{setSel(d);setAmount(d.amount||"");}} style={{display:"grid",gridTemplateColumns:"1.5fr 2.5fr 1fr 1fr 1fr",padding:"13px 18px",gap:12,cursor:"pointer",alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.background=C.dim} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+            <div><div style={{fontFamily:SS,fontWeight:700,fontSize:12,color:C.ink}}>{d.client}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{d.email}</div></div>
+            <div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{d.desc.slice(0,55)}…</div>
+            <div style={{fontFamily:SF,fontWeight:700,fontSize:12,color:d.amount?C.gold:C.stone}}>{d.amount?`${d.amount}€/mois`:"–"}</div>
+            <div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{d.date}</div>
+            <Badge status={d.status}/>
+          </div>{i<devis.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+        ))}
+      </div>
+      {sel&&(
+        <Overlay title="Demande de devis" onClose={()=>setSel(null)} wide>
+          <div style={{background:C.dim,border:`1px solid ${C.linen}`,borderRadius:6,padding:14,marginBottom:16}}>
+            <div style={{fontFamily:SS,fontWeight:700,fontSize:13,color:C.ink}}>{sel.client}</div>
+            <div style={{fontFamily:SS,fontSize:11,color:C.stone,marginBottom:5}}>{sel.email} — {sel.date}</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.ink,lineHeight:1.6}}>{sel.desc}</div>
+          </div>
+          <TI label="Tarif mensuel proposé (€)" value={amount} onChange={e=>setAmount(e.target.value)} type="number" placeholder="ex: 49"/>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setSel(null)} style={{flex:1,background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Fermer</button>
+            <button onClick={()=>{upd(sel.id,"quoted",amount);setSel(null);}} style={{flex:2,background:C.gold,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Envoyer le devis</button>
+          </div>
+        </Overlay>
+      )}
+    </div>
+  );
+};
+
+const AdminFactures=({users,software})=>{
+  const clients=users.filter(u=>u.role==="client");
+  const rows=clients.map(c=>({...c,mrr:getMrr(c.subs),inv:`INV-2024-${String(80+c.id).padStart(3,"0")}`,date:"01 Déc 2024",ps:c.status==="overdue"?"overdue":c.status==="trial"?"pending":"paid"}));
+  const paid=rows.filter(r=>r.ps==="paid").reduce((s,r)=>s+r.mrr,0);
+  const pend=rows.filter(r=>r.ps!=="paid").reduce((s,r)=>s+r.mrr,0);
+  return (
+    <div>
+      <PH section="Finance" title="Factures"/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:20}}>
+        <KPI label="Encaissé" value={`${paid} €`} accent/><KPI label="En attente" value={`${pend} €`}/><KPI label="Total" value={rows.length}/>
+      </div>
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1.2fr 2fr 1.5fr 1fr 1fr 1fr",padding:"9px 18px",background:C.dim,borderBottom:`1px solid ${C.linen}`,gap:12}}>
+          {["N° Facture","Client","Logiciels","Montant","Date","Statut"].map(h=><div key={h} style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:C.stone}}>{h}</div>)}
+        </div>
+        {rows.map((r,i)=>(
+          <div key={r.id}><div style={{display:"grid",gridTemplateColumns:"1.2fr 2fr 1.5fr 1fr 1fr 1fr",padding:"12px 18px",gap:12,alignItems:"center"}}>
+            <span style={{fontFamily:SS,fontSize:11,color:C.gold,fontWeight:600}}>{r.inv}</span>
+            <div style={{display:"flex",alignItems:"center",gap:8}}><Mono i={r.avatar} size={22}/><span style={{fontFamily:SS,fontSize:11,fontWeight:600,color:C.ink}}>{r.company}</span></div>
+            <span style={{fontFamily:SS,fontSize:11,color:C.stone}}>{r.subs.length} logiciel{r.subs.length>1?"s":""}</span>
+            <span style={{fontFamily:SF,fontWeight:700,fontSize:12,color:C.ink}}>{r.mrr} €</span>
+            <span style={{fontFamily:SS,fontSize:11,color:C.stone}}>{r.date}</span>
+            <Badge status={r.ps}/>
+          </div>{i<rows.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AdminReferrals=({users})=>{
+  const clients=users.filter(u=>u.role==="client");
+  const total=clients.reduce((s,c)=>s+(c.referrals||0),0);
+  const topRef=clients.filter(c=>c.referrals>0).sort((a,b)=>b.referrals-a.referrals);
+  return (
+    <div>
+      <PH section="Croissance" title="Programme de parrainage"/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:20}}>
+        <KPI label="Parrainages total" value={total} sub="clients référencés" trend/>
+        <KPI label="Crédits distribués" value={`${clients.reduce((s,c)=>s+(c.referralCredit||0),0)} mois`} accent/>
+        <KPI label="Taux participation" value={`${Math.round((clients.filter(c=>c.referrals>0).length/Math.max(1,clients.length))*100)}%`} sub="clients actifs"/>
+      </div>
+      <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,overflow:"hidden"}}>
+        <div style={{padding:"13px 18px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:13,fontWeight:600,color:C.ink}}>Top parrains</span></div>
+        {topRef.length===0&&<div style={{padding:"20px",fontFamily:SS,fontSize:12,color:C.stone}}>Aucun parrainage encore.</div>}
+        {topRef.map((c,i)=>(
+          <div key={c.id}><div style={{display:"flex",alignItems:"center",gap:14,padding:"12px 18px"}}>
+            <Mono i={c.avatar} size={28}/>
+            <div style={{flex:1}}><div style={{fontFamily:SS,fontWeight:600,fontSize:13,color:C.ink}}>{c.company}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>Code : {c.referralCode}</div></div>
+            <div style={{textAlign:"right"}}><div style={{fontFamily:SF,fontWeight:700,fontSize:15,color:C.gold}}>{c.referrals} parrainage{c.referrals>1?"s":""}</div><div style={{fontFamily:SS,fontSize:11,color:C.stone}}>{c.referralCredit||0} mois de crédit</div></div>
+          </div>{i<topRef.length-1&&<HR s={{margin:"0 18px"}}/>}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Nav config ─────────────────────────────────────────────────────────────
+const PUBLIC_NAV=[
+  {id:"c-market",     label:"Marketplace",     g:"◈"},
+  {id:"pub-secteurs", label:"Par secteur",      g:"◉"},
+  {id:"pub-apropos",  label:"À propos",         g:"◎"},
+];
+const CLIENT_EXTRA=[
+  {id:"c-espace",     label:"Mon espace",       g:"◧"},
+  {id:"c-hub",        label:"Nos logiciels",    g:"⬚"},
+  {id:"c-parrainage", label:"Parrainage",        g:"◆"},
+  {id:"c-devis",      label:"Devis sur mesure",  g:"◫"},
+];
+const ADMIN_NAV=[
+  {id:"a-dashboard",  label:"Dashboard",        g:"◈"},
+  {id:"a-clients",    label:"Clients",          g:"◉"},
+  {id:"a-software",   label:"Logiciels",        g:"◧"},
+  {id:"a-devis",      label:"Devis",            g:"◎"},
+  {id:"a-factures",   label:"Factures",         g:"◫"},
+  {id:"a-referrals",  label:"Parrainage",       g:"◆"},
+];
+const LOCKED=[
+  {id:"c-espace",    label:"Mon espace",        g:"◧",desc:"Gérez vos abonnements et factures"},
+  {id:"c-hub",       label:"Nos logiciels",     g:"⬚",desc:"Accédez aux logiciels inclus dans l'abonnement"},
+  {id:"c-parrainage",label:"Parrainage",         g:"◆",desc:"Gagnez des mois offerts"},
+  {id:"c-devis",     label:"Devis sur mesure",   g:"◫",desc:"Logiciel développé pour vous"},
+];
+
+// ── App ────────────────────────────────────────────────────────────────────
+const encodeTeamPayload=(payload)=>{
+  try{return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));}catch(e){return "";}
+};
+const decodeTeamPayload=(token)=>{
+  try{return JSON.parse(decodeURIComponent(escape(atob(token))));}catch(e){return null;}
+};
+
+function App() {
+  const teamParams=new URLSearchParams(window.location.search);
+  const teamMode=teamParams.get("team")==="1";
+  const teamOwnerId=teamParams.get("owner")||teamParams.get("client");
+  const teamToken=teamParams.get("data")||"";
+  const teamPayload=teamToken?decodeTeamPayload(teamToken):null;
+  const [view,setView]=useState(teamMode?"c-hub":"c-market");
+  const [user,setUser]=useState(null);
+  const [users,setUsers]=useState(USERS_DB);
+  const [software,setSoftware]=useState(SW_DB);
+  const [devis,setDevis]=useState(DEVIS_DB);
+  const [selClient,setSelClient]=useState(null);
+  const [showOnboard,setShowOnboard]=useState(false);
+  const [showAuth,setShowAuth]=useState(false);
+  const [authMode,setAuthMode]=useState("login");
+  const [selSector,setSelSector]=useState("");
+  const teamUserFromDb=teamMode?users.find(u=>String(u.id)===String(teamOwnerId)&&u.role==="client"):null;
+  const teamUser=teamMode?(teamUserFromDb?{...teamUserFromDb,logo:(teamPayload&&teamPayload.logo)||teamUserFromDb.logo||"",ownerId:teamUserFromDb.id}:(teamPayload&&Array.isArray(teamPayload.subs)?{id:teamOwnerId||teamPayload.ownerId||"shared",ownerId:teamOwnerId||teamPayload.ownerId||"shared",role:"client",company:teamPayload.company||"Client ONIQ",subs:teamPayload.subs,logo:teamPayload.logo||""}:null)):null;
+
+  const openAuth=(mode)=>{setAuthMode(mode);setShowAuth(true);};
+
+  const login=(u,isNew)=>{
+    setUser(u);
+    setUsers(p=>{const ex=p.find(x=>x.id===u.id);return ex?p.map(x=>x.id===u.id?u:x):[...p,u];});
+    setView(u.role==="admin"?"a-dashboard":"c-market");
+    setShowAuth(false);
+    if(isNew)setShowOnboard(true);
+  };
+
+  const logout=()=>{setUser(null);setView("c-market");};
+
+  const setUserSync=updater=>{
+    setUser(prev=>{
+      const next=typeof updater==="function"?updater(prev):updater;
+      setUsers(us=>us.map(u=>u.id===next.id?next:u));
+      return next;
+    });
+  };
+
+  const onboardDone=(picks)=>{
+    setShowOnboard(false);
+    if(picks.length>0){
+      const now=Date.now();
+      setUserSync(u=>({...u,trials:{...u.trials,...picks.reduce((a,id)=>({...a,[id]:now}),{})}}));
+    }
+  };
+
+  const isAdmin=user?.role==="admin";
+  const activeNav=view==="a-client-detail"?"a-clients":view;
+  const NAV=isAdmin?ADMIN_NAV:[...PUBLIC_NAV,...(user?CLIENT_EXTRA:[])];
+
+  if(teamMode){
+    return teamUser
+      ? <TeamSoftwareHub client={teamUser} software={software}/>
+      : (
+        <div style={{minHeight:"100vh",background:C.dim,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+          <div style={{maxWidth:460,background:C.paper,border:`1px solid ${C.linen}`,borderRadius:12,padding:"28px 30px",textAlign:"center"}}>
+            <div style={{fontSize:34,marginBottom:10}}>🔒</div>
+            <div style={{fontFamily:SF,fontSize:24,fontWeight:700,color:C.ink,marginBottom:8}}>Lien équipe invalide</div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.stone,lineHeight:1.7}}>Ce lien n'est pas valide ou il est incomplet. Générez à nouveau le lien depuis l'espace client.</div>
+          </div>
+        </div>
+      );
+  }
+
+  return (
+    <div style={{fontFamily:SS,background:C.dim,minHeight:"100vh",display:"flex"}}>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+      {showOnboard&&<Onboarding user={user} onDone={onboardDone}/>}
+      {showAuth&&<AuthModal onLogin={login} initMode={authMode} onClose={()=>setShowAuth(false)}/>}
+
+      {/* Sidebar */}
+      <div style={{width:216,background:C.deep,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:10,flexShrink:0}}>
+        <div style={{padding:"22px 18px 14px",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+          <div style={{fontFamily:SF,fontSize:20,fontWeight:700,color:C.ivory,letterSpacing:5,marginBottom:4}}>ONIQ</div>
+          <div style={{height:1,background:`linear-gradient(90deg,${C.gold}88,transparent)`,marginBottom:5}}/>
+          <div style={{fontFamily:SS,fontSize:8,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)"}}>{isAdmin?"Admin":user?"Espace Client":"Marketplace"}</div>
+        </div>
+
+        <nav style={{flex:1,padding:"10px 8px",display:"flex",flexDirection:"column",gap:2,overflowY:"auto"}}>
+          {NAV.map(item=>(
+            <button key={item.id} onClick={()=>setView(item.id)} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 13px",borderRadius:4,background:activeNav===item.id?`${C.gold}1A`:"transparent",border:`1px solid ${activeNav===item.id?C.gold+"44":"transparent"}`,color:activeNav===item.id?C.gold:"rgba(255,255,255,0.33)",cursor:"pointer",fontFamily:SS,fontSize:12,fontWeight:activeNav===item.id?600:400,textAlign:"left",transition:"all 0.15s",width:"100%"}}
+              onMouseEnter={e=>{if(activeNav!==item.id){e.currentTarget.style.color="rgba(255,255,255,0.6)";e.currentTarget.style.background="rgba(255,255,255,0.04)";}}}
+              onMouseLeave={e=>{if(activeNav!==item.id){e.currentTarget.style.color="rgba(255,255,255,0.33)";e.currentTarget.style.background="transparent";}}}
+            ><span style={{fontSize:11,opacity:0.5}}>{item.g}</span>{item.label}</button>
+          ))}
+
+          {!user&&(
+            <>
+              <div style={{height:1,background:"rgba(255,255,255,0.05)",margin:"8px 6px"}}/>
+              <div style={{padding:"5px 13px 3px",fontFamily:SS,fontSize:8,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.18)"}}>Espace pro</div>
+              {LOCKED.map(item=>(
+                <button key={item.id} onClick={()=>openAuth("register")} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 13px",borderRadius:4,background:"transparent",border:"1px solid transparent",color:"rgba(255,255,255,0.18)",cursor:"pointer",fontFamily:SS,fontSize:12,textAlign:"left",width:"100%",transition:"all 0.15s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.color="rgba(255,255,255,0.42)";e.currentTarget.style.background="rgba(255,255,255,0.03)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.18)";e.currentTarget.style.background="transparent";}}
+                ><span style={{fontSize:11,opacity:0.35}}>{item.g}</span><span style={{flex:1}}>{item.label}</span><span style={{fontSize:9,opacity:0.4}}>🔒</span></button>
+              ))}
+            </>
+          )}
+        </nav>
+
+        <div style={{padding:"11px 14px",borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+          {user?(
+            <>
+              <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:9}}>
+                <div style={{width:26,height:26,borderRadius:4,background:C.gold,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:C.ink,fontFamily:SF,flexShrink:0}}>{user.avatar}</div>
+                <div style={{overflow:"hidden"}}><div style={{fontFamily:SS,fontSize:11,fontWeight:600,color:C.ivory,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.company}</div><div style={{fontFamily:SS,fontSize:8,letterSpacing:"0.1em",color:"rgba(255,255,255,0.22)",textTransform:"uppercase"}}>{isAdmin?"Admin":"Client"}</div></div>
+              </div>
+              <button onClick={logout} style={{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:4,padding:"7px",fontFamily:SS,fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.28)",cursor:"pointer",letterSpacing:"0.08em",textTransform:"uppercase"}}>Déconnexion</button>
+            </>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              <button onClick={()=>openAuth("register")} style={{width:"100%",background:C.gold,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:10,fontWeight:800,color:C.ink,cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase"}}>Créer un compte</button>
+              <button onClick={()=>openAuth("login")} style={{width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:4,padding:"7px",fontFamily:SS,fontSize:10,fontWeight:600,color:"rgba(255,255,255,0.4)",cursor:"pointer",letterSpacing:"0.08em",textTransform:"uppercase"}}>Se connecter</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{marginLeft:216,flex:1,overflowY:"auto",minHeight:"100vh"}}>
+        {isAdmin&&(
+          <div style={{padding:"32px 36px"}}>
+            <div style={{maxWidth:1040,margin:"0 auto"}}>
+              {view==="a-dashboard"&&<AdminDash users={users} software={software} devis={devis} setView={setView}/>}
+              {view==="a-clients"&&<AdminClients users={users} setUsers={setUsers} software={software} setView={setView} setSelClient={setSelClient}/>}
+              {view==="a-client-detail"&&<AdminClientDetail client={selClient} setClient={setSelClient} users={users} setUsers={setUsers} software={software} setView={setView}/>}
+              {view==="a-software"&&<AdminSoftware software={software} setSoftware={setSoftware}/>}
+              {view==="a-devis"&&<AdminDevis devis={devis} setDevis={setDevis}/>}
+              {view==="a-factures"&&<AdminFactures users={users} software={software}/>}
+              {view==="a-referrals"&&<AdminReferrals users={users}/>}
+            </div>
+          </div>
+        )}
+        {!isAdmin&&(
+          <>
+            {view==="c-market"&&<Marketplace user={user} setUser={setUserSync} software={software} setView={setView} onAuth={openAuth}/>}
+            {view==="pub-secteurs"&&<Secteurs onSector={s=>{setSelSector(s);setView("pub-sector-detail");}} onAuth={openAuth}/>}
+            {view==="pub-sector-detail"&&<SectorDetail sector={selSector} onBack={()=>setView("pub-secteurs")} onAuth={openAuth} user={user}/>}
+            {view==="pub-apropos"&&<Apropos onAuth={openAuth}/>}
+            {view==="c-espace"&&user&&<MonEspace user={user} setUser={setUserSync} software={software}/> }
+            {view==="c-hub"&&user&&<SoftwareHub user={user} software={software}/> }
+            {view==="c-parrainage"&&user&&<Parrainage user={user}/>}
+            {view==="c-devis"&&user&&<DevisClient user={user}/>}
+            {(view==="c-espace"||view==="c-hub"||view==="c-parrainage"||view==="c-devis")&&!user&&(
+              <div style={{padding:"80px 36px",textAlign:"center"}}>
+                <div style={{maxWidth:380,margin:"0 auto"}}>
+                  <div style={{fontSize:38,marginBottom:14}}>🔒</div>
+                  <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink,marginBottom:7}}>Fonctionnalité pro</div>
+                  <div style={{fontFamily:SS,fontSize:13,color:C.stone,marginBottom:26,lineHeight:1.7}}>
+                    {view==="c-espace"&&"Gérez vos abonnements, essais et factures."}
+                    {view==="c-hub"&&"Retrouvez tous les logiciels inclus dans l'abonnement du client."}
+                    {view==="c-parrainage"&&"Parrainez des confrères, gagnez des mois offerts."}
+                    {view==="c-devis"&&"Décrivez votre besoin, on développe votre logiciel en 48h."}
+                  </div>
+                  <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                    <button onClick={()=>openAuth("login")} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"9px 18px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Se connecter</button>
+                    <button onClick={()=>openAuth("register")} style={{background:C.gold,border:"none",borderRadius:4,padding:"9px 18px",fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Créer un compte gratuit</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
