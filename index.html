@@ -15,6 +15,10 @@
 <div id="root"></div>
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useRef } = React;
+const supabaseUrl = "https://kxdxxhepewziazfnfnkq.supabase.co";
+const supabaseKey = "sb_publishable_gVj5IB3XYj00YysDmvkCqA_zcWdsFvH";
+
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 const C = {
   ink:"#0A0A08",deep:"#060504",paper:"#F5F2EC",dim:"#EFEBE3",linen:"#E8E2D8",
