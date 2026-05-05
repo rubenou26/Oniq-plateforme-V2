@@ -750,16 +750,22 @@ window.__SW_DB__ = SW_DB;
 const SECTORS=["Bâtiment","Construction","Maîtrise d\'œuvre","Promotion"];
 
 // Données démo (lecture seule, sans auth) — remplacées par les vrais users Supabase au login
-const USERS_DB=[
+const USERS_DB_DEMO_DISABLED=[
+  /* Démos désactivées pour la prod — les vrais utilisateurs viennent de Supabase auth */
   {id:2,role:"client",name:"Villa et Lumière",    company:"Villa et Lumière",         email:"contact@villaetlumiere.fr",    avatar:"VL",subs:[101], trials:{},since:"Jan 2025",status:"active", sector:"Bâtiment",         referralCode:"VL2024",referrals:2,referralCredit:2},
   {id:3,role:"client",name:"Bâti Conseil",        company:"Bâti Conseil",             email:"contact@baticonseil.fr",       avatar:"BC",subs:[101], trials:{},since:"Jun 2024",status:"active", sector:"Construction",      referralCode:"BC2023",referrals:1,referralCredit:0},
   {id:4,role:"client",name:"Atelier Structure",   company:"Atelier Structure",        email:"contact@atelierstructure.fr",  avatar:"AS",subs:[],    trials:{},since:"Mar 2025",status:"trial",  sector:"Maîtrise d'œuvre", referralCode:"AS2024",referrals:0,referralCredit:0},
 ];
 
+/* Production : aucune donnée seed locale — tous les utilisateurs viennent de Supabase */
+const USERS_DB=[];
+
 const DEVIS_DB=[
+  /* Démos désactivées en prod
   {id:1,client:"Menuiserie Blanc", email:"blanc@menuiserie.fr",desc:"Logiciel gestion chantiers et devis bâtiment.",   date:"28 Jan 2026",status:"pending",amount:null},
   {id:2,client:"Salon Beauté Rose",email:"rose@salon.fr",      desc:"App fidélité clients avec points et récompenses.",date:"05 Fév 2026",status:"quoted", amount:38},
   {id:3,client:"Pressing Dubois", email:"dubois@pressing.fr",  desc:"Suivi articles en lavage, SMS automatiques.",     date:"10 Fév 2026",status:"pending",amount:null},
+  */
 ];
 
 const MRR_HIST=[465,510,554,610,668,718];
@@ -2661,7 +2667,7 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
             <div style={{marginTop:14,borderTop:`1px solid ${C.linen}`,paddingTop:14,display:"flex",alignItems:"center",gap:12}}>
               <div style={{width:18,height:18,border:`2px solid ${C.gold}33`,borderTopColor:C.gold,borderRadius:"50%",animation:"oniqSpin 0.7s linear infinite"}}/>
               <div style={{fontFamily:SS,fontSize:12,color:C.stone,fontStyle:"italic"}}>🤖 L'IA analyse votre demande et sélectionne les meilleurs logiciels…</div>
-              <style>{`@keyframes oniqSpin{to{transform:rotate(360deg)}}`}</style>
+              <style>{`@keyframes oniqSpin{to{transform:rotate(360deg)}}@keyframes oniqPulseDot{0%,100%{opacity:1;transform:translateY(-50%) scale(1)}50%{opacity:0.5;transform:translateY(-50%) scale(1.4)}}`}</style>
             </div>
           )}
           {!aiLoad&&aiRes&&(
@@ -4701,6 +4707,10 @@ const AdminClients=({users,setUsers,software,setView,setSelClient})=>{
   const [roleUpdating,setRoleUpdating]=useState(null);
   const [resendLoading,setResendLoading]=useState(null);
   const [resendMsg,setResendMsg]=useState("");
+  const [impTarget,setImpTarget]=useState(null);
+  const [impLoading,setImpLoading]=useState(false);
+  const [impError,setImpError]=useState("");
+  const [hoverRow,setHoverRow]=useState(null);
 
   // Auto-load de TOUS les utilisateurs au montage (admin voit tout le monde, pas que les 4 hardcodés)
   useEffect(()=>{
@@ -4916,12 +4926,16 @@ const AdminClients=({users,setUsers,software,setView,setSelClient})=>{
           const rs=getRoleStyle(c.role);
           const isUpdating=roleUpdating===c.id||roleUpdating===c.email;
           return (
-            <div key={c.id||c.email}>
-              <div style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr 1.5fr 1fr 1fr',padding:'12px 18px',gap:12,alignItems:'center',background:i%2===0?'transparent':C.dim}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,cursor:c._source==='local'?'pointer':'default'}}
-                  onClick={c._source==='local'?()=>{setSelClient(c);setView("a-client-detail");}:undefined}
-                  onMouseEnter={c._source==='local'?e=>e.currentTarget.parentElement.style.background=C.dim:undefined}
-                  onMouseLeave={c._source==='local'?e=>e.currentTarget.parentElement.style.background=i%2===0?'transparent':C.dim:undefined}>
+            <div key={c.id||c.email}
+              onMouseEnter={()=>setHoverRow(c.id||c.email)}
+              onMouseLeave={()=>setHoverRow(null)}
+              style={{position:'relative',transition:'all .22s cubic-bezier(.2,.9,.2,1.05)',background:hoverRow===(c.id||c.email)?'linear-gradient(90deg, rgba(193,139,69,0.08) 0%, rgba(193,139,69,0.02) 100%)':(i%2===0?'transparent':C.dim),borderLeft:hoverRow===(c.id||c.email)?'3px solid #C18B45':'3px solid transparent'}}>
+              {/* Gold accent dot when hovered */}
+              {hoverRow===(c.id||c.email)&&<div style={{position:'absolute',right:18,top:'50%',transform:'translateY(-50%)',width:6,height:6,borderRadius:'50%',background:'#C18B45',boxShadow:'0 0 12px #C18B45',pointerEvents:'none',animation:'oniqPulseDot 1.4s ease-in-out infinite'}}/>}
+              <div style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr 1.5fr 1fr 1fr',padding:'13px 18px',gap:12,alignItems:'center'}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,cursor:c.email?'pointer':'default'}}
+                  onClick={c.email?()=>{setImpError("");setImpTarget(c);}:undefined}
+                  title={c.email?"Clic = se connecter en tant que cet utilisateur":undefined}>
                   <Mono i={c.avatar||'??'} size={28}/>
                   <div>
                     <div style={{fontFamily:SS,fontWeight:600,fontSize:12,color:C.ink}}>{c.company||c.name||c.email}</div>
@@ -4953,25 +4967,11 @@ const AdminClients=({users,setUsers,software,setView,setSelClient})=>{
                     </button>
                   ))}
                   {c.email&&(
-                    <button onClick={async()=>{
-                      const ok=window.confirm("Se connecter en tant que "+(c.company||c.name||c.email)+" ?\n\nUn nouvel onglet va s'ouvrir avec sa session. Votre session admin reste active.\n\nAction loggée pour audit RGPD.");
-                      if(!ok)return;
-                      try{
-                        const {data:{session}}=await supabaseClient.auth.getSession();
-                        if(!session){alert("Session admin invalide. Reconnectez-vous.");return;}
-                        const url=(supabaseClient?.supabaseUrl||"").replace(/\/$/,"")+"/functions/v1/admin-impersonate";
-                        const res=await fetch(url,{
-                          method:"POST",
-                          headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
-                          body:JSON.stringify({target_email:c.email})
-                        });
-                        if(!res.ok){const t=await res.text();alert("Impersonation refusée : "+(t||res.status));return;}
-                        const {magic_link}=await res.json();
-                        if(!magic_link){alert("Pas de lien retourné par le serveur");return;}
-                        window.open(magic_link,"_blank","noopener");
-                      }catch(e){alert("Erreur : "+e.message);}
-                    }} title={"Se connecter en tant que "+c.email+" (nouvel onglet)"}
-                      style={{padding:'3px 8px',borderRadius:3,border:'1px solid #c18b45',background:'linear-gradient(135deg,#C18B45,#8B5E2A)',color:'#FFF',fontFamily:SS,fontSize:8,fontWeight:700,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.04em'}}>
+                    <button onClick={()=>{setImpError("");setImpTarget(c);}}
+                      title={"Se connecter en tant que "+c.email+" (nouvel onglet)"}
+                      style={{padding:'3px 9px',borderRadius:3,border:'1px solid #c18b45',background:'linear-gradient(135deg,#C18B45,#8B5E2A)',color:'#FFF',fontFamily:SS,fontSize:8,fontWeight:700,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.04em',boxShadow:'0 2px 6px rgba(193,139,69,0.25)',transition:'all .18s ease'}}
+                      onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-1px)';e.currentTarget.style.boxShadow='0 4px 12px rgba(193,139,69,0.45)';}}
+                      onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='0 2px 6px rgba(193,139,69,0.25)';}}>
                       🔓
                     </button>
                   )}
@@ -5023,6 +5023,71 @@ const AdminClients=({users,setUsers,software,setView,setSelClient})=>{
             <button onClick={add} style={{flex:2,background:C.ink,border:"none",borderRadius:4,padding:"9px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em"}}>Créer</button>
           </div>
         </Overlay>
+      )}
+
+      {/* ═══ Modal d'impersonation designed ═══ */}
+      {impTarget && (
+        <div onClick={()=>!impLoading&&setImpTarget(null)} style={{position:'fixed',inset:0,background:'radial-gradient(circle at 50% 30%, rgba(193,139,69,0.12), rgba(10,10,8,0.78))',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,animation:'oniqFadeIn 0.25s ease'}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'#FBF9F3',border:'1px solid #E8E2D8',borderRadius:14,boxShadow:'0 30px 80px rgba(10,10,8,0.4), 0 0 0 1px rgba(193,139,69,0.2)',width:'min(480px, calc(100% - 32px))',padding:0,overflow:'hidden',animation:'oniqModalIn 0.32s cubic-bezier(.2,.9,.2,1.05)',position:'relative'}}>
+
+            {/* Aurora top gradient */}
+            <div style={{position:'absolute',top:0,left:0,right:0,height:140,background:'radial-gradient(ellipse at 50% 0%, rgba(193,139,69,0.3) 0%, transparent 70%)',pointerEvents:'none'}}/>
+
+            <div style={{padding:'28px 30px 18px',position:'relative'}}>
+              {/* Lock icon */}
+              <div style={{width:54,height:54,borderRadius:14,background:'linear-gradient(135deg,#C18B45,#8B5E2A)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:18,boxShadow:'0 12px 28px rgba(193,139,69,0.45)'}}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+              </div>
+
+              <div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:'0.22em',textTransform:'uppercase',color:'#C18B45',marginBottom:8}}>Connexion administrateur</div>
+              <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink,lineHeight:1.25,marginBottom:6}}>Se connecter en tant que</div>
+              <div style={{fontFamily:SF,fontStyle:'italic',fontSize:24,fontWeight:600,color:'#8B5E2A',marginBottom:18,wordBreak:'break-word'}}>{impTarget.company||impTarget.name||impTarget.email}</div>
+
+              <div style={{display:'flex',flexDirection:'column',gap:10,padding:'14px 16px',background:'rgba(255,255,255,0.7)',border:'1px solid #E8E2D8',borderRadius:8,marginBottom:18,fontFamily:SS,fontSize:12,lineHeight:1.5,color:'#5A5347'}}>
+                <div style={{display:'flex',alignItems:'flex-start',gap:8}}><span style={{color:'#1e6641',fontWeight:700}}>✓</span><span><strong style={{color:C.ink}}>Nouvel onglet</strong> avec la session de cet utilisateur — votre session admin reste intacte ici.</span></div>
+                <div style={{display:'flex',alignItems:'flex-start',gap:8}}><span style={{color:'#1e6641',fontWeight:700}}>✓</span><span><strong style={{color:C.ink}}>Action loggée</strong> dans le journal d'audit RGPD (admin_audit_log).</span></div>
+                <div style={{display:'flex',alignItems:'flex-start',gap:8}}><span style={{color:'#1e6641',fontWeight:700}}>✓</span><span><strong style={{color:C.ink}}>Magic-link à usage unique</strong> — expire dès utilisation.</span></div>
+              </div>
+
+              <div style={{fontFamily:SS,fontSize:11,color:C.stone,marginBottom:4}}>Email cible</div>
+              <div style={{fontFamily:'SF Mono, Consolas, monospace',fontSize:13,fontWeight:600,color:C.ink,padding:'9px 12px',background:'#FFF',border:'1px dashed #C18B45',borderRadius:6,marginBottom:6,wordBreak:'break-all'}}>{impTarget.email}</div>
+
+              {impError && (
+                <div style={{marginTop:10,padding:'10px 12px',background:'#fdf2f2',border:'1px solid #f1c9c9',borderRadius:6,fontFamily:SS,fontSize:11,color:'#B23A3A',display:'flex',gap:8,alignItems:'flex-start'}}>
+                  <span style={{flexShrink:0}}>⚠</span><span style={{wordBreak:'break-word'}}>{impError}</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{display:'flex',gap:10,padding:'14px 22px 22px',borderTop:'1px solid #E8E2D8',background:'#F5F2EC'}}>
+              <button disabled={impLoading} onClick={()=>setImpTarget(null)}
+                style={{flex:1,background:'transparent',border:`1px solid ${C.linen}`,borderRadius:6,padding:'10px 14px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:impLoading?'not-allowed':'pointer',textTransform:'uppercase',letterSpacing:'0.12em',opacity:impLoading?0.5:1,transition:'all .15s'}}>Annuler</button>
+              <button disabled={impLoading} onClick={async()=>{
+                setImpLoading(true);setImpError("");
+                try{
+                  const {data:{session}}=await supabaseClient.auth.getSession();
+                  if(!session)throw new Error("Session admin expirée — reconnectez-vous.");
+                  const url=(supabaseClient?.supabaseUrl||"").replace(/\/$/,"")+"/functions/v1/admin-impersonate";
+                  const res=await fetch(url,{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({target_email:impTarget.email})});
+                  if(!res.ok){const t=await res.text();throw new Error("Refusé par le serveur : "+(t||res.status));}
+                  const data=await res.json();
+                  if(!data.magic_link)throw new Error("Pas de lien retourné par le serveur.");
+                  window.open(data.magic_link,"_blank","noopener");
+                  setImpTarget(null);
+                }catch(e){setImpError(e.message||String(e));}
+                finally{setImpLoading(false);}
+              }}
+                style={{flex:2,background:impLoading?'#999':'linear-gradient(135deg,#C18B45,#8B5E2A)',border:'none',borderRadius:6,padding:'10px 14px',fontFamily:SS,fontSize:11,fontWeight:700,color:'#FFF',cursor:impLoading?'wait':'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:impLoading?'none':'0 8px 20px rgba(193,139,69,0.4)',transition:'all .15s',display:'inline-flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                {impLoading?<><span style={{width:14,height:14,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#FFF',borderRadius:'50%',animation:'oniqSpin 0.7s linear infinite'}}/><span>Génération du lien…</span></>:<><span>🔓</span><span>Confirmer & ouvrir</span></>}
+              </button>
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes oniqFadeIn{from{opacity:0}to{opacity:1}}
+            @keyframes oniqModalIn{from{opacity:0;transform:scale(0.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+          `}</style>
+        </div>
       )}
     </div>
   );
