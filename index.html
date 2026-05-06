@@ -882,6 +882,131 @@ const SwLogo=({slug,icon,size=40,radius})=>{
 };
 try{window.SwLogo=SwLogo;}catch(e){}
 
+/* ════════════════════════════════════════════════════════════════
+   SwSpot — spot cinématique animé pour chaque logiciel
+   Loop 16 s : black + particles → color bloom + logo trace → 4 mots
+   métier → 3 mockups parallax → tagline + CTA → retour au noir
+   ════════════════════════════════════════════════════════════════ */
+const SW_SPOT_DATA={
+  batimanager:{c1:'#D4893A',c2:'#B5651D',c3:'#8B4A12',accent:'#FFE3C2',glow:'rgba(255,180,90,0.55)',
+    name:'BatiManager',tagline:'La gestion de chantier qui respire',
+    words:['Chantiers.','Planning.','Marges.','Sérénité.'],
+    mockups:[
+      {ttl:'Tableau de bord',sub:'15 chantiers actifs · 2,4 M€',bars:[68,82,45,91,56]},
+      {ttl:'Planning équipes',sub:'Drag & drop intelligent',rows:6},
+      {ttl:'Marges en temps réel',sub:'+12,4 % vs prévisionnel',pct:'+12,4%'}
+    ]},
+  metrimanager:{c1:'#4A7BAE',c2:'#2D5687',c3:'#1E3A5F',accent:'#D6E5F5',glow:'rgba(120,170,230,0.55)',
+    name:'OniMetri',tagline:'Le métré qui ne se trompe jamais',
+    words:['Plans.','Métré.','DPGF.','Précision.'],
+    mockups:[
+      {ttl:'Métré sur plan',sub:'Détection IA des surfaces',bars:[88,72,95,64,80]},
+      {ttl:'DPGF générée',sub:'132 postes · export Excel',rows:8},
+      {ttl:'Pré-chiffrage',sub:'Calcul automatique HT',pct:'238 K€'}
+    ]},
+  onicompta:{c1:'#4A9C77',c2:'#2D7556',c3:'#1A4A36',accent:'#D8F0E2',glow:'rgba(140,220,170,0.55)',
+    name:'OniCompta',tagline:'La conformité 2026 sans transpirer',
+    words:['Factures.','Trésorerie.','Conformité.','Liberté.'],
+    mockups:[
+      {ttl:'Factures électroniques',sub:'Format Factur-X validé',bars:[92,78,85,90,71]},
+      {ttl:'Trésorerie temps réel',sub:'Banque connectée',rows:5},
+      {ttl:'TVA + Bilan auto',sub:'Génération en 1 clic',pct:'14 380 €'}
+    ]},
+  onipilote:{c1:'#3D3528',c2:'#2A2218',c3:'#0F0C09',accent:'#E8C474',glow:'rgba(232,196,116,0.65)',
+    name:'OniPilote',tagline:'Le pilotage premier contact → SAV',
+    words:['Clients.','Pipeline.','Performance.','Liberté.'],
+    mockups:[
+      {ttl:'Pipeline commercial',sub:'124 leads · 8 phases',bars:[55,72,88,64,40]},
+      {ttl:'Vue 360° client',sub:'Tout l\'historique en 1 fiche',rows:7},
+      {ttl:'Conversion +18%',sub:'Sur les 30 derniers jours',pct:'68 %'}
+    ]},
+};
+
+const SwSpot=({slug,muted=true})=>{
+  const d=SW_SPOT_DATA[slug]||SW_SPOT_DATA.onipilote;
+  const keyframes=`
+    @keyframes ssBgPulse{0%,100%{opacity:0}10%,90%{opacity:1}}
+    @keyframes ssBlackVeil{0%,8%{opacity:1}15%,90%{opacity:0}96%,100%{opacity:1}}
+    @keyframes ssParticleFloat{0%{transform:translateY(40px) scale(0.4);opacity:0}30%,70%{opacity:1}100%{transform:translateY(-300px) scale(1);opacity:0}}
+    @keyframes ssLogoDraw{0%,8%{opacity:0;transform:scale(0.6)}18%,90%{opacity:1;transform:scale(1)}96%,100%{opacity:0;transform:scale(1.2)}}
+    @keyframes ssLogoStroke{0%,8%{stroke-dashoffset:240}18%{stroke-dashoffset:0}}
+    @keyframes ssHaloPulse{0%,100%{opacity:0.5;transform:scale(0.95)}50%{opacity:1;transform:scale(1.1)}}
+    @keyframes ssWord{0%,28%{opacity:0;transform:translateY(20px)}33%,38%{opacity:1;transform:translateY(0)}43%,100%{opacity:0;transform:translateY(-12px)}}
+    @keyframes ssWord2{0%,38%{opacity:0;transform:translateY(20px)}43%,48%{opacity:1;transform:translateY(0)}53%,100%{opacity:0;transform:translateY(-12px)}}
+    @keyframes ssWord3{0%,48%{opacity:0;transform:translateY(20px)}53%,58%{opacity:1;transform:translateY(0)}63%,100%{opacity:0;transform:translateY(-12px)}}
+    @keyframes ssWord4{0%,58%{opacity:0;transform:translateY(20px)}63%,68%{opacity:1;transform:translateY(0)}73%,100%{opacity:0;transform:translateY(-12px)}}
+    @keyframes ssMock1{0%,67%{opacity:0;transform:translateX(80px) rotateY(-12deg)}72%,76%{opacity:1;transform:translateX(0) rotateY(-6deg)}80%,100%{opacity:0;transform:translateX(-40px) rotateY(0deg)}}
+    @keyframes ssMock2{0%,75%{opacity:0;transform:translateX(80px) rotateY(-12deg)}80%,84%{opacity:1;transform:translateX(0) rotateY(-6deg)}88%,100%{opacity:0;transform:translateX(-40px) rotateY(0deg)}}
+    @keyframes ssMock3{0%,83%{opacity:0;transform:translateX(80px) rotateY(-12deg)}88%,93%{opacity:1;transform:translateX(0) rotateY(-6deg)}}
+    @keyframes ssClose{0%,90%{opacity:0;transform:translateY(14px)}94%,99%{opacity:1;transform:translateY(0)}}
+    @keyframes ssBarFill{0%{width:0}100%{width:var(--w,50%)}}
+    @keyframes ssSheen{0%,8%,90%,100%{transform:translateX(-100%)}45%{transform:translateX(120%)}}
+  `;
+  return (
+    <div style={{position:'absolute',inset:0,overflow:'hidden',background:'#000',cursor:'pointer'}} aria-label={'Spot animé '+d.name}>
+      <style dangerouslySetInnerHTML={{__html:keyframes}}/>
+      {/* COULEUR SIGNATURE — bg radial qui bloom */}
+      <div style={{position:'absolute',inset:0,background:`radial-gradient(ellipse at center, ${d.c1} 0%, ${d.c2} 50%, ${d.c3} 100%)`,animation:'ssBgPulse 16s ease-in-out infinite'}}/>
+      {/* SWEEP de lumière diagonal */}
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(115deg,transparent 35%,rgba(255,255,255,0.18) 50%,transparent 65%)',animation:'ssSheen 16s ease-in-out infinite',mixBlendMode:'overlay'}}/>
+      {/* PATTERN dots subtil */}
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 1px 1px,rgba(255,255,255,0.06) 1px,transparent 0)',backgroundSize:'28px 28px',pointerEvents:'none',opacity:0.6}}/>
+      {/* PARTICULES dorées qui montent */}
+      {Array.from({length:24}).map((_,i)=>{
+        const left=(i*4.3)%100;const dl=(i*0.65)%16;const sz=2+(i%4);
+        return <div key={i} style={{position:'absolute',left:left+'%',bottom:0,width:sz,height:sz,borderRadius:'50%',background:d.accent,boxShadow:'0 0 6px '+d.glow,animation:'ssParticleFloat 16s linear infinite',animationDelay:'-'+dl+'s',opacity:0}}/>;
+      })}
+      {/* LOGO + HALO au centre — phase 1 */}
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',animation:'ssLogoDraw 16s ease-in-out infinite',transformOrigin:'center'}}>
+        <div style={{position:'absolute',inset:'-80%',borderRadius:'50%',background:`radial-gradient(circle, ${d.glow}, transparent 65%)`,filter:'blur(18px)',animation:'ssHaloPulse 2.4s ease-in-out infinite'}}/>
+        <svg width="120" height="120" viewBox="0 0 40 40" fill="none" style={{position:'relative',zIndex:2,filter:'drop-shadow(0 4px 22px '+d.glow+')'}}>
+          {slug==='batimanager'&&<path d="M12 10 L12 30 L24 30 Q30 30 30 24.5 Q30 21 26 20 Q30 19 30 15.5 Q30 10 24 10 Z" stroke={d.accent} strokeWidth="2.5" strokeLinejoin="round" fill="none" style={{strokeDasharray:240,animation:'ssLogoStroke 16s ease-out infinite'}}/>}
+          {slug==='metrimanager'&&<g style={{strokeDasharray:240,animation:'ssLogoStroke 16s ease-out infinite'}}><path d="M10 28 L10 12 L20 22 L30 12 L30 28" stroke={d.accent} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/><line x1="6" y1="12" x2="14" y2="12" stroke={d.accent} strokeWidth="1.6" strokeLinecap="round" strokeOpacity=".55"/><line x1="26" y1="12" x2="34" y2="12" stroke={d.accent} strokeWidth="1.6" strokeLinecap="round" strokeOpacity=".55"/></g>}
+          {slug==='onicompta'&&<g style={{strokeDasharray:240,animation:'ssLogoStroke 16s ease-out infinite'}}><path d="M28 12 L14 12 Q10 12 10 16 L10 24 Q10 28 14 28 L28 28" stroke={d.accent} strokeWidth="2.6" strokeLinecap="round" fill="none"/><line x1="16" y1="17.5" x2="27" y2="17.5" stroke={d.accent} strokeWidth="1.7" strokeLinecap="round" strokeOpacity=".75"/><line x1="16" y1="22.5" x2="23" y2="22.5" stroke={d.accent} strokeWidth="1.7" strokeLinecap="round" strokeOpacity=".75"/></g>}
+          {slug==='onipilote'&&<path d="M14 30 L14 10 L23 10 Q29 10 29 16.5 Q29 23 23 23 L14 23" stroke={d.accent} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" fill="none" style={{strokeDasharray:240,animation:'ssLogoStroke 16s ease-out infinite'}}/>}
+        </svg>
+      </div>
+      {/* MOTS MÉTIER — Cormorant italic centré */}
+      {d.words.map((w,i)=>(
+        <div key={i} style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontWeight:600,fontSize:'clamp(36px,5.6vw,72px)',letterSpacing:'-0.02em',color:'#FFFFFF',textShadow:'0 4px 32px rgba(0,0,0,0.45),0 0 18px '+d.glow,whiteSpace:'nowrap',animation:`${i===0?'ssWord':i===1?'ssWord2':i===2?'ssWord3':'ssWord4'} 16s ease-in-out infinite`,opacity:0}}>{w}</div>
+      ))}
+      {/* MOCKUPS abstraits — phase 3 */}
+      {d.mockups.map((mk,i)=>(
+        <div key={i} style={{position:'absolute',top:'50%',left:'50%',width:'min(560px,72%)',transform:'translate(-50%,-50%)',background:'linear-gradient(135deg,rgba(255,255,255,0.96),rgba(251,249,243,0.94))',borderRadius:14,padding:'18px 22px',boxShadow:'0 24px 60px rgba(10,8,5,0.5),0 0 0 1px rgba(255,255,255,0.12)',perspective:1000,transformStyle:'preserve-3d',animation:`${i===0?'ssMock1':i===1?'ssMock2':'ssMock3'} 16s ease-in-out infinite`,opacity:0}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,paddingBottom:10,borderBottom:'1px solid rgba(184,154,90,0.18)'}}>
+            <div>
+              <div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontWeight:700,fontSize:18,color:d.c3,letterSpacing:'-0.01em'}}>{mk.ttl}</div>
+              <div style={{fontFamily:'Inter,sans-serif',fontSize:10.5,color:'#7A6F5C',marginTop:1,letterSpacing:'0.02em'}}>{mk.sub}</div>
+            </div>
+            <div style={{width:8,height:8,borderRadius:'50%',background:d.c1,boxShadow:'0 0 6px '+d.c1}}/>
+          </div>
+          {mk.bars&&<div style={{display:'flex',alignItems:'flex-end',gap:8,height:64,padding:'4px 0'}}>{mk.bars.map((h,j)=>(<div key={j} style={{flex:1,height:h+'%',background:`linear-gradient(180deg,${d.c1},${d.c2})`,borderRadius:'4px 4px 0 0',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.25)',animationDelay:(j*0.05)+'s'}}/>))}</div>}
+          {mk.rows&&<div style={{display:'flex',flexDirection:'column',gap:5}}>{Array.from({length:mk.rows}).map((_,j)=>(<div key={j} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0'}}><div style={{width:18,height:18,borderRadius:'50%',background:'linear-gradient(135deg,'+d.c1+','+d.c2+')',flexShrink:0}}/><div style={{flex:1,height:6,background:'#F0E9D9',borderRadius:3,overflow:'hidden'}}><div style={{height:'100%',width:(50+j*7%50)+'%',background:`linear-gradient(90deg,${d.c1},${d.c2})`,borderRadius:3}}/></div><div style={{fontFamily:'Inter,sans-serif',fontSize:9.5,fontWeight:700,color:d.c3,minWidth:36,textAlign:'right'}}>{(125+j*23%80)+(j%2?'k':'€')}</div></div>))}</div>}
+          {mk.pct&&<div style={{padding:'18px 0 6px',textAlign:'center'}}><div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontWeight:700,fontSize:'clamp(40px,5vw,68px)',background:`linear-gradient(135deg,${d.c1},${d.c3})`,WebkitBackgroundClip:'text',backgroundClip:'text',WebkitTextFillColor:'transparent',letterSpacing:'-0.02em',lineHeight:1}}>{mk.pct}</div></div>}
+        </div>
+      ))}
+      {/* CLOSING — tagline + CTA en fin de loop */}
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',textAlign:'center',animation:'ssClose 16s ease-in-out infinite',opacity:0,zIndex:5}}>
+        <div style={{fontFamily:"'Cormorant Garamond',serif",fontStyle:'italic',fontWeight:600,fontSize:'clamp(28px,4vw,52px)',color:'#FFFFFF',letterSpacing:'-0.02em',marginBottom:12,textShadow:'0 4px 22px rgba(0,0,0,0.45)'}}>{d.tagline}</div>
+        <div style={{display:'inline-flex',alignItems:'center',gap:10,padding:'9px 20px',border:'1px solid '+d.accent,borderRadius:999,fontFamily:'Inter,sans-serif',fontSize:11,fontWeight:700,letterSpacing:'0.18em',textTransform:'uppercase',color:d.accent,background:'rgba(0,0,0,0.30)',backdropFilter:'blur(10px)'}}>
+          <span style={{width:6,height:6,borderRadius:'50%',background:d.accent,boxShadow:'0 0 8px '+d.glow}}/>
+          Essai gratuit · 30 jours
+        </div>
+      </div>
+      {/* VEIL noir — apparait début + fin pour fade in/out */}
+      <div style={{position:'absolute',inset:0,background:'#000',animation:'ssBlackVeil 16s ease-in-out infinite',pointerEvents:'none'}}/>
+      {/* Vignette permanente subtile */}
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.40) 100%)',pointerEvents:'none'}}/>
+      {/* Bandeau "spot animé" en haut-droite */}
+      <div style={{position:'absolute',top:14,right:14,zIndex:6,display:'inline-flex',alignItems:'center',gap:6,padding:'5px 10px',background:'rgba(0,0,0,0.40)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:6,fontFamily:'Inter,sans-serif',fontSize:9.5,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:'rgba(255,255,255,0.75)'}}>
+        <span style={{width:6,height:6,borderRadius:'50%',background:'#EF4444',boxShadow:'0 0 6px rgba(239,68,68,0.7)',animation:'ssHaloPulse 1.4s ease-in-out infinite'}}/>
+        Live preview
+      </div>
+    </div>
+  );
+};
+try{window.SwSpot=SwSpot;}catch(e){}
+
 
 const SW_DB=[
   {
@@ -3214,17 +3339,8 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                 <div style={{width:18,height:1,background:`linear-gradient(90deg,${C.gold},transparent)`}}/>
                 <div style={{fontFamily:SS,fontSize:9.5,fontWeight:700,letterSpacing:"0.22em",textTransform:"uppercase",color:C.gold}}>Vidéo de présentation</div>
               </div>
-              <div style={{position:"relative",paddingBottom:"52%",borderRadius:14,overflow:"hidden",border:`1px solid ${C.linen}`,boxShadow:"0 16px 48px -12px rgba(10,10,8,0.18),0 0 0 1px rgba(184,154,90,0.08)",background:`linear-gradient(135deg,#1F1A14 0%,#2A2218 50%,#1E1812 100%)`}}>
-                <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse 60% 80% at 50% 50%,rgba(184,154,90,0.18) 0%,transparent 70%)`,pointerEvents:"none"}}/>
-                <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-                  <div style={{width:80,height:80,borderRadius:"50%",background:`linear-gradient(135deg,${C.gold},#A06D2E)`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 24px rgba(184,154,90,0.35),inset 0 1px 0 rgba(255,255,255,0.18)"}}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="#FFF" stroke="none" style={{marginLeft:4}}><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                  </div>
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontFamily:SF,fontStyle:"italic",fontWeight:600,fontSize:22,color:"#F4E9D5",marginBottom:6,letterSpacing:"-0.01em"}}>Arrive bientôt</div>
-                    <div style={{fontFamily:SS,fontSize:10,color:C.gold,letterSpacing:"0.22em",textTransform:"uppercase",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span style={{width:18,height:1,background:`linear-gradient(90deg,transparent,${C.gold})`}}/>Coming soon<span style={{width:18,height:1,background:`linear-gradient(90deg,${C.gold},transparent)`}}/></div>
-                  </div>
-                </div>
+              <div style={{position:"relative",paddingBottom:"56.25%",borderRadius:14,overflow:"hidden",border:`1px solid ${C.linen}`,boxShadow:"0 16px 48px -12px rgba(10,10,8,0.22),0 0 0 1px rgba(184,154,90,0.08)",background:'#000'}}>
+                <SwSpot slug={detail.slug} key={'spot-'+detail.slug}/>
               </div>
             </div>
 
@@ -4010,8 +4126,8 @@ const SwSplash=({slug})=>{
   const [phase,setPhase]=useState('enter'); /* enter → hold → exit → done */
   React.useEffect(()=>{
     const t1=setTimeout(()=>setPhase('hold'),900);
-    const t2=setTimeout(()=>setPhase('exit'),1500);
-    const t3=setTimeout(()=>setPhase('done'),2150);
+    const t2=setTimeout(()=>setPhase('exit'),2500);
+    const t3=setTimeout(()=>setPhase('done'),3150);
     return ()=>{clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);};
   },[]);
   if(phase==='done')return null;
@@ -8970,25 +9086,44 @@ function App() {
           </>
         </nav>
 
-        <div style={{padding:"14px",borderTop:'1px solid #E8E2D8',background:'rgba(255,255,255,0.4)',position:'relative',zIndex:2}}>
-          {/* Live support — lien discret juste au-dessus des CTA */}
+        {/* ── Live support — petit panneau au-dessus du borderTop, design support classy ── */}
+        <div style={{padding:'12px 14px 14px',position:'relative',zIndex:2}}>
           <button
             type="button"
             onClick={()=>{try{window.dispatchEvent(new CustomEvent('oniq-open-chat'));}catch(e){}}}
-            onMouseEnter={e=>{e.currentTarget.style.color='#FFE9A8';e.currentTarget.querySelector('.lspulse').style.boxShadow='0 0 10px rgba(120,220,140,0.85)';}}
-            onMouseLeave={e=>{e.currentTarget.style.color='#D6C8AE';e.currentTarget.querySelector('.lspulse').style.boxShadow='0 0 6px rgba(120,220,140,0.55)';}}
+            onMouseEnter={e=>{e.currentTarget.style.background='linear-gradient(135deg,rgba(212,162,76,0.14) 0%,rgba(125,184,124,0.10) 100%)';e.currentTarget.style.borderColor='rgba(232,196,116,0.45)';e.currentTarget.style.boxShadow='0 6px 18px rgba(10,8,5,0.45),0 0 22px rgba(125,184,124,0.18),inset 0 1px 0 rgba(255,255,255,0.06)';e.currentTarget.querySelector('.ls-ttl').style.color='#FFE9A8';e.currentTarget.querySelector('.ls-bub').style.background='linear-gradient(135deg,#7DDB94,#4A9C77)';e.currentTarget.querySelector('.ls-bub').style.boxShadow='0 4px 14px rgba(125,184,124,0.55)';}}
+            onMouseLeave={e=>{e.currentTarget.style.background='linear-gradient(135deg,rgba(244,233,213,0.04) 0%,rgba(212,162,76,0.06) 100%)';e.currentTarget.style.borderColor='rgba(232,196,116,0.22)';e.currentTarget.style.boxShadow='0 2px 6px rgba(10,8,5,0.30),inset 0 1px 0 rgba(255,255,255,0.04)';e.currentTarget.querySelector('.ls-ttl').style.color='#F4E9D5';e.currentTarget.querySelector('.ls-bub').style.background='linear-gradient(135deg,#5BA46E,#2D7556)';e.currentTarget.querySelector('.ls-bub').style.boxShadow='0 3px 10px rgba(45,117,86,0.45)';}}
             style={{
-              width:'100%',background:'transparent',border:'none',padding:'8px 6px 12px',
-              fontFamily:SS,fontSize:11,fontWeight:600,letterSpacing:'0.10em',textTransform:'uppercase',
-              color:'#D6C8AE',cursor:'pointer',
-              display:'flex',alignItems:'center',justifyContent:'center',gap:8,
-              transition:'color .2s ease',
+              width:'100%',
+              background:'linear-gradient(135deg,rgba(244,233,213,0.04) 0%,rgba(212,162,76,0.06) 100%)',
+              border:'1px solid rgba(232,196,116,0.22)',
+              borderRadius:10,
+              padding:'10px 12px',
+              cursor:'pointer',
+              display:'flex',alignItems:'center',gap:11,
+              boxShadow:'0 2px 6px rgba(10,8,5,0.30),inset 0 1px 0 rgba(255,255,255,0.04)',
+              transition:'all .25s cubic-bezier(.4,0,.2,1)',
+              textAlign:'left',position:'relative',overflow:'hidden',
             }}
             aria-label="Ouvrir le chat live support">
-            <span className="lspulse" style={{display:'inline-block',width:7,height:7,borderRadius:'50%',background:'#7DB87C',boxShadow:'0 0 6px rgba(120,220,140,0.55)',animation:'oniqLsPulse 1.6s ease-in-out infinite'}}/>
-            <span>Live support</span>
+            {/* Reflet doré horizontal au-dessus */}
+            <span style={{position:'absolute',top:0,left:0,right:0,height:1,background:'linear-gradient(90deg,transparent,rgba(232,196,116,0.45),transparent)',pointerEvents:'none'}}/>
+            {/* Bulle support avec icône chat + dot pulse */}
+            <span className="ls-bub" style={{position:'relative',width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,#5BA46E,#2D7556)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 3px 10px rgba(45,117,86,0.45)',transition:'all .25s ease'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>
+              {/* dot online indicator */}
+              <span style={{position:'absolute',right:-1,bottom:-1,width:9,height:9,borderRadius:'50%',background:'#7DDB94',border:'1.5px solid #14110D',boxShadow:'0 0 6px rgba(125,219,148,0.85)',animation:'oniqLsPulse 1.6s ease-in-out infinite'}}/>
+            </span>
+            <div style={{flex:1,minWidth:0}}>
+              <div className="ls-ttl" style={{fontFamily:SS,fontSize:11.5,fontWeight:700,letterSpacing:'0.04em',color:'#F4E9D5',transition:'color .2s ease',marginBottom:1}}>Live support</div>
+              <div style={{fontFamily:SS,fontSize:10,color:'#9D8E76',letterSpacing:'0.02em',lineHeight:1.3}}>Réponse en moins de 2 min</div>
+            </div>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(232,196,116,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="m9 18 6-6-6-6"/></svg>
           </button>
-          <style dangerouslySetInnerHTML={{__html:'@keyframes oniqLsPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.85)}}'}}/>
+          <style dangerouslySetInnerHTML={{__html:'@keyframes oniqLsPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.55;transform:scale(0.82)}}'}}/>
+        </div>
+
+        <div style={{padding:"14px",borderTop:'1px solid rgba(232,196,116,0.18)',background:'linear-gradient(180deg,transparent 0%,rgba(10,8,5,0.45) 100%)',position:'relative',zIndex:2}}>
           {user?(
             <>
               <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:10,padding:'10px 12px',background:'linear-gradient(135deg,rgba(244,233,213,0.06) 0%,rgba(212,162,76,0.14) 100%)',border:'1px solid rgba(232,196,116,0.36)',borderRadius:10,boxShadow:'0 4px 18px rgba(10,8,5,0.40),inset 0 1px 0 rgba(255,255,255,0.05),0 0 28px rgba(212,162,76,0.10)',position:'relative',overflow:'hidden'}}>
@@ -9003,10 +9138,10 @@ function App() {
                   <div style={{fontFamily:SS,fontSize:9,letterSpacing:"0.16em",color:'#E8C474',textTransform:"uppercase",fontWeight:700,marginTop:2}}>{isAdmin?"Admin":isCommercial?t('commercial'):t('client')}</div>
                 </div>
               </div>
-              <InstallPWAButton style={{marginBottom:7,width:'100%',justifyContent:'center',borderRadius:6,padding:'8px',fontSize:9.5}}/>
-              <button onClick={logout} style={{width:"100%",background:"transparent",border:'1px solid #E8E2D8',borderRadius:7,padding:"9px",fontFamily:SS,fontSize:10,fontWeight:700,color:'#5A4F3D',cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase",transition:'all .15s ease'}}
-                onMouseEnter={e=>{e.currentTarget.style.background='rgba(166,60,60,0.10)';e.currentTarget.style.borderColor='rgba(166,60,60,0.40)';e.currentTarget.style.color='#A63C3C';}}
-                onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.borderColor='#E8E2D8';e.currentTarget.style.color='#5A4F3D';}}
+              <InstallPWAButton style={{marginBottom:7,width:'100%',justifyContent:'center',borderRadius:6,padding:'8px',fontSize:9.5,background:'rgba(244,233,213,0.05)',border:'1px solid rgba(232,196,116,0.22)',color:'#D6C8AE'}}/>
+              <button onClick={logout} style={{width:"100%",background:'rgba(244,233,213,0.04)',border:'1px solid rgba(232,196,116,0.22)',borderRadius:7,padding:"9px",fontFamily:SS,fontSize:10,fontWeight:700,color:'#D6C8AE',cursor:"pointer",letterSpacing:"0.1em",textTransform:"uppercase",transition:'all .15s ease'}}
+                onMouseEnter={e=>{e.currentTarget.style.background='rgba(166,60,60,0.18)';e.currentTarget.style.borderColor='rgba(255,138,138,0.55)';e.currentTarget.style.color='#FF8A8A';}}
+                onMouseLeave={e=>{e.currentTarget.style.background='rgba(244,233,213,0.04)';e.currentTarget.style.borderColor='rgba(232,196,116,0.22)';e.currentTarget.style.color='#D6C8AE';}}
               >Déconnexion</button>
             </>
           ):(
