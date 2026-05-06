@@ -551,9 +551,9 @@ if ('serviceWorker' in navigator) {
 <body>
 <!-- ═══ INTRO ANIMATION : sablier marron → cream ═══ -->
 <style>
-#oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.4s cubic-bezier(.5,0,.3,1) forwards;animation-delay:5.0s;pointer-events:none;overflow:hidden}
-#oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade 1.4s ease-out forwards 5.0s}
-#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(96px,16vw,260px);letter-spacing:-.045em;line-height:1;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 4.4s cubic-bezier(.45,.1,.3,1) forwards .4s,oniqIntroPop 1.0s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.4s cubic-bezier(.5,0,.3,1) forwards 5.0s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
+#oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.0s cubic-bezier(.5,0,.3,1) forwards;animation-delay:2.6s;pointer-events:none;overflow:hidden}
+#oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade 1.0s ease-out forwards 2.6s}
+#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(96px,16vw,260px);letter-spacing:-.045em;line-height:1;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 2.2s cubic-bezier(.45,.1,.3,1) forwards .15s,oniqIntroPop 0.7s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.0s cubic-bezier(.5,0,.3,1) forwards 2.6s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
 @keyframes oniqIntroPop{0%{transform:translateY(20px) scale(.94);opacity:0}55%{opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes oniqIntroSweep{0%{background-position:100% 50%;filter:drop-shadow(0 0 0 transparent)}45%{filter:drop-shadow(0 0 36px rgba(255,180,100,.65))}80%{filter:drop-shadow(0 0 22px rgba(180,90,30,.5))}100%{background-position:0% 50%;filter:drop-shadow(0 0 12px rgba(120,60,20,.3))}}
 @keyframes oniqIntroDissolve{0%{transform:scale(1);filter:drop-shadow(0 0 12px rgba(120,60,20,.3)) blur(0)}45%{transform:scale(1.08);filter:drop-shadow(0 0 30px rgba(255,200,120,.5)) blur(0)}100%{transform:scale(1.4);filter:drop-shadow(0 0 60px rgba(255,200,120,0)) blur(14px);opacity:0}}
@@ -928,11 +928,11 @@ const SwSpot=({slug,muted=true})=>{
   const d=SW_SPOT_DATA[slug]||SW_SPOT_DATA.onipilote;
   const [playing,setPlaying]=React.useState(false);
   const keyframes=`
-    @keyframes ssBgPulse{0%,100%{opacity:0}10%,90%{opacity:1}}
-    @keyframes ssBlackVeil{0%,8%{opacity:1}15%,90%{opacity:0}96%,100%{opacity:1}}
-    @keyframes ssParticleFloat{0%{transform:translateY(40px) scale(0.4);opacity:0}30%,70%{opacity:1}100%{transform:translateY(-300px) scale(1);opacity:0}}
-    @keyframes ssLogoDraw{0%,8%{opacity:0;transform:scale(0.6)}18%,90%{opacity:1;transform:scale(1)}96%,100%{opacity:0;transform:scale(1.2)}}
-    @keyframes ssLogoStroke{0%,8%{stroke-dashoffset:240}18%{stroke-dashoffset:0}}
+    @keyframes ssBgPulse{0%{opacity:0}4%,90%{opacity:1}100%{opacity:0}}
+    @keyframes ssBlackVeil{0%,2%{opacity:1}6%,90%{opacity:0}96%,100%{opacity:1}}
+    @keyframes ssParticleFloat{0%{transform:translateY(40px) scale(0.4);opacity:0}20%,70%{opacity:1}100%{transform:translateY(-300px) scale(1);opacity:0}}
+    @keyframes ssLogoDraw{0%,2%{opacity:0;transform:scale(0.6)}10%,90%{opacity:1;transform:scale(1)}96%,100%{opacity:0;transform:scale(1.2)}}
+    @keyframes ssLogoStroke{0%,2%{stroke-dashoffset:240}10%{stroke-dashoffset:0}}
     @keyframes ssHaloPulse{0%,100%{opacity:0.5;transform:scale(0.95)}50%{opacity:1;transform:scale(1.1)}}
     @keyframes ssWord{0%,28%{opacity:0;transform:translateY(20px)}33%,38%{opacity:1;transform:translateY(0)}43%,100%{opacity:0;transform:translateY(-12px)}}
     @keyframes ssWord2{0%,38%{opacity:0;transform:translateY(20px)}43%,48%{opacity:1;transform:translateY(0)}53%,100%{opacity:0;transform:translateY(-12px)}}
@@ -3482,8 +3482,12 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
           const sub=isSub(sw.id),trial=isTrial(sw.id),inC=isCart(sw.id);
           return (
             <div key={sw.id} data-reveal data-reveal-style="rise" data-tilt data-oniq-card className="oniq-mkt-card" style={{background:C.paper,border:`1px solid ${sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen}`,borderRadius:8,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",transition:"transform 0.18s,box-shadow 0.18s",cursor:"pointer",animationDelay:(i*0.06)+'s'}}
-              onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 20px rgba(0,0,0,0.07)";}}
-              onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";}}
+              onClick={(e)=>{if(!e.target.closest('button,a,select,input,textarea')) setDetail(sw);}}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e)=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button,a,select,input,textarea')){e.preventDefault();setDetail(sw);}}}
+              onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 28px rgba(184,154,90,0.18)";e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=C.gold+"66";}}
+              onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor=sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen;}}
             >
               {sw.inDev&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#C47B2B,#8B5E2A)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(196,123,43,0.3)',display:'flex',alignItems:'center',gap:5}}><span style={{width:6,height:6,borderRadius:'50%',background:'#FFE5B0',boxShadow:'0 0 0 2px rgba(255,229,176,0.4)',animation:'oniqDevPulse 2s ease-in-out infinite'}}/>En développement</div>}
               {sw.popular&&!sub&&!trial&&!sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(184,154,90,0.30)',display:'flex',alignItems:'center',gap:5}}><svg width="9" height="9" viewBox="0 0 24 24" fill="#FFF" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Populaire</div>}
@@ -3544,9 +3548,18 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
 
       {/* Detail page — refonte premium avec aurora bg + SwLogo + effets wow */}
       {detail&&(
-        <div style={{position:"fixed",inset:0,background:C.ivory,zIndex:300,overflowY:"auto"}}>
+        <div style={{position:"fixed",inset:0,background:C.ivory,zIndex:300,overflowY:"auto"}}
+             ref={(el)=>{if(el&&!el._escBound){el._escBound=true;const h=(ev)=>{if(ev.key==='Escape')setDetail(null);};window.addEventListener('keydown',h);el._escH=h;}}}
+        >
           {/* Aurora background — orbs gold subtils, statiques */}
           <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:`radial-gradient(ellipse 60% 50% at 12% 18%,rgba(184,154,90,0.10) 0%,transparent 55%),radial-gradient(ellipse 50% 60% at 88% 75%,rgba(160,109,46,0.08) 0%,transparent 60%),radial-gradient(ellipse 70% 40% at 50% 100%,rgba(214,205,185,0.10) 0%,transparent 60%)`}}/>
+          {/* FAB Retour — toujours visible bas-gauche */}
+          <button onClick={()=>setDetail(null)} aria-label="Retour à la marketplace" title="Retour (Échap)"
+            style={{position:"fixed",bottom:24,left:24,zIndex:340,width:54,height:54,borderRadius:"50%",background:"linear-gradient(135deg,#1F1A14 0%,#2A2218 100%)",border:`1.5px solid rgba(232,196,116,0.42)`,color:"#E8C474",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 24px rgba(10,10,8,0.32),0 0 0 1px rgba(232,196,116,0.10) inset",transition:"all .2s ease"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.08)";e.currentTarget.style.boxShadow="0 12px 32px rgba(212,162,76,0.42),0 0 0 1px rgba(232,196,116,0.20) inset";e.currentTarget.style.background="linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)";e.currentTarget.style.color="#FFF";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="0 8px 24px rgba(10,10,8,0.32),0 0 0 1px rgba(232,196,116,0.10) inset";e.currentTarget.style.background="linear-gradient(135deg,#1F1A14 0%,#2A2218 100%)";e.currentTarget.style.color="#E8C474";}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          </button>
           {/* Sticky top bar */}
           <div style={{position:"sticky",top:0,zIndex:301,background:"rgba(250,248,244,0.85)",backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)",borderBottom:`1px solid ${C.linen}`,padding:"12px 32px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <button onClick={()=>setDetail(null)} aria-label="Retour à la marketplace"
@@ -4169,6 +4182,18 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                 <div style={{fontFamily:SS,fontSize:9.5,color:'rgba(244,233,213,0.45)',textAlign:'center',letterSpacing:'0.04em',marginTop:4}}>Aucune carte bancaire requise</div>
               </div>
             </div>
+          </div>
+          {/* Pied de page — bouton retour large pour scroll long */}
+          <div style={{position:"relative",zIndex:1,padding:"36px 32px 80px",display:"flex",justifyContent:"center",borderTop:`1px solid ${C.linen}`,marginTop:24}}>
+            <button onClick={()=>setDetail(null)}
+              onMouseEnter={e=>{e.currentTarget.style.background=`linear-gradient(135deg,#FBF9F3,#F4EAD8)`;e.currentTarget.style.borderColor=C.gold;e.currentTarget.style.boxShadow="0 6px 22px rgba(184,154,90,0.22)";e.currentTarget.style.transform="translateY(-1px)";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="#FFFFFF";e.currentTarget.style.borderColor=C.linen;e.currentTarget.style.boxShadow="0 2px 6px rgba(10,10,8,0.04)";e.currentTarget.style.transform="translateY(0)";}}
+              style={{display:"inline-flex",alignItems:"center",gap:12,background:"#FFFFFF",border:`1.5px solid ${C.linen}`,borderRadius:999,padding:"12px 26px 12px 14px",fontFamily:SS,fontSize:12,fontWeight:700,color:C.ink,cursor:"pointer",letterSpacing:"0.05em",textTransform:"uppercase",transition:"all .2s ease",boxShadow:"0 2px 6px rgba(10,10,8,0.04)"}}>
+              <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background:`linear-gradient(135deg,#D4A24C,#A06D2E)`,color:"#FFF"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+              </span>
+              <span>Retour à la marketplace</span>
+            </button>
           </div>
         </div>
       )}
