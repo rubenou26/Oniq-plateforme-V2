@@ -3217,6 +3217,19 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
       if(sw)setDetail(sw);
     }
   }catch(e){}},[software]);
+  // ESC pour fermer la fiche détail (cleanup propre, pas de leak)
+  useEffect(()=>{
+    if(!detail)return;
+    const h=(ev)=>{if(ev.key==='Escape')setDetail(null);};
+    window.addEventListener('keydown',h);
+    // Bloque le scroll du body sous la fiche
+    const prevOverflow=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return ()=>{
+      window.removeEventListener('keydown',h);
+      document.body.style.overflow=prevOverflow;
+    };
+  },[detail]);
   const [showCart,setShowCart]=useState(false);
   const [showPay,setShowPay]=useState(false);
   const [toast,setToast]=useState(null);
@@ -3548,9 +3561,7 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
 
       {/* Detail page — refonte premium avec aurora bg + SwLogo + effets wow */}
       {detail&&(
-        <div style={{position:"fixed",inset:0,background:C.ivory,zIndex:300,overflowY:"auto"}}
-             ref={(el)=>{if(el&&!el._escBound){el._escBound=true;const h=(ev)=>{if(ev.key==='Escape')setDetail(null);};window.addEventListener('keydown',h);el._escH=h;}}}
-        >
+        <div style={{position:"fixed",inset:0,background:C.ivory,zIndex:300,overflowY:"auto"}}>
           {/* Aurora background — orbs gold subtils, statiques */}
           <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:`radial-gradient(ellipse 60% 50% at 12% 18%,rgba(184,154,90,0.10) 0%,transparent 55%),radial-gradient(ellipse 50% 60% at 88% 75%,rgba(160,109,46,0.08) 0%,transparent 60%),radial-gradient(ellipse 70% 40% at 50% 100%,rgba(214,205,185,0.10) 0%,transparent 60%)`}}/>
           {/* FAB Retour — toujours visible bas-gauche */}
