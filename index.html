@@ -149,12 +149,16 @@
         }
       ],
       "sameAs": [
+        "https://www.wikidata.org/wiki/Q139689041",
         "https://www.linkedin.com/company/oniq-online",
         "https://twitter.com/oniq_fr",
         "https://www.crunchbase.com/organization/oniq",
         "https://www.producthunt.com/products/oniq",
         "https://www.g2.com/products/oniq",
         "https://www.capterra.fr/software/oniq"
+      ],
+      "identifier": [
+        {"@type": "PropertyValue", "propertyID": "Wikidata", "value": "Q139689041", "url": "https://www.wikidata.org/wiki/Q139689041"}
       ]
     },
     {
@@ -840,9 +844,9 @@ if ('serviceWorker' in navigator) {
 <body>
 <!-- ═══ INTRO ANIMATION : sablier marron → cream ═══ -->
 <style>
-#oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.0s cubic-bezier(.5,0,.3,1) forwards;animation-delay:2.6s;pointer-events:none;overflow:hidden}
-#oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade 1.0s ease-out forwards 2.6s}
-#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(96px,16vw,260px);letter-spacing:-.045em;line-height:1;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 2.2s cubic-bezier(.45,.1,.3,1) forwards .15s,oniqIntroPop 0.7s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.0s cubic-bezier(.5,0,.3,1) forwards 2.6s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
+#oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.4s cubic-bezier(.5,0,.3,1) forwards;animation-delay:5.0s;pointer-events:none;overflow:hidden}
+#oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade 1.4s ease-out forwards 5.0s}
+#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(96px,16vw,260px);letter-spacing:-.045em;line-height:1;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 4.4s cubic-bezier(.45,.1,.3,1) forwards .4s,oniqIntroPop 1.0s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.4s cubic-bezier(.5,0,.3,1) forwards 5.0s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
 @keyframes oniqIntroPop{0%{transform:translateY(20px) scale(.94);opacity:0}55%{opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes oniqIntroSweep{0%{background-position:100% 50%;filter:drop-shadow(0 0 0 transparent)}45%{filter:drop-shadow(0 0 36px rgba(255,180,100,.65))}80%{filter:drop-shadow(0 0 22px rgba(180,90,30,.5))}100%{background-position:0% 50%;filter:drop-shadow(0 0 12px rgba(120,60,20,.3))}}
 @keyframes oniqIntroDissolve{0%{transform:scale(1);filter:drop-shadow(0 0 12px rgba(120,60,20,.3)) blur(0)}45%{transform:scale(1.08);filter:drop-shadow(0 0 30px rgba(255,200,120,.5)) blur(0)}100%{transform:scale(1.4);filter:drop-shadow(0 0 60px rgba(255,200,120,0)) blur(14px);opacity:0}}
@@ -5188,9 +5192,9 @@ const SW_SPLASH_PALETTES={
 const SwSplash=({slug})=>{
   const [phase,setPhase]=useState('enter'); /* enter → hold → exit → done */
   React.useEffect(()=>{
-    const t1=setTimeout(()=>setPhase('hold'),900);
-    const t2=setTimeout(()=>setPhase('exit'),2500);
-    const t3=setTimeout(()=>setPhase('done'),3150);
+    const t1=setTimeout(()=>setPhase('hold'),420);   /* 900 → 420 : démarrage plus vif */
+    const t2=setTimeout(()=>setPhase('exit'),1900);  /* 2500 → 1900 : on raccourcit le hold */
+    const t3=setTimeout(()=>setPhase('done'),2500);  /* 3150 → 2500 : exit reste propre 600ms */
     return ()=>{clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);};
   },[]);
   if(phase==='done')return null;
@@ -5221,7 +5225,7 @@ const SwSplash=({slug})=>{
     borderRadius:'50%',
     border:'1px solid '+pal.glow,
     opacity:phase==='enter'?0:(phase==='hold'?0.7:0),
-    transition:'all 1.2s cubic-bezier(.2,.8,.2,1)',
+    transition:'all 0.7s cubic-bezier(.2,.8,.2,1)',
     pointerEvents:'none',
   };
   const ring2Style={
@@ -5237,7 +5241,7 @@ const SwSplash=({slug})=>{
       ? 'scale(0.6) rotate(-3deg)'
       : (phase==='hold'?'scale(1) rotate(0deg)':'scale(1.4) rotate(2deg)'),
     opacity:phase==='enter'?0:(phase==='exit'?0:1),
-    transition:phase==='enter'?'all 0.85s cubic-bezier(.2,.8,.2,1)':'all 0.55s cubic-bezier(.6,0,.4,1)',
+    transition:phase==='enter'?'all 0.45s cubic-bezier(.2,.8,.2,1)':'all 0.55s cubic-bezier(.6,0,.4,1)',
     filter:'drop-shadow(0 0 24px '+pal.glow+') drop-shadow(0 8px 32px rgba(0,0,0,0.35))',
     position:'relative',
     zIndex:2,
@@ -5250,7 +5254,7 @@ const SwSplash=({slug})=>{
     background:'radial-gradient(circle, '+pal.glow+' 0%, transparent 65%)',
     opacity:phase==='enter'?0:(phase==='hold'?0.85:0.2),
     transform:phase==='enter'?'scale(0.4)':(phase==='hold'?'scale(1)':'scale(1.6)'),
-    transition:'all 1s cubic-bezier(.2,.8,.2,1)',
+    transition:'all 0.55s cubic-bezier(.2,.8,.2,1)',
     pointerEvents:'none',
   };
   return (
