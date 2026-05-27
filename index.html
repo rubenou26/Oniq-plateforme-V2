@@ -3939,8 +3939,17 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   const [aiRes,setAiRes]=useState(null);
   const [showAi,setShowAi]=useState(false);
 
-  const CATS=["Tous",...Array.from(new Set(software.map(s=>s.cat)))];
-  let list=software.filter(s=>(cat==="Tous"||s.cat===cat)&&s.name.toLowerCase().includes(search.toLowerCase()));
+  /* Catégories : "Tous" en 1er, "Pack" en 2e (mis en valeur), puis les autres
+     "Tous" = uniquement les logiciels individuels (les packs sont sur leur onglet dédié) */
+  const _allCats=Array.from(new Set(software.map(s=>s.cat)));
+  const CATS=["Tous","Pack",..._allCats.filter(c=>c!=="Pack")];
+  let list=software.filter(s=>{
+    const matchesSearch=s.name.toLowerCase().includes(search.toLowerCase());
+    if(!matchesSearch) return false;
+    if(cat==="Tous") return !s.isPack;          /* Tous = pas de packs */
+    if(cat==="Pack") return !!s.isPack;          /* Pack = uniquement les packs */
+    return s.cat===cat;                          /* Autres cats = filtre standard */
+  });
   if(sort==="popular")list=[...list].sort((a,b)=>b.reviews-a.reviews);
   if(sort==="rating")list=[...list].sort((a,b)=>b.rating-a.rating);
   if(sort==="price_asc")list=[...list].sort((a,b)=>a.price-b.price);
@@ -4214,7 +4223,31 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher…" style={{width:"100%",background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:"9px 12px 9px 30px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box"}}/>
         </div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-          {CATS.map(c=>{const _n=c==="Tous"?software.length:software.filter(s=>s.cat===c).length;return <button key={c} onClick={()=>setCat(c)} style={{background:cat===c?C.ink:"transparent",border:`1px solid ${cat===c?C.ink:C.linen}`,borderRadius:20,padding:"6px 13px",color:cat===c?C.ivory:C.stone,cursor:"pointer",fontFamily:SS,fontSize:11,fontWeight:600}}>{c} <span data-count={`(${_n})`} style={{opacity:0.6,fontSize:10}}>({_n})</span></button>;})}
+          {CATS.map(c=>{
+            const _n = c==="Tous" ? software.filter(s=>!s.isPack).length
+                     : c==="Pack" ? software.filter(s=>s.isPack).length
+                     : software.filter(s=>s.cat===c).length;
+            const isPackTab = c==="Pack";
+            const isActive = cat===c;
+            return <button key={c} onClick={()=>setCat(c)} style={{
+              background: isActive ? (isPackTab?'linear-gradient(135deg,#1F1A14,#3A2410)':C.ink) : (isPackTab?'rgba(212,162,76,0.08)':'transparent'),
+              border: `1px solid ${isActive?(isPackTab?'#D4A24C':C.ink):(isPackTab?'rgba(212,162,76,0.4)':C.linen)}`,
+              borderRadius: 20,
+              padding: "6px 13px",
+              color: isActive ? (isPackTab?'#FFE9A8':C.ivory) : (isPackTab?'#A06D2E':C.stone),
+              cursor: "pointer",
+              fontFamily: SS,
+              fontSize: 11,
+              fontWeight: isPackTab?700:600,
+              letterSpacing: isPackTab?'0.04em':'normal',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+            }}>
+              {isPackTab && <span style={{fontSize:9,color:isActive?'#FFE9A8':'#D4A24C'}}>◆</span>}
+              {c} <span data-count={`(${_n})`} style={{opacity:0.6,fontSize:10}}>({_n})</span>
+            </button>;
+          })}
         </div>
         <select value={sort} onChange={e=>setSort(e.target.value)} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 12px",fontFamily:SS,fontSize:12,color:C.ink,outline:"none",cursor:"pointer"}}>
           <option value="popular">Plus populaires</option>
