@@ -4190,28 +4190,19 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         </div>
       )}
 
-      {/* ─── BANNIÈRE FEATURED PACK BÂTIMENT ─── */}
+      {/* ─── BANNIÈRE FEATURED PACK BÂTIMENT (épurée) ─── */}
       {(()=>{ const pack=software.find(s=>s.id===107); if(!pack||isSub(107)) return null; return (
         <div className="oniq-pack-banner" onClick={()=>setDetail(pack)} role="button" tabIndex={0}
              onKeyDown={(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setDetail(pack);}}}>
-          <div style={{position:'relative',zIndex:2,display:'flex',alignItems:'center',gap:24,flexWrap:'wrap',justifyContent:'space-between'}}>
+          <div style={{position:'relative',zIndex:2,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap',justifyContent:'space-between'}}>
             <div style={{display:'flex',alignItems:'center',gap:18,flex:1,minWidth:260}}>
-              <div style={{width:64,height:64,borderRadius:14,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,flexShrink:0,boxShadow:'0 4px 18px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.2)'}}>🏛</div>
+              <div style={{width:60,height:60,borderRadius:14,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,flexShrink:0,boxShadow:'0 4px 18px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.2)'}}>🏛</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
-                  <span style={{fontFamily:SS,fontSize:9,fontWeight:800,letterSpacing:'0.22em',textTransform:'uppercase',color:'#E8C474',background:'rgba(212,162,76,0.15)',padding:'3px 9px',borderRadius:999,border:'1px solid rgba(212,162,76,0.3)'}}>◆ NOUVEAUTÉ · OFFRE PACK</span>
-                  <span style={{fontFamily:SS,fontSize:10,fontWeight:800,color:'#FFF',background:'linear-gradient(135deg,#E63946,#A0282F)',padding:'3px 9px',borderRadius:999,letterSpacing:'0.05em',boxShadow:'0 2px 8px rgba(230,57,70,0.4)'}}>-15 %</span>
-                </div>
-                <div style={{fontFamily:SF,fontSize:24,fontWeight:700,color:'#FFE9A8',marginBottom:6,letterSpacing:'-0.01em'}}>Pack Bâtiment <span style={{fontStyle:'italic',fontWeight:500}}>— l'écosystème complet</span></div>
-                <div style={{fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.78)',lineHeight:1.5,marginBottom:8}}>BatiManager + OniMetri + OniPilote + OniCompta + OniPromail <em style={{color:'#7DDB94',fontStyle:'normal',fontWeight:600}}>offert</em>. Sync native entre tous les modules.</div>
-                <div style={{display:'flex',gap:14,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontFamily:SS,fontSize:11,fontWeight:600,color:'rgba(244,233,213,0.55)',textDecoration:'line-through'}}>566 €/mois</span>
-                  <span style={{fontFamily:SF,fontSize:22,fontWeight:800,color:'#FFE9A8',letterSpacing:'-0.01em'}}>479 €/mois HT</span>
-                  <span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:'#7DDB94',background:'rgba(125,219,148,0.12)',padding:'4px 10px',borderRadius:999,border:'1px solid rgba(125,219,148,0.25)'}}>💰 Économisez 87 €/mois</span>
-                </div>
+                <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:'#FFE9A8',marginBottom:4,letterSpacing:'-0.01em'}}>Pack Bâtiment</div>
+                <div style={{fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>L'écosystème complet — <span style={{fontFamily:SF,fontWeight:700,color:'#FFE9A8'}}>479 €/mois HT</span></div>
               </div>
             </div>
-            <button onClick={(e)=>{e.stopPropagation();setDetail(pack);}} style={{background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:10,padding:'14px 28px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:'0 6px 22px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.3)',whiteSpace:'nowrap',flexShrink:0}}>Découvrir le pack →</button>
+            <button onClick={(e)=>{e.stopPropagation();setDetail(pack);}} style={{background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:10,padding:'13px 26px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:'0 6px 22px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.3)',whiteSpace:'nowrap',flexShrink:0}}>Découvrir →</button>
           </div>
         </div>
       ); })()}
@@ -4246,10 +4237,8 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
               onMouseEnter={e=>{if(!sw.isPack){e.currentTarget.style.boxShadow="0 8px 28px rgba(184,154,90,0.18)";e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=C.gold+"66";}}}
               onMouseLeave={e=>{if(!sw.isPack){e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor=sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen;}}}
             >
-              {/* Badge PACK -15% flottant en haut-gauche, animé */}
-              {sw.isPack&&!sub&&<div style={{position:'absolute',top:-10,left:-10,zIndex:5,background:'linear-gradient(135deg,#E63946 0%,#A0282F 100%)',color:'#FFF',fontSize:11,fontWeight:900,padding:'8px 14px',borderRadius:10,letterSpacing:'0.08em',boxShadow:'0 6px 18px rgba(230,57,70,0.45)',transform:'rotate(-8deg)',animation:'oniqPackBadgeFloat 2.5s ease-in-out infinite',border:'2px solid #FFF'}}>-15 %</div>}
-              {/* Badge "Économisez 87€/mois" en bas-droite quand pack */}
-              {sw.isPack&&!sub&&<div style={{position:'absolute',bottom:60,right:10,zIndex:5,background:'linear-gradient(135deg,#22C55E 0%,#15803D 100%)',color:'#FFF',fontSize:10,fontWeight:800,padding:'5px 10px',borderRadius:999,letterSpacing:'0.05em',boxShadow:'0 4px 12px rgba(34,197,94,0.35)',animation:'oniqSavePulse 2s ease-in-out infinite',display:'flex',alignItems:'center',gap:5}}><span style={{fontSize:11}}>💰</span>Économisez 87 €/mois</div>}
+              {/* Badge PACK discret en haut-gauche pour distinguer (sans % de réduction) */}
+              {sw.isPack&&!sub&&<div style={{position:'absolute',top:10,left:10,zIndex:5,background:'linear-gradient(135deg,#1F1A14 0%,#3A2410 100%)',color:'#FFE9A8',fontSize:9,fontWeight:800,padding:'4px 10px',borderRadius:999,letterSpacing:'0.14em',textTransform:'uppercase',boxShadow:'0 3px 10px rgba(0,0,0,0.25)',border:'1px solid rgba(212,162,76,0.5)'}}>◆ Pack</div>}
               {sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#C47B2B,#8B5E2A)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(196,123,43,0.3)',display:'flex',alignItems:'center',gap:5,zIndex:3}}><span style={{width:6,height:6,borderRadius:'50%',background:'#FFE5B0',boxShadow:'0 0 0 2px rgba(255,229,176,0.4)',animation:'oniqDevPulse 2s ease-in-out infinite'}}/>En dev</div>}
               {sw.popular&&!sub&&!trial&&!sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(184,154,90,0.30)',display:'flex',alignItems:'center',gap:5}}><svg width="9" height="9" viewBox="0 0 24 24" fill="#FFF" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Populaire</div>}
               {sw.bundleFreeThreshold&&!sub&&!trial&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#A06D2E 0%,#6B4519 100%)',color:'#FBF9F3',fontSize:9,fontWeight:700,padding:"4px 10px",borderRadius:999,letterSpacing:"0.04em",boxShadow:'0 2px 6px rgba(160,109,46,0.30), inset 0 1px 0 rgba(255,255,255,0.10)',display:'inline-flex',alignItems:'center',gap:5,whiteSpace:'nowrap',zIndex:3,border:'1px solid rgba(232,196,116,0.32)'}}><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 12V22H4V12M22 7H2v5h20zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Offert dès 50 €</div>}
@@ -8360,28 +8349,22 @@ const PackBatimentPopup=({user,software,setView,setDetail})=>{
     setTimeout(()=>{setShow(false);setClosing(false);}, 320);
   };
   if(!show||!pack) return null;
-  return React.createElement('div',{className:'oniq-pack-popup'+(closing?' closing':''),role:'dialog','aria-label':'Promotion Pack Bâtiment'},
+  return React.createElement('div',{className:'oniq-pack-popup'+(closing?' closing':''),role:'dialog','aria-label':'Pack Bâtiment'},
     /* Bouton fermer X */
     React.createElement('button',{onClick:()=>close(true),style:{position:'absolute',top:10,right:10,background:'transparent',border:'none',color:'rgba(244,233,213,0.6)',fontSize:18,cursor:'pointer',width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'},
       onMouseEnter:e=>e.currentTarget.style.background='rgba(244,233,213,0.08)',
       onMouseLeave:e=>e.currentTarget.style.background='transparent',
       title:'Ne plus afficher'},'×'),
-    /* Badge -15% */
-    React.createElement('div',{style:{display:'inline-block',background:'linear-gradient(135deg,#E63946,#A0282F)',color:'#FFF',fontSize:10,fontWeight:900,padding:'4px 11px',borderRadius:999,letterSpacing:'0.08em',marginBottom:14,boxShadow:'0 3px 10px rgba(230,57,70,0.4)'}},'◆ OFFRE PACK · -15 %'),
     /* Titre */
-    React.createElement('div',{style:{fontFamily:"'Playfair Display',Georgia,serif",fontSize:22,fontWeight:700,color:'#FFE9A8',lineHeight:1.2,marginBottom:8,letterSpacing:'-0.01em'}},'🏛 Pack Bâtiment'),
-    React.createElement('div',{style:{fontSize:13,color:'rgba(244,233,213,0.78)',lineHeight:1.5,marginBottom:14}},'5 logiciels métier ONIQ en un seul abonnement. ',
-      React.createElement('span',{style:{color:'#7DDB94',fontWeight:600}},'OniPromail offert.')),
-    /* Prix */
-    React.createElement('div',{style:{display:'flex',alignItems:'baseline',gap:10,marginBottom:6,flexWrap:'wrap'}},
-      React.createElement('span',{style:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:800,color:'#FFE9A8',letterSpacing:'-0.02em'}},'479 €'),
-      React.createElement('span',{style:{fontSize:11,color:'rgba(244,233,213,0.6)'}},'/mois HT'),
-      React.createElement('span',{style:{fontSize:11,color:'rgba(244,233,213,0.45)',textDecoration:'line-through'}},'566 €')
+    React.createElement('div',{style:{fontFamily:"'Playfair Display',Georgia,serif",fontSize:22,fontWeight:700,color:'#FFE9A8',lineHeight:1.2,marginBottom:8,letterSpacing:'-0.01em',paddingRight:30}},'🏛 Pack Bâtiment'),
+    React.createElement('div',{style:{fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5,marginBottom:18}},"L'écosystème ONIQ complet en un seul abonnement."),
+    /* Prix simple */
+    React.createElement('div',{style:{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,color:'#FFE9A8',letterSpacing:'-0.02em',marginBottom:18}},'479 €',
+      React.createElement('span',{style:{fontSize:12,fontWeight:500,color:'rgba(244,233,213,0.55)',marginLeft:6}},'/mois HT')
     ),
-    React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(125,219,148,0.14)',color:'#7DDB94',fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:999,marginBottom:18,border:'1px solid rgba(125,219,148,0.25)'}},'💰 ','Économisez 87 €/mois'),
     /* Boutons */
     React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
-      React.createElement('button',{onClick:()=>{close(false);setDetail&&setDetail(pack);},style:{flex:1,minWidth:140,background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em',boxShadow:'0 4px 14px rgba(212,162,76,0.4)'}},'Voir le pack →'),
+      React.createElement('button',{onClick:()=>{close(false);setDetail&&setDetail(pack);},style:{flex:1,minWidth:140,background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em',boxShadow:'0 4px 14px rgba(212,162,76,0.4)'}},'Découvrir →'),
       React.createElement('button',{onClick:()=>close(false),style:{background:'transparent',color:'rgba(244,233,213,0.6)',border:'1px solid rgba(244,233,213,0.2)',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}},'Plus tard')
     )
   );
