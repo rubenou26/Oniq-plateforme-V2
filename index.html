@@ -478,6 +478,134 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   PACK BÂTIMENT — ANIMATIONS DE MISE EN AVANT
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Bordure dorée pulsante autour de la carte pack */
+@keyframes oniqPackGlow {
+  0%,100% { box-shadow: 0 0 0 1px #D4A24C, 0 4px 20px rgba(212,162,76,0.25), 0 0 40px rgba(212,162,76,0.15); }
+  50%     { box-shadow: 0 0 0 1px #FFE9A8, 0 8px 32px rgba(212,162,76,0.50), 0 0 60px rgba(232,196,116,0.35); }
+}
+/* Shimmer doré qui balaye la carte */
+@keyframes oniqPackShimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+/* Badge -15% qui flotte */
+@keyframes oniqPackBadgeFloat {
+  0%,100% { transform: translateY(0) rotate(-8deg); }
+  50%     { transform: translateY(-4px) rotate(-12deg); }
+}
+/* Pulse du badge "Économisez 87€" */
+@keyframes oniqSavePulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50%     { transform: scale(1.08); opacity: 0.9; }
+}
+/* Sparkles autour de la carte pack */
+@keyframes oniqSparkle {
+  0%,100% { opacity: 0; transform: scale(0); }
+  50%     { opacity: 1; transform: scale(1); }
+}
+
+/* Style automatique pour la carte pack (data-pack="1") */
+.oniq-mkt-card[data-pack="1"] {
+  animation: oniqPackGlow 3s ease-in-out infinite;
+  border: 2px solid #D4A24C !important;
+  background: linear-gradient(145deg, #FFF9EE 0%, #FBF9F3 50%, #FFF4DD 100%) !important;
+  position: relative;
+  overflow: hidden;
+}
+.oniq-mkt-card[data-pack="1"]::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,233,168,0.45) 50%, transparent 70%);
+  animation: oniqPackShimmer 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.oniq-mkt-card[data-pack="1"] > * { position: relative; z-index: 2; }
+
+/* Bannière featured (au-dessus de la grille marketplace) */
+@keyframes oniqBannerGradient {
+  0%,100% { background-position: 0% 50%; }
+  50%     { background-position: 100% 50%; }
+}
+.oniq-pack-banner {
+  position: relative;
+  background: linear-gradient(135deg, #1F1A14 0%, #3A2410 25%, #5A3A1F 50%, #3A2410 75%, #1F1A14 100%);
+  background-size: 300% 300%;
+  animation: oniqBannerGradient 8s ease infinite;
+  border-radius: 14px;
+  padding: 28px 32px;
+  margin-bottom: 22px;
+  color: #F4E9D5;
+  overflow: hidden;
+  border: 1px solid rgba(212,162,76,0.35);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25), 0 0 60px rgba(212,162,76,0.15);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.oniq-pack-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.30), 0 0 80px rgba(212,162,76,0.25);
+}
+.oniq-pack-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -100%;
+  width: 200%; height: 200%;
+  background: radial-gradient(ellipse 40% 40% at 30% 30%, rgba(212,162,76,0.18) 0%, transparent 50%),
+              radial-gradient(ellipse 30% 30% at 70% 60%, rgba(199,121,58,0.18) 0%, transparent 50%);
+  animation: oniqPackBannerOrbs 12s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes oniqPackBannerOrbs {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  50%     { transform: translate(5%,-3%) rotate(15deg); }
+}
+
+/* Popup promotionnelle */
+@keyframes oniqPopIn {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes oniqPopOut {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(40px) scale(0.9); }
+}
+.oniq-pack-popup {
+  position: fixed;
+  bottom: 22px; right: 22px;
+  z-index: 9000;
+  background: linear-gradient(135deg, #1F1A14 0%, #3A2410 50%, #1F1A14 100%);
+  border: 1px solid #D4A24C;
+  border-radius: 16px;
+  padding: 22px 24px;
+  max-width: 380px;
+  color: #F4E9D5;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 80px rgba(212,162,76,0.20);
+  animation: oniqPopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.oniq-pack-popup.closing { animation: oniqPopOut 0.3s ease forwards; }
+.oniq-pack-popup::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px; right: -1px;
+  height: 50%;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(180deg, rgba(232,196,116,0.18) 0%, transparent 100%);
+  pointer-events: none;
+}
+@media(max-width:480px){
+  .oniq-pack-popup {
+    bottom: 12px; right: 12px; left: 12px;
+    max-width: none;
+    padding: 18px 20px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    LANDING PAGE — Fixes spécifiques (data-oniq-hero, sections, footer)
    ═══════════════════════════════════════════════════════════════════════ */
 @media(max-width:768px){
@@ -1874,6 +2002,31 @@ const SW_DB=[
     highlights:["✦ OFFERT dès 50 €/mois d'abonnement ONIQ","5 €/mois seulement pour les clients OniCompta seul","Email pro sur votre domaine personnalisé","Tri IA des entrants (Mistral)","Templates + signatures dynamiques générées par IA","Sync auto avec OniPilote (CRM) et OniCompta (OCR factures)","Données hébergées en France · zéro scan publicitaire","Gardez votre Gmail/Outlook existant","Conformité RGPD by design"],
     userReviews:[]
   },
+  {
+    id:107,
+    slug:"pack-batiment",
+    name:"Pack Bâtiment",
+    price:479,
+    cat:"Pack",
+    sector:"Bâtiment,Construction,Maîtrise d'œuvre",
+    icon:"🏛",
+    desc:"L'écosystème BTP complet à -15 %. BatiManager + OniMetri + OniPilote + OniCompta + OniPromail offert. Tout pour piloter votre entreprise de A à Z.",
+    features:["BatiManager — Gestion de chantier IA","OniMetri — Métré & DPGF IA","OniPilote — CRM hub multi-rôles","OniCompta — Comptabilité Factur-X","OniPromail — Email pro OFFERT","Sync native entre tous les modules","Économie : 87 €/mois vs séparé"],
+    popular:true,
+    isPack:true,
+    includes:[101,102,104,103],
+    bundleIncludesFree:[105],
+    individualPrice:566,
+    savingsMonth:87,
+    rating:0,
+    reviews:0,
+    longDesc:"Le Pack Bâtiment, c'est notre offre la plus complète pour les entreprises du BTP : tous les logiciels métier ONIQ regroupés en un seul abonnement, avec 87 €/mois d'économie par rapport aux licences séparées.\n\n**Ce que vous obtenez (valeur 566 €/mois → 479 €/mois) :**\n\n• **BatiManager (199 €)** — Pilotage chantier avec OCR factures fournisseurs, balance budgétaire prévisionnelle, alertes dépassement automatiques, nomenclature MILOG.\n\n• **OniMetri (239 €)** — Métré IA sur plans PDF, génération DPGF en 30 secondes, 16 lots techniques pré-configurés, export Excel professionnel.\n\n• **OniPilote (79 €)** — CRM hub 6 phases (Accueil → SAV), pipeline visuel, rôles dédiés (commercial, conducteur, SAV), passations formelles.\n\n• **OniCompta (49 €)** — Comptabilité Factur-X conforme 2026, OCR factures, sync open banking, FEC + PCG complet.\n\n• **OniPromail (5 €) — OFFERT** dans le pack : email pro sur votre domaine, tri IA des entrants, intégration native CRM/comptabilité.\n\n**Sync native entre tous les modules.** Une facture fournisseur scannée dans BatiManager remonte dans OniCompta. Un devis OniMetri devient un dossier dans OniPilote. Un email entrant via OniPromail alimente la fiche client OniPilote. Zéro double saisie.\n\nIdéal pour : constructeurs de maisons individuelles, entreprises BTP générales, maîtres d'œuvre, économistes de la construction. Engagement annuel ou mensuel sans engagement.",
+    videoId:"dQw4w9WgXcQ",
+    screenshots:["Dashboard chantiers BatiManager","DPGF générée par OniMetri","Pipeline CRM OniPilote 6 phases","Facturation Factur-X OniCompta","Email pro OniPromail unifié"],
+    highlights:["5 logiciels métier en un seul abonnement","Économie : 87 €/mois vs séparé (-15 %)","OniPromail OFFERT (valeur 5 €/mois)","Sync native entre tous les modules","Une seule facture, une seule connexion","Données 100 % France · IA souveraine","Engagement annuel ou mensuel libre","Support prioritaire inclus"],
+    userReviews:[]
+  },
+
   {
     id:106,
     slug:"oniassist",
@@ -3793,7 +3946,24 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   if(sort==="price_asc")list=[...list].sort((a,b)=>a.price-b.price);
   if(sort==="price_desc")list=[...list].sort((a,b)=>b.price-a.price);
 
-  const isSub=id=>user?.subs?.includes(id);
+  /* EXPANSION DES PACKS : si user abonné à un pack (id 107),
+     on lui donne accès automatiquement aux logiciels inclus + gratuits du pack. */
+  const expandPackSubs=(subs)=>{
+    if(!Array.isArray(subs)||!subs.length) return new Set();
+    const expanded=new Set(subs);
+    for(const sid of subs){
+      const sw=(window.__SW_DB__||software).find(x=>x.id===sid);
+      if(sw&&sw.isPack){
+        (sw.includes||[]).forEach(id=>expanded.add(id));
+        (sw.bundleIncludesFree||[]).forEach(id=>expanded.add(id));
+      }
+    }
+    return expanded;
+  };
+  const isSub=id=>{
+    if(!user||!user.subs) return false;
+    return expandPackSubs(user.subs).has(id);
+  };
   const isTrial=id=>user&&isTrialActive(user.trials?.[id]);
   const isCart=id=>cart.includes(id);
 
@@ -4020,6 +4190,32 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         </div>
       )}
 
+      {/* ─── BANNIÈRE FEATURED PACK BÂTIMENT ─── */}
+      {(()=>{ const pack=software.find(s=>s.id===107); if(!pack||isSub(107)) return null; return (
+        <div className="oniq-pack-banner" onClick={()=>setDetail(pack)} role="button" tabIndex={0}
+             onKeyDown={(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setDetail(pack);}}}>
+          <div style={{position:'relative',zIndex:2,display:'flex',alignItems:'center',gap:24,flexWrap:'wrap',justifyContent:'space-between'}}>
+            <div style={{display:'flex',alignItems:'center',gap:18,flex:1,minWidth:260}}>
+              <div style={{width:64,height:64,borderRadius:14,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,flexShrink:0,boxShadow:'0 4px 18px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.2)'}}>🏛</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4,flexWrap:'wrap'}}>
+                  <span style={{fontFamily:SS,fontSize:9,fontWeight:800,letterSpacing:'0.22em',textTransform:'uppercase',color:'#E8C474',background:'rgba(212,162,76,0.15)',padding:'3px 9px',borderRadius:999,border:'1px solid rgba(212,162,76,0.3)'}}>◆ NOUVEAUTÉ · OFFRE PACK</span>
+                  <span style={{fontFamily:SS,fontSize:10,fontWeight:800,color:'#FFF',background:'linear-gradient(135deg,#E63946,#A0282F)',padding:'3px 9px',borderRadius:999,letterSpacing:'0.05em',boxShadow:'0 2px 8px rgba(230,57,70,0.4)'}}>-15 %</span>
+                </div>
+                <div style={{fontFamily:SF,fontSize:24,fontWeight:700,color:'#FFE9A8',marginBottom:6,letterSpacing:'-0.01em'}}>Pack Bâtiment <span style={{fontStyle:'italic',fontWeight:500}}>— l'écosystème complet</span></div>
+                <div style={{fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.78)',lineHeight:1.5,marginBottom:8}}>BatiManager + OniMetri + OniPilote + OniCompta + OniPromail <em style={{color:'#7DDB94',fontStyle:'normal',fontWeight:600}}>offert</em>. Sync native entre tous les modules.</div>
+                <div style={{display:'flex',gap:14,flexWrap:'wrap',alignItems:'center'}}>
+                  <span style={{fontFamily:SS,fontSize:11,fontWeight:600,color:'rgba(244,233,213,0.55)',textDecoration:'line-through'}}>566 €/mois</span>
+                  <span style={{fontFamily:SF,fontSize:22,fontWeight:800,color:'#FFE9A8',letterSpacing:'-0.01em'}}>479 €/mois HT</span>
+                  <span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:'#7DDB94',background:'rgba(125,219,148,0.12)',padding:'4px 10px',borderRadius:999,border:'1px solid rgba(125,219,148,0.25)'}}>💰 Économisez 87 €/mois</span>
+                </div>
+              </div>
+            </div>
+            <button onClick={(e)=>{e.stopPropagation();setDetail(pack);}} style={{background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:10,padding:'14px 28px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:'0 6px 22px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.3)',whiteSpace:'nowrap',flexShrink:0}}>Découvrir le pack →</button>
+          </div>
+        </div>
+      ); })()}
+
       {/* Filtres */}
       <div style={{display:"flex",gap:8,marginBottom:16,alignItems:"center",flexWrap:"wrap"}}>
         <div style={{position:"relative",flex:1,minWidth:180}}>
@@ -4042,14 +4238,18 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         {list.map((sw,i)=>{
           const sub=isSub(sw.id),trial=isTrial(sw.id),inC=isCart(sw.id);
           return (
-            <div key={sw.id} data-reveal data-reveal-style="rise" data-tilt data-oniq-card className="oniq-mkt-card" style={{background:C.paper,border:`1px solid ${sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen}`,borderRadius:8,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",transition:"transform 0.18s,box-shadow 0.18s",cursor:"pointer",animationDelay:(i*0.06)+'s'}}
+            <div key={sw.id} data-reveal data-reveal-style="rise" data-tilt data-oniq-card data-pack={sw.isPack?"1":undefined} className="oniq-mkt-card" style={{background:C.paper,border:`1px solid ${sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen}`,borderRadius:8,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",transition:"transform 0.18s,box-shadow 0.18s",cursor:"pointer",animationDelay:(i*0.06)+'s'}}
               onClick={(e)=>{if(!e.target.closest('button,a,select,input,textarea')) setDetail(sw);}}
               role="button"
               tabIndex={0}
               onKeyDown={(e)=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button,a,select,input,textarea')){e.preventDefault();setDetail(sw);}}}
-              onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 28px rgba(184,154,90,0.18)";e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=C.gold+"66";}}
-              onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor=sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen;}}
+              onMouseEnter={e=>{if(!sw.isPack){e.currentTarget.style.boxShadow="0 8px 28px rgba(184,154,90,0.18)";e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=C.gold+"66";}}}
+              onMouseLeave={e=>{if(!sw.isPack){e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.borderColor=sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen;}}}
             >
+              {/* Badge PACK -15% flottant en haut-gauche, animé */}
+              {sw.isPack&&!sub&&<div style={{position:'absolute',top:-10,left:-10,zIndex:5,background:'linear-gradient(135deg,#E63946 0%,#A0282F 100%)',color:'#FFF',fontSize:11,fontWeight:900,padding:'8px 14px',borderRadius:10,letterSpacing:'0.08em',boxShadow:'0 6px 18px rgba(230,57,70,0.45)',transform:'rotate(-8deg)',animation:'oniqPackBadgeFloat 2.5s ease-in-out infinite',border:'2px solid #FFF'}}>-15 %</div>}
+              {/* Badge "Économisez 87€/mois" en bas-droite quand pack */}
+              {sw.isPack&&!sub&&<div style={{position:'absolute',bottom:60,right:10,zIndex:5,background:'linear-gradient(135deg,#22C55E 0%,#15803D 100%)',color:'#FFF',fontSize:10,fontWeight:800,padding:'5px 10px',borderRadius:999,letterSpacing:'0.05em',boxShadow:'0 4px 12px rgba(34,197,94,0.35)',animation:'oniqSavePulse 2s ease-in-out infinite',display:'flex',alignItems:'center',gap:5}}><span style={{fontSize:11}}>💰</span>Économisez 87 €/mois</div>}
               {sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#C47B2B,#8B5E2A)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(196,123,43,0.3)',display:'flex',alignItems:'center',gap:5,zIndex:3}}><span style={{width:6,height:6,borderRadius:'50%',background:'#FFE5B0',boxShadow:'0 0 0 2px rgba(255,229,176,0.4)',animation:'oniqDevPulse 2s ease-in-out infinite'}}/>En dev</div>}
               {sw.popular&&!sub&&!trial&&!sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(184,154,90,0.30)',display:'flex',alignItems:'center',gap:5}}><svg width="9" height="9" viewBox="0 0 24 24" fill="#FFF" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Populaire</div>}
               {sw.bundleFreeThreshold&&!sub&&!trial&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#A06D2E 0%,#6B4519 100%)',color:'#FBF9F3',fontSize:9,fontWeight:700,padding:"4px 10px",borderRadius:999,letterSpacing:"0.04em",boxShadow:'0 2px 6px rgba(160,109,46,0.30), inset 0 1px 0 rgba(255,255,255,0.10)',display:'inline-flex',alignItems:'center',gap:5,whiteSpace:'nowrap',zIndex:3,border:'1px solid rgba(232,196,116,0.32)'}}><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 12V22H4V12M22 7H2v5h20zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Offert dès 50 €</div>}
@@ -5107,6 +5307,11 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
           </div>
         </div>
       )}
+
+      {/* Popup promotionnelle Pack Bâtiment — apparaît 25s après chargement
+          + récurrence 5min ; dismissible 24h ou pour toujours */}
+      <PackBatimentPopup user={user} software={software} setView={setView} setDetail={setDetail}/>
+
       </div>
     </div>
   );
@@ -5115,9 +5320,26 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
 // ── Mon Espace ─────────────────────────────────────────────────────────────
 const MonEspace=({user,setUser,software,setView})=>{
   const isAdmin=user?.role==='admin';
-  const myApps=isAdmin?software:software.filter(s=>(user?.subs||[]).includes(s.id));
-  const myTrials=isAdmin?[]:software.filter(s=>!(user?.subs||[]).includes(s.id)&&isTrialActive(user?.trials?.[s.id]));
-  const mrr=myApps.reduce((s,x)=>s+x.price,0);
+  /* Expand pack subscriptions : abonnement à un pack (id 107) → accès aux logiciels inclus */
+  const _expand=(subs)=>{
+    if(!Array.isArray(subs)||!subs.length)return new Set();
+    const out=new Set(subs);
+    for(const sid of subs){
+      const sw=software.find(x=>x.id===sid);
+      if(sw&&sw.isPack){
+        (sw.includes||[]).forEach(id=>out.add(id));
+        (sw.bundleIncludesFree||[]).forEach(id=>out.add(id));
+      }
+    }
+    return out;
+  };
+  const expandedSubs=_expand(user?.subs);
+  /* MyApps = abonnements + logiciels inclus dans packs, sauf les packs eux-mêmes
+     (on n'ouvre pas un "Pack" comme un logiciel, on ouvre ses composants) */
+  const myApps=isAdmin?software:software.filter(s=>expandedSubs.has(s.id)&&!s.isPack);
+  const myTrials=isAdmin?[]:software.filter(s=>!expandedSubs.has(s.id)&&isTrialActive(user?.trials?.[s.id]));
+  /* MRR = somme des prix réels (les packs ont leur prix unique, pas les composants inclus) */
+  const mrr=(user?.subs||[]).reduce((sum,sid)=>{const sw=software.find(x=>x.id===sid);return sum+(sw?sw.price:0);},0);
   const [unsub,setUnsub]=useState(null);
   const [toast,setToast]=useState(null);
   const [accessMap,setAccessMap]=useState({});
@@ -5535,8 +5757,24 @@ const SoftwareHub=({user,software,setUser,setView})=>{
     try{if(sw)localStorage.setItem('oniq-active-software',JSON.stringify(sw));else localStorage.removeItem('oniq-active-software');}catch(e){}
   };
   const isAdmin=user?.role==="admin";
-  const myApps=isAdmin?software:software.filter(s=>user?.subs?.includes(s.id));
-  const total=myApps.reduce((s,x)=>s+x.price,0);
+  /* Expand pack subscriptions : abonné à un pack (107) → accès aux logiciels inclus */
+  const _expandPk=(subs)=>{
+    if(!Array.isArray(subs)||!subs.length)return new Set();
+    const out=new Set(subs);
+    for(const sid of subs){
+      const sw=software.find(x=>x.id===sid);
+      if(sw&&sw.isPack){
+        (sw.includes||[]).forEach(id=>out.add(id));
+        (sw.bundleIncludesFree||[]).forEach(id=>out.add(id));
+      }
+    }
+    return out;
+  };
+  const expSubs=_expandPk(user?.subs);
+  /* MyApps : abonnements + composants des packs, mais on n'affiche pas le pack lui-même */
+  const myApps=isAdmin?software:software.filter(s=>expSubs.has(s.id)&&!s.isPack);
+  /* Total MRR = somme prix des abonnements réels (le pack a son prix unique) */
+  const total=(user?.subs||[]).reduce((s,sid)=>{const sw=software.find(x=>x.id===sid);return s+(sw?sw.price:0);},0);
   // Auto-sync subs from cloud when component mounts (fixes blank on first load)
   useEffect(()=>{
     if(!user?.id||isAdmin||!supabaseClient)return;
@@ -6088,10 +6326,49 @@ const SoftwareLaunchModal=({software,onClose})=>{
       }
       // ONIPROMAIL — envoi d'un nouveau message via Resend (Edge Function send-reply mode compose)
       if(evt.data.type==='onipromail-send-email'){
+        const sendPayload={compose:true,from_alias:evt.data.from_alias,to:evt.data.to,cc:evt.data.cc,bcc:evt.data.bcc,subject:evt.data.subject,body:evt.data.body};
+        let okResult=false; let errMsg='';
         try{
-          const {data,error}=await supabaseClient.functions.invoke('send-reply',{body:{compose:true,from_alias:evt.data.from_alias,to:evt.data.to,cc:evt.data.cc,bcc:evt.data.bcc,subject:evt.data.subject,body:evt.data.body}});
-          iframeRef.current?.contentWindow?.postMessage({type:'onipromail-send-email-result',ok:!error&&data&&data.ok,error:error?error.message:(data&&data.error)},'*');
-        }catch(e){iframeRef.current?.contentWindow?.postMessage({type:'onipromail-send-email-result',ok:false,error:e.message},'*');}
+          /* TENTATIVE 1 : Supabase JS SDK */
+          const {data,error}=await supabaseClient.functions.invoke('send-reply',{body:sendPayload});
+          if(error){
+            errMsg='SDK: '+(error.message||'erreur');
+            console.warn('[onipromail-send] SDK error, fallback direct fetch…', error);
+          } else if(data && data.ok){
+            okResult=true;
+          } else if(data && data.error){
+            errMsg='Fonction: '+data.error;
+          }
+        }catch(e){
+          errMsg='SDK exception: '+e.message;
+          console.warn('[onipromail-send] SDK threw, fallback direct fetch…', e);
+        }
+        /* TENTATIVE 2 : fetch direct (contourne les quirks du SDK Supabase) */
+        if(!okResult && errMsg){
+          try{
+            const headers={'Content-Type':'application/json'};
+            try{
+              const {data:s}=await supabaseClient.auth.getSession();
+              headers['Authorization']='Bearer '+(s?.session?.access_token||supabaseKey);
+              headers['apikey']=supabaseKey;
+            }catch(_){ headers['Authorization']='Bearer '+supabaseKey; headers['apikey']=supabaseKey; }
+            const resp=await fetch(`${SUPABASE_FUNCTIONS_BASE}/send-reply`,{method:'POST',headers,body:JSON.stringify(sendPayload)});
+            const txt=await resp.text();
+            let json=null; try{json=JSON.parse(txt);}catch(_){}
+            if(resp.ok && json && json.ok){
+              okResult=true; errMsg='';
+            } else if(resp.status===404){
+              errMsg='⚠ Edge Function "send-reply" introuvable (HTTP 404). Va sur Supabase Dashboard → Edge Functions → crée la fonction "send-reply" et déploie-la. Code dans claude/send-reply-edge-function.ts';
+            } else if(resp.status===500){
+              errMsg='Edge Function erreur 500 : '+((json&&json.error)||txt.slice(0,200))+'\nProbable cause : secret RESEND_API_KEY manquant dans Supabase → Settings → Edge Functions → Secrets';
+            } else {
+              errMsg='HTTP '+resp.status+' : '+((json&&json.error)||txt.slice(0,200));
+            }
+          }catch(e2){
+            errMsg=errMsg+' | fetch direct aussi échoué : '+e2.message;
+          }
+        }
+        iframeRef.current?.contentWindow?.postMessage({type:'onipromail-send-email-result',ok:okResult,error:errMsg||undefined},'*');
       }
       // ONIPROMAIL — récupération des aliases (boîtes accessibles à l'utilisateur)
       if(evt.data.type==='onipromail-fetch-aliases'){
@@ -8037,6 +8314,79 @@ const AdminValidations=({software,users})=>{
 };
 
 // -- Cookie Consent (RGPD France) -------------------------------------------
+/* ═════════════════════════════════════════════════════════════════════════
+   POPUP PROMO PACK BÂTIMENT
+   - Apparaît 25s après chargement (1ère fois), puis toutes les 5 min
+   - Caché 24h si l'utilisateur clique "Pas maintenant"
+   - Caché à jamais (jusqu'à logout) si l'utilisateur est abonné au pack
+   - Caché à jamais si bouton X
+   ═════════════════════════════════════════════════════════════════════════ */
+const PackBatimentPopup=({user,software,setView,setDetail})=>{
+  const [show,setShow]=React.useState(false);
+  const [closing,setClosing]=React.useState(false);
+  const pack=software?.find(s=>s.id===107);
+  const isSubbed=user?.subs?.includes(107) || (user?.subs||[]).some(sid=>{
+    const sw=software.find(x=>x.id===sid);
+    return sw&&sw.isPack&&(sw.includes||[]).every(i=>(user.subs||[]).includes(i));
+  });
+  React.useEffect(()=>{
+    if(!pack||isSubbed) return;
+    try{
+      const dismissed=localStorage.getItem('oniq_pack_popup_dismissed');
+      const snoozed=localStorage.getItem('oniq_pack_popup_snooze');
+      if(dismissed) return; // X cliqué → plus jamais
+      if(snoozed && (Date.now()-parseInt(snoozed,10) < 24*60*60*1000)) return; // snooze 24h
+    }catch(e){}
+    /* 1er affichage : 25s après chargement */
+    const t1=setTimeout(()=>setShow(true), 25000);
+    /* Récurrent : toutes les 5 min on re-vérifie */
+    const t2=setInterval(()=>{
+      try{
+        const snoozed=localStorage.getItem('oniq_pack_popup_snooze');
+        const dismissed=localStorage.getItem('oniq_pack_popup_dismissed');
+        if(dismissed) return;
+        if(snoozed && (Date.now()-parseInt(snoozed,10) < 24*60*60*1000)) return;
+        setShow(true);
+      }catch(e){}
+    }, 5*60*1000);
+    return ()=>{clearTimeout(t1); clearInterval(t2);};
+  },[pack,isSubbed]);
+  const close=(perm)=>{
+    setClosing(true);
+    try{
+      if(perm) localStorage.setItem('oniq_pack_popup_dismissed','1');
+      else localStorage.setItem('oniq_pack_popup_snooze',String(Date.now()));
+    }catch(e){}
+    setTimeout(()=>{setShow(false);setClosing(false);}, 320);
+  };
+  if(!show||!pack) return null;
+  return React.createElement('div',{className:'oniq-pack-popup'+(closing?' closing':''),role:'dialog','aria-label':'Promotion Pack Bâtiment'},
+    /* Bouton fermer X */
+    React.createElement('button',{onClick:()=>close(true),style:{position:'absolute',top:10,right:10,background:'transparent',border:'none',color:'rgba(244,233,213,0.6)',fontSize:18,cursor:'pointer',width:28,height:28,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',transition:'background .15s'},
+      onMouseEnter:e=>e.currentTarget.style.background='rgba(244,233,213,0.08)',
+      onMouseLeave:e=>e.currentTarget.style.background='transparent',
+      title:'Ne plus afficher'},'×'),
+    /* Badge -15% */
+    React.createElement('div',{style:{display:'inline-block',background:'linear-gradient(135deg,#E63946,#A0282F)',color:'#FFF',fontSize:10,fontWeight:900,padding:'4px 11px',borderRadius:999,letterSpacing:'0.08em',marginBottom:14,boxShadow:'0 3px 10px rgba(230,57,70,0.4)'}},'◆ OFFRE PACK · -15 %'),
+    /* Titre */
+    React.createElement('div',{style:{fontFamily:"'Playfair Display',Georgia,serif",fontSize:22,fontWeight:700,color:'#FFE9A8',lineHeight:1.2,marginBottom:8,letterSpacing:'-0.01em'}},'🏛 Pack Bâtiment'),
+    React.createElement('div',{style:{fontSize:13,color:'rgba(244,233,213,0.78)',lineHeight:1.5,marginBottom:14}},'5 logiciels métier ONIQ en un seul abonnement. ',
+      React.createElement('span',{style:{color:'#7DDB94',fontWeight:600}},'OniPromail offert.')),
+    /* Prix */
+    React.createElement('div',{style:{display:'flex',alignItems:'baseline',gap:10,marginBottom:6,flexWrap:'wrap'}},
+      React.createElement('span',{style:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:800,color:'#FFE9A8',letterSpacing:'-0.02em'}},'479 €'),
+      React.createElement('span',{style:{fontSize:11,color:'rgba(244,233,213,0.6)'}},'/mois HT'),
+      React.createElement('span',{style:{fontSize:11,color:'rgba(244,233,213,0.45)',textDecoration:'line-through'}},'566 €')
+    ),
+    React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:5,background:'rgba(125,219,148,0.14)',color:'#7DDB94',fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:999,marginBottom:18,border:'1px solid rgba(125,219,148,0.25)'}},'💰 ','Économisez 87 €/mois'),
+    /* Boutons */
+    React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
+      React.createElement('button',{onClick:()=>{close(false);setDetail&&setDetail(pack);},style:{flex:1,minWidth:140,background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em',boxShadow:'0 4px 14px rgba(212,162,76,0.4)'}},'Voir le pack →'),
+      React.createElement('button',{onClick:()=>close(false),style:{background:'transparent',color:'rgba(244,233,213,0.6)',border:'1px solid rgba(244,233,213,0.2)',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}},'Plus tard')
+    )
+  );
+};
+
 const CookieConsent=()=>{
   const [show,setShow]=React.useState(false);
   const [closing,setClosing]=React.useState(false);
