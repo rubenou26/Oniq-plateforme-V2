@@ -1074,8 +1074,8 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     {"@type":"ListItem","position":1,"name":"Accueil","item":"https://www.oniq.online/"},
-    {"@type":"ListItem","position":2,"name":"Marketplace","item":"https://www.oniq.online/#c-market"},
-    {"@type":"ListItem","position":3,"name":"Mon Espace","item":"https://www.oniq.online/#c-espace"}
+    {"@type":"ListItem","position":2,"name":"Marketplace","item":"https://www.oniq.online/marketplace"},
+    {"@type":"ListItem","position":3,"name":"Mon Espace","item":"https://www.oniq.online/mon-espace"}
   ]
 }
 </script>
@@ -1089,11 +1089,11 @@
   "description": "Liste des 5 logiciels édités par ONIQ pour PME françaises avec IA Mistral intégrée",
   "numberOfItems": 5,
   "itemListElement": [
-    {"@type":"ListItem","position":1,"item":{"@type":"SoftwareApplication","name":"BatiManager","url":"https://www.oniq.online/#sw/batimanager","description":"Gestion de chantier IA : suivi budgétaire, OCR factures, balance financière, trésorerie prévisionnelle","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"199","priceCurrency":"EUR"}}},
-    {"@type":"ListItem","position":2,"item":{"@type":"SoftwareApplication","name":"OniMetri","url":"https://www.oniq.online/#sw/metrimanager","description":"Métré et DPGF par IA Vision : import plans PDF, génération DPGF par lot, export Excel","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"239","priceCurrency":"EUR"}}},
-    {"@type":"ListItem","position":3,"item":{"@type":"SoftwareApplication","name":"OniCompta","url":"https://www.oniq.online/#sw/onicompta","description":"Comptabilité conforme facture électronique 2026 : Factur-X, OCR, TVA, FEC, portail expert-comptable","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"49","priceCurrency":"EUR"}}},
-    {"@type":"ListItem","position":4,"item":{"@type":"SoftwareApplication","name":"OniPilote","url":"https://www.oniq.online/#sw/onipilote","description":"CRM hub multi-rôles : pipeline 6 phases, sync inter-logiciels, IA conversationnelle","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"79","priceCurrency":"EUR"}}},
-    {"@type":"ListItem","position":5,"item":{"@type":"SoftwareApplication","name":"OniPromail","url":"https://www.oniq.online/#sw/onipromail","description":"Email professionnel français avec tri IA — OFFERT dès 50€/mois d'abonnement ONIQ","applicationCategory":"CommunicationApplication","offers":{"@type":"Offer","price":"5","priceCurrency":"EUR"}}}
+    {"@type":"ListItem","position":1,"item":{"@type":"SoftwareApplication","name":"BatiManager","url":"https://www.oniq.online/logiciels/batimanager","description":"Gestion de chantier IA : suivi budgétaire, OCR factures, balance financière, trésorerie prévisionnelle","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"199","priceCurrency":"EUR"}}},
+    {"@type":"ListItem","position":2,"item":{"@type":"SoftwareApplication","name":"OniMetri","url":"https://www.oniq.online/logiciels/onimetri","description":"Métré et DPGF par IA Vision : import plans PDF, génération DPGF par lot, export Excel","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"239","priceCurrency":"EUR"}}},
+    {"@type":"ListItem","position":3,"item":{"@type":"SoftwareApplication","name":"OniCompta","url":"https://www.oniq.online/logiciels/onicompta","description":"Comptabilité conforme facture électronique 2026 : Factur-X, OCR, TVA, FEC, portail expert-comptable","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"49","priceCurrency":"EUR"}}},
+    {"@type":"ListItem","position":4,"item":{"@type":"SoftwareApplication","name":"OniPilote","url":"https://www.oniq.online/logiciels/onipilote","description":"CRM hub multi-rôles : pipeline 6 phases, sync inter-logiciels, IA conversationnelle","applicationCategory":"BusinessApplication","offers":{"@type":"Offer","price":"79","priceCurrency":"EUR"}}},
+    {"@type":"ListItem","position":5,"item":{"@type":"SoftwareApplication","name":"OniPromail","url":"https://www.oniq.online/logiciels/onipromail","description":"Email professionnel français avec tri IA — OFFERT dès 50€/mois d'abonnement ONIQ","applicationCategory":"CommunicationApplication","offers":{"@type":"Offer","price":"5","priceCurrency":"EUR"}}}
   ]
 }
 </script>
@@ -1152,12 +1152,12 @@ Email professionnel français alternatif à Google Workspace : email pro sur dom
 
 ## Pages canoniques
 - Accueil : https://www.oniq.online
-- Marketplace : https://www.oniq.online/#c-market
-- BatiManager : https://www.oniq.online/#sw/batimanager
-- OniMetri : https://www.oniq.online/#sw/metrimanager
-- OniCompta : https://www.oniq.online/#sw/onicompta
-- OniPilote : https://www.oniq.online/#sw/onipilote
-- OniPromail : https://www.oniq.online/#sw/onipromail
+- Marketplace : https://www.oniq.online/marketplace
+- BatiManager : https://www.oniq.online/logiciels/batimanager
+- OniMetri : https://www.oniq.online/logiciels/onimetri
+- OniCompta : https://www.oniq.online/logiciels/onicompta
+- OniPilote : https://www.oniq.online/logiciels/onipilote
+- OniPromail : https://www.oniq.online/logiciels/onipromail
 
 ## Données de contact
 - Site : https://www.oniq.online
@@ -3661,10 +3661,10 @@ const LandingPage=({onEnter,onAuth})=>{
             <div>
               <div style={{fontFamily:SANS,fontSize:11,fontWeight:700,letterSpacing:'.22em',textTransform:'uppercase',color:COL.gold,marginBottom:18}}>Légal</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="#pub-mentions" onClick={(e)=>{e.preventDefault();window.location.hash='pub-mentions';try{window.dispatchEvent(new HashChangeEvent('hashchange'));}catch(_){window.location.reload();}}}>Mentions légales</a>
-                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="#pub-cgv" onClick={(e)=>{e.preventDefault();window.location.hash='pub-cgv';try{window.dispatchEvent(new HashChangeEvent('hashchange'));}catch(_){window.location.reload();}}}>CGV / CGU</a>
-                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="#pub-rgpd" onClick={(e)=>{e.preventDefault();window.location.hash='pub-rgpd';try{window.dispatchEvent(new HashChangeEvent('hashchange'));}catch(_){window.location.reload();}}}>Politique RGPD</a>
-                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="#pub-cookies" onClick={(e)=>{e.preventDefault();window.location.hash='pub-cookies';try{window.dispatchEvent(new HashChangeEvent('hashchange'));}catch(_){window.location.reload();}}}>Cookies</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/mentions-legales" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-mentions'}}));}catch(_){window.location.href='/mentions-legales';}}}>Mentions légales</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/cgv" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cgv'}}));}catch(_){window.location.href='/cgv';}}}>CGV / CGU</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/rgpd" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-rgpd'}}));}catch(_){window.location.href='/rgpd';}}}>Politique RGPD</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/cookies" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cookies'}}));}catch(_){window.location.href='/cookies';}}}>Cookies</a>
               </div>
             </div>
           </div>
@@ -4167,8 +4167,8 @@ const Onboarding=({user,onDone})=>{
 
 // ── Marketplace ────────────────────────────────────────────────────────────
 const Marketplace=({user,setUser,software,setView,onAuth})=>{
-  // Lire les paramètres initiaux depuis l'URL (ex: #c-market?q=chantier&cat=BTP)
-  const _initParams=(()=>{try{const h=window.location.hash.split("?")[1]||"";return new URLSearchParams(h);}catch(e){return new URLSearchParams();}})();
+  // Lire les paramètres initiaux depuis la vraie query string (ex: /marketplace?cat=Pack&q=chantier)
+  const _initParams=(()=>{try{return new URLSearchParams(window.location.search);}catch(e){return new URLSearchParams();}})();
   const [cat,setCat]=useState(_initParams.get("cat")||"Tous");
   const [search,setSearch]=useState(_initParams.get("q")||"");
   const [sort,setSort]=useState(_initParams.get("sort")||"popular");
@@ -4176,14 +4176,17 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   useEffect(()=>{
     const t=setTimeout(()=>{
       try{
-        const base=window.location.hash.split("?")[0]||"#c-market";
-        const p=new URLSearchParams();
-        if(search) p.set("q",search);
-        if(cat&&cat!=="Tous") p.set("cat",cat);
-        if(sort&&sort!=="popular") p.set("sort",sort);
-        const qs=p.toString();
-        const newHash=qs?base+"?"+qs:base;
-        if(window.location.hash!==newHash){window.history.replaceState(null,"",window.location.pathname+window.location.search+newHash);}
+        // On ne touche qu'aux trois filtres marketplace — les autres params (team=, t=, payment=)
+        // sont préservés pour ne pas casser les flows de paiement et d'invitation équipe.
+        const cur=new URLSearchParams(window.location.search);
+        if(search) cur.set("q",search); else cur.delete("q");
+        if(cat&&cat!=="Tous") cur.set("cat",cat); else cur.delete("cat");
+        if(sort&&sort!=="popular") cur.set("sort",sort); else cur.delete("sort");
+        const qs=cur.toString();
+        const newUrl=window.location.pathname+(qs?"?"+qs:"")+(window.location.hash||"");
+        if(window.location.search!==(qs?"?"+qs:"")){
+          window.history.replaceState(null,"",newUrl);
+        }
       }catch(e){}
     },300);
     return ()=>clearTimeout(t);
@@ -9092,6 +9095,133 @@ const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-clients"
 const LOCKED_PRO=[{id:'c-espace',label:'Mon espace',g:'user',desc:'Gérez vos abonnements'},{id:'c-parrainage',label:'Parrainage',g:'gift',desc:'20% 1er mois'}];
 const LOCKED_HUB=[{id:'c-hub',label:'Nos logiciels',g:'cube',desc:"Accédez aux logiciels"}];
 
+// ══════════════════════════════════════════════════════════════════════════
+//  ROUTING — vraies URLs (History API) au lieu des hashes #c-market
+// ══════════════════════════════════════════════════════════════════════════
+//
+//  Le hash routing historique (#c-market, #sw-batimanager) reste accepté en
+//  entrée et redirige automatiquement vers la version path (/marketplace,
+//  /logiciels/batimanager). Côté serveur, public/_redirects (Cloudflare Pages)
+//  renvoie /index.html en 200 pour toutes les routes — sans ça un refresh
+//  sur /marketplace produirait un 404.
+//
+//  Hashes Supabase préservés : #access_token=…, #type=recovery, #refresh_token=…
+//  sont des conventions OAuth/recovery et ne sont jamais réécrits.
+const ROUTES=[
+  // view id            URL path                       title             public role
+  ['landing',           '/',                           'ONIQ',                   true],
+  ['c-market',          '/marketplace',                'Marketplace ONIQ',       true],
+  ['c-devis',           '/cles-en-main',               'Clés en main',           true],
+
+  // Pages publiques
+  ['pub-blog',          '/blog',                       'Blog ONIQ',              true],
+  ['pub-mentions',      '/mentions-legales',           'Mentions légales',       true],
+  ['pub-cgv',           '/cgv',                        'CGV',                    true],
+  ['pub-cgu',           '/cgu',                        'CGU',                    true],
+  ['pub-rgpd',          '/rgpd',                       'Politique RGPD',         true],
+  ['pub-cookies',       '/cookies',                    'Politique cookies',      true],
+  ['pub-securite',      '/securite',                   'Sécurité',               true],
+  ['pub-tarifs',        '/tarifs',                     'Tarifs ONIQ',            true],
+  ['pub-secteurs',      '/secteurs',                   'Nos secteurs',           true],
+  ['pub-sector-detail', '/secteurs/detail',            'Secteur',                true],
+  ['pub-decouvrir',     '/decouvrir',                  'Découvrir ONIQ',         true],
+  ['pub-pourquoi',      '/pourquoi-oniq',              'Pourquoi ONIQ',          true],
+  ['pub-recrutement',   '/recrutement',                'Recrutement',            true],
+  ['pub-apropos',       '/a-propos',                   'À propos',               true],
+
+  // Fiches logiciels
+  ['sw-batimanager',    '/logiciels/batimanager',      'BatiManager',            true],
+  ['sw-metrimanager',   '/logiciels/onimetri',         'OniMetri',               true],
+  ['sw-onicompta',      '/logiciels/onicompta',        'OniCompta',              true],
+  ['sw-onipilote',      '/logiciels/onipilote',        'OniPilote',              true],
+  ['sw-onipromail',     '/logiciels/onipromail',       'OniPromail',             true],
+  ['sw-oniprospect',    '/logiciels/oniprospect',      'OniProspect',            true],
+
+  // Client connecté
+  ['c-espace',          '/mon-espace',                 'Mon espace',             false],
+  ['c-hub',             '/mes-logiciels',              'Mes logiciels',          false],
+  ['c-parrainage',      '/parrainage',                 'Parrainage',             false],
+  ['c-aide',            '/aide',                       'Aide',                   true],
+  ['c-mes-pros',        '/mes-pros',                   'Mes pros',               false],
+  // c-mon-equipe placé AVANT c-team pour que PATH_TO_VIEW['/mon-equipe'] === 'c-team'
+  // (c'est c-team qui a un renderer dans App, c-mon-equipe est un alias historique).
+  ['c-mon-equipe',      '/mon-equipe',                 'Mon équipe',             false],
+  ['c-team',            '/mon-equipe',                 'Mon équipe',             false],
+  ['c-cgv',             '/compte/cgv',                 'CGV',                    false],
+  ['c-rgpd',            '/compte/rgpd',                'RGPD',                   false],
+  ['c-mentions',        '/compte/mentions-legales',    'Mentions légales',       false],
+  ['c-cookies',         '/compte/cookies',             'Cookies',                false],
+
+  // Admin
+  ['a-dashboard',       '/admin',                      'Admin · Dashboard',      false],
+  ['a-clients',         '/admin/clients',              'Admin · Clients',        false],
+  ['a-pro-pending',     '/admin/pros-en-attente',      'Admin · Pros',           false],
+  ['a-services',        '/admin/services',             'Admin · Services',       false],
+  ['a-software',        '/admin/logiciels',            'Admin · Logiciels',      false],
+  ['a-devis',           '/admin/devis',                'Admin · Devis',          false],
+  ['a-factures',        '/admin/factures',             'Admin · Factures',       false],
+  ['a-referrals',       '/admin/parrainage',           'Admin · Parrainage',     false],
+  ['a-codes',           '/admin/codes',                'Admin · Codes',          false],
+  ['a-commercial',      '/admin/commercial',           'Admin · Commercial',     false],
+  ['a-validations',     '/admin/validations',          'Admin · Validations',    false],
+  ['a-support',         '/admin/support',              'Admin · Support',        false],
+
+  // Commercial
+  ['co-dashboard',      '/commercial',                 'Commercial',             false],
+  ['co-pipeline',       '/commercial/pipeline',        'Commercial · Pipeline',  false],
+  ['co-leads',          '/commercial/leads',           'Commercial · Leads',     false],
+  ['co-crm',            '/commercial/crm',             'Commercial · CRM',       false],
+  ['co-espace',         '/commercial/espace',          'Commercial · Espace',    false],
+];
+const VIEW_TO_PATH=Object.fromEntries(ROUTES.map(r=>[r[0],r[1]]));
+const PATH_TO_VIEW=Object.fromEntries(ROUTES.map(r=>[r[1],r[0]]));
+const VIEW_TITLE  =Object.fromEntries(ROUTES.map(r=>[r[0],r[2]]));
+const VALID_VIEWS_SET=new Set(ROUTES.map(r=>r[0]));
+
+/** Construit l'URL absolue (path + querystring) pour une vue donnée. */
+function pathFromView(view, params){
+  const p=VIEW_TO_PATH[view]||'/';
+  if(!params) return p;
+  const qs=(params instanceof URLSearchParams)?params.toString():new URLSearchParams(params).toString();
+  return qs?(p+'?'+qs):p;
+}
+/** Résout la vue à partir du pathname courant. Renvoie 'landing' par défaut. */
+function viewFromPath(pathname){
+  if(!pathname || pathname==='/') return 'landing';
+  // Strip trailing slash sauf racine
+  const clean=pathname.length>1 && pathname.endsWith('/') ? pathname.slice(0,-1) : pathname;
+  return PATH_TO_VIEW[clean] || null;
+}
+/** Met à jour l'URL sans recharger la page. Conserve la query string si on passe un objet. */
+function navigateTo(view, params, replace){
+  const url=pathFromView(view, params);
+  try{
+    if(replace) window.history.replaceState(null,'',url);
+    else window.history.pushState(null,'',url);
+  }catch(e){}
+  try{ if(VIEW_TITLE[view]) document.title=VIEW_TITLE[view]+' — Plateforme'; }catch(e){}
+}
+/** Mapping legacy hash (#c-market, #sw-batimanager) → nouvelle URL.
+ *  Appelé une seule fois au boot pour migrer les anciens bookmarks/liens externes. */
+function migrateLegacyHash(){
+  try{
+    const raw=String(window.location.hash||'').replace(/^#/,'');
+    if(!raw) return null;
+    // Préserve les hashes Supabase (auth callback, password recovery)
+    if(raw.includes('access_token')||raw.includes('refresh_token')||raw.startsWith('type=recovery')) return null;
+    const [legacyId,query]=raw.split('?');
+    if(!legacyId) return null;
+    // Cas spécial du schema.org historique : #sw/batimanager → sw-batimanager
+    const normalized=legacyId.startsWith('sw/')?'sw-'+legacyId.slice(3):legacyId;
+    const path=VIEW_TO_PATH[normalized];
+    if(!path) return null;
+    const newUrl=query?(path+'?'+query):path;
+    window.history.replaceState(null,'',newUrl);
+    return normalized;
+  }catch(e){return null;}
+}
+try{window.__oniqRoutes={ROUTES,VIEW_TO_PATH,PATH_TO_VIEW,pathFromView,viewFromPath,navigateTo,migrateLegacyHash};}catch(e){}
+
 // ── Système de codes d'essai ──
 const TRIAL_CODES_KEY='oniq_trial_codes';
 function getTrialCodes(){try{return JSON.parse(localStorage.getItem(TRIAL_CODES_KEY)||'[]')}catch(e){return[]}}
@@ -10917,15 +11047,18 @@ function App() {
   const _navs=React.useMemo(()=>getNavs(t),[lang]);
   // Vues publiques (pas de redirect si pas connecté)
   const PUBLIC_VIEWS=['landing','pub-mentions','pub-cgv','pub-rgpd','pub-cookies'];
-  // Lecture initiale : hash URL en priorité, sinon landing
+  // Lecture initiale : path URL en priorité, fallback sur legacy hash (#c-market)
+  // pour les bookmarks historiques, sinon landing.
   const [view,setView]=useState(
     (()=>{
       try{
         const params=new URLSearchParams(window.location.search);
         if(params.get('team')) return 'c-market';
-        const hash=window.location.hash.replace('#','');
-        if(hash && hash!=='landing') return hash;
-        return 'landing';
+        // Migration des anciens hashes : #c-market → /marketplace en remplaçant l'URL.
+        const migrated=(typeof migrateLegacyHash==='function')?migrateLegacyHash():null;
+        if(migrated) return migrated;
+        const v=(typeof viewFromPath==='function')?viewFromPath(window.location.pathname):null;
+        return v||'landing';
       }catch(e){return 'landing';}
     })()
   );
@@ -10933,28 +11066,38 @@ function App() {
   const [prevView,setPrevView]=useState("c-market");
   const goTo=(v)=>{setPrevView(view);setView(v);};
 
-  // Sync hash URL ↔ view state
+  // Sync URL path ↔ view state. La query string courante est préservée pour ne pas
+  // perdre les filtres marketplace (?cat=Pack&q=…) ni les paramètres Stripe (?payment=success).
   useEffect(()=>{
     if(!view) return;
-    // Mettre à jour le hash sans recharger la page
     try{
-      if(view==='landing'){
-        window.history.replaceState(null,'',window.location.pathname+window.location.search);
-      } else {
-        window.history.pushState(null,'',window.location.pathname+window.location.search+'#'+view);
+      const targetPath=(typeof pathFromView==='function')?pathFromView(view):'/';
+      const fullTarget=targetPath+window.location.search;
+      // Évite les pushState inutiles (et donc les doublons dans l'historique).
+      if(window.location.pathname!==targetPath){
+        window.history.pushState(null,'',fullTarget);
       }
+      if(VIEW_TITLE&&VIEW_TITLE[view]) document.title=VIEW_TITLE[view]+' — Plateforme';
+      // Canonical dynamique : pointe sur l'URL courante (sans query) pour aider Google
+      // à dédupliquer les variantes /marketplace?cat=Pack vers /marketplace.
+      try{
+        let link=document.querySelector('link[rel="canonical"]');
+        if(!link){ link=document.createElement('link'); link.setAttribute('rel','canonical'); document.head.appendChild(link); }
+        link.setAttribute('href','https://www.oniq.online'+targetPath);
+      }catch(_){}
     }catch(e){}
     // Sauvegarder aussi dans localStorage comme fallback
     if(view!=='landing'&&!view.startsWith('pub-')){try{localStorage.setItem('oniq_view',view);}catch(e){}}
   },[view]);
 
-  // Écouter le bouton "Retour" du navigateur — avec whitelist de vues valides (anti XSS via #hash)
+  // Écouter le bouton "Retour" du navigateur : on relit le pathname et on résout la vue
+  // via PATH_TO_VIEW. La whitelist VALID_VIEWS_SET (générée depuis ROUTES) empêche
+  // qu'un path bricolé puisse forcer une vue arbitraire.
   useEffect(()=>{
-    const VALID_VIEWS=['landing','c-market','c-espace','c-mes-pros','c-mon-equipe','c-aide','c-devis','c-cgv','c-rgpd','c-mentions','c-cookies','a-dashboard','a-clients','a-pro-pending','a-services','co-dashboard','co-pipeline','co-leads','pub-blog','pub-mentions','pub-cgv','pub-rgpd','pub-cookies','pub-cgu','pub-securite','pub-tarifs','pub-secteurs','pub-decouvrir','pub-pourquoi','pub-recrutement','sw-batimanager','sw-metrimanager','sw-onicompta','sw-onipilote','sw-onipromail','sw-oniprospect'];
     const onPop=()=>{
       try{
-        const hash=String(window.location.hash||'').replace('#','').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,50);
-        if(hash && hash!=='landing' && VALID_VIEWS.includes(hash)) setView(hash);
+        const v=(typeof viewFromPath==='function')?viewFromPath(window.location.pathname):null;
+        if(v && VALID_VIEWS_SET.has(v)) setView(v);
         else setView('landing');
       }catch(e){console.warn('popstate handler',e);}
     };
@@ -11072,11 +11215,11 @@ function App() {
       const cloudSubs=await loadUserSubs(authUser.id, SW_DB);
       if(cloudSubs.length>0) mapped.subs=cloudSubs;
       setUser(mapped);
-      // Restaurer la vue : hash URL > localStorage > défaut landing
+      // Restaurer la vue : URL path > localStorage > défaut landing
       try{
-        const hash=window.location.hash.replace('#','');
+        const v=(typeof viewFromPath==='function')?viewFromPath(window.location.pathname):null;
         const sv=localStorage.getItem('oniq_view');
-        if(hash && hash!=='landing' && !PUBLIC_VIEWS.includes(hash)) setView(hash);
+        if(v && v!=='landing' && !PUBLIC_VIEWS.includes(v)) setView(v);
         else if(sv && sv!=='landing') setView(sv);
         else setView('landing');
       }catch(e){setView('landing');}
@@ -11151,11 +11294,11 @@ function App() {
             const ex=prev.find(x=>String(x.id)===String(mapped.id)||x.email===mapped.email);
             return ex?prev.map(x=>(String(x.id)===String(ex.id)||x.email===mapped.email)?{...ex,...mapped}:x):[...prev,mapped];
           });
-          // Restaurer la vue si on vient d'un refresh (hash > localStorage > défaut)
+          // Restaurer la vue si on vient d'un refresh (URL path > localStorage > défaut)
           try{
-            const hash=window.location.hash.replace('#','');
+            const v=(typeof viewFromPath==='function')?viewFromPath(window.location.pathname):null;
             const sv=localStorage.getItem('oniq_view');
-            if(hash && hash!=='landing' && !PUBLIC_VIEWS.includes(hash)) setView(hash);
+            if(v && v!=='landing' && !PUBLIC_VIEWS.includes(v)) setView(v);
             else if(sv && sv!=='landing') setView(sv);
             else setView('landing');
           }catch(e){}
@@ -11175,6 +11318,14 @@ function App() {
     const h=(e)=>{const m=e?.detail?.mode==='signup'?'signup':'login';openAuth(m);};
     window.addEventListener('oniq-open-auth',h);
     return ()=>window.removeEventListener('oniq-open-auth',h);
+  },[]);
+
+  /* Navigation interne déclarative : tout composant peut dispatcher
+     window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cgv'}})) */
+  useEffect(()=>{
+    const h=(e)=>{const v=e?.detail?.view; if(v && VALID_VIEWS_SET.has(v)) setView(v);};
+    window.addEventListener('oniq-navigate',h);
+    return ()=>window.removeEventListener('oniq-navigate',h);
   },[]);
 
   /* ── Hooks globaux pour la modale démo (DOM hors React) ── */
@@ -12845,7 +12996,7 @@ See DEPLOYMENT.md for the full guide.
     });
 
     /* === Animated gradient text shimmer on landing titles (uniquement landing) === */
-    const isLanding=document.querySelector('.oniq-landing-root, [data-landing]')||window.location.hash===''||window.location.hash==='#'||(window.__oniqView&&window.__oniqView==='landing');
+    const isLanding=document.querySelector('.oniq-landing-root, [data-landing]')||window.location.pathname==='/'||(window.__oniqView&&window.__oniqView==='landing');
     /* Best-effort detection: si on est sur landing, animate gradient text */
   }
   /* Ré-applique l'init sur changement de DOM (React rerenders) */
