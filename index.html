@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v17">
+<html lang="fr" data-oniq-version="v18">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v17"/>
+<meta name="oniq-version" content="v18"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -292,7 +292,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;}
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   Design tokens en CSS variables — accessibles hors React (toasts DOM,
+   modales injectées par JS, iframes apps). Reflètent exactement l'objet DS
+   défini plus bas. À garder synchronisé manuellement (~50 lignes).
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* Couleurs ONIQ — palette unique, doré utilisé comme accent uniquement */
+  --c-ink:#0A0A08;--c-deep:#060504;--c-paper:#F5F2EC;--c-dim:#EFEBE3;--c-linen:#E8E2D8;
+  --c-ivory:#FAF8F4;--c-stone:#8C8070;--c-sand:#B5A898;
+  --c-gold:#B89A5A;--c-gold-l:#D4B87A;--c-gold-dim:rgba(184,154,90,.13);--c-gold-b:rgba(184,154,90,.35);
+  --c-green:#4A7C59;--c-amber:#C47B2B;--c-red:#A63C3C;
+  /* Spacing — grille 4 px stricte */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-7:32px;--s-8:40px;--s-9:48px;--s-10:56px;--s-11:64px;--s-12:80px;
+  /* Typo */
+  --ff-sans:'DM Sans','Helvetica Neue',sans-serif;
+  --ff-serif:'Playfair Display',Georgia,serif;
+  --fs-xs:11px;--fs-sm:12px;--fs-md:13px;--fs-base:14px;--fs-lg:16px;--fs-xl:20px;--fs-h3:24px;--fs-h2:32px;--fs-h1:44px;
+  --fw-normal:400;--fw-medium:500;--fw-semi:600;--fw-bold:700;
+  /* Radius, ombres, transitions */
+  --r-sm:6px;--r-md:10px;--r-lg:14px;
+  --sh-sm:0 1px 2px rgba(10,10,8,.04);
+  --sh-md:0 1px 3px rgba(10,10,8,.04),0 4px 12px -4px rgba(10,10,8,.06);
+  --sh-lg:0 4px 8px -2px rgba(10,10,8,.06),0 16px 32px -8px rgba(10,10,8,.10);
+  --t:all .16s cubic-bezier(.2,.7,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}body{font-family:var(--ff-sans);}
 
 /* ── NAV BUTTONS ── */
 .nav-btn{transition:all 0.15s;}
@@ -1770,6 +1796,84 @@ const C = {
 };
 const SF="'Playfair Display',Georgia,serif";
 const SS="'DM Sans','Helvetica Neue',sans-serif";
+
+// ══════════════════════════════════════════════════════════════════════════
+//  DESIGN SYSTEM (DS) — épuration "ONIQ minimaliste"
+//
+//  Objectif : moins de bruit visuel (gradients, bordures dorées partout),
+//  une grille d'espacement cohérente, des composants standards. L'identité
+//  cream/gold/ink reste, mais le doré ne sort que pour l'accent — jamais
+//  comme bordure décorative ni fond de bloc entier.
+//
+//  Convention : on importe ces tokens dans les composants au lieu de
+//  ré-inventer des valeurs ad-hoc (padding:"22px 26px" → DS.pad.lg).
+// ══════════════════════════════════════════════════════════════════════════
+const DS = {
+  // Grille 4 px — toutes les valeurs s'alignent dessus
+  s:{x0:0,x1:4,x2:8,x3:12,x4:16,x5:20,x6:24,x7:32,x8:40,x9:48,x10:56,x11:64,x12:80},
+  // Échelle typographique (en px) — 7 niveaux suffisent
+  fs:{xs:11,sm:12,md:13,base:14,lg:16,xl:20,h3:24,h2:32,h1:44},
+  // Poids — 3 niveaux : courant / emphase / titre
+  fw:{normal:400,medium:500,semi:600,bold:700},
+  // Letterspacing : neutre par défaut, micro-letterspacing pour les éyebrows
+  ls:{tight:'-0.01em',normal:'0',wide:'0.04em',eyebrow:'0.16em'},
+  // Line-height
+  lh:{tight:1.2,snug:1.35,normal:1.55,relaxed:1.7},
+  // Rayons : 3 niveaux uniquement (chip 6 / card 10 / modal 14)
+  r:{sm:6,md:10,lg:14,full:999},
+  // Ombres : 3 niveaux discrets, jamais d'ombre dorée colorée
+  sh:{
+    sm:'0 1px 2px rgba(10,10,8,0.04)',
+    md:'0 1px 3px rgba(10,10,8,0.04),0 4px 12px -4px rgba(10,10,8,0.06)',
+    lg:'0 4px 8px -2px rgba(10,10,8,0.06),0 16px 32px -8px rgba(10,10,8,0.10)',
+  },
+  // Transitions : une valeur, ease-out, 160 ms — règle unique
+  t:'all .16s cubic-bezier(.2,.7,.3,1)',
+  // Padding shortcuts pour boutons / cards / inputs
+  pad:{xs:'4px 8px',sm:'6px 12px',md:'10px 16px',lg:'14px 20px',xl:'22px 26px'},
+};
+// Fragments de styles réutilisables — on évite de re-déclarer les mêmes
+// objets de style inline dans 80 endroits. Composer avec `{...DS.btn}`.
+DS.btn = {
+  fontFamily:SS,fontSize:DS.fs.sm,fontWeight:DS.fw.semi,letterSpacing:DS.ls.wide,
+  padding:DS.pad.md,borderRadius:DS.r.sm,border:'1px solid transparent',
+  cursor:'pointer',transition:DS.t,display:'inline-flex',alignItems:'center',
+  justifyContent:'center',gap:DS.s.x2,lineHeight:1,whiteSpace:'nowrap',
+};
+DS.btnPrimary = {
+  ...DS.btn,background:C.ink,color:C.ivory,
+};
+DS.btnSecondary = {
+  ...DS.btn,background:C.ivory,color:C.ink,borderColor:C.linen,
+};
+DS.btnGhost = {
+  ...DS.btn,background:'transparent',color:C.stone,
+};
+DS.btnAccent = { // RÉSERVÉ aux actions vraiment importantes — pas plus d'un par écran
+  ...DS.btn,background:C.gold,color:'#FFFFFF',fontWeight:DS.fw.bold,
+};
+DS.card = {
+  background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,
+  padding:DS.s.x6,boxShadow:DS.sh.sm,
+};
+DS.cardElevated = {
+  ...DS.card,boxShadow:DS.sh.md,
+};
+DS.input = {
+  fontFamily:SS,fontSize:DS.fs.base,padding:DS.pad.md,
+  background:'#FFFFFF',border:`1px solid ${C.linen}`,borderRadius:DS.r.sm,
+  color:C.ink,outline:'none',transition:DS.t,width:'100%',boxSizing:'border-box',
+};
+DS.label = {
+  fontFamily:SS,fontSize:DS.fs.xs,fontWeight:DS.fw.semi,
+  letterSpacing:DS.ls.eyebrow,textTransform:'uppercase',color:C.stone,
+};
+DS.h1 = {fontFamily:SF,fontSize:DS.fs.h1,fontWeight:DS.fw.bold,lineHeight:DS.lh.tight,letterSpacing:DS.ls.tight,color:C.ink};
+DS.h2 = {fontFamily:SF,fontSize:DS.fs.h2,fontWeight:DS.fw.bold,lineHeight:DS.lh.tight,letterSpacing:DS.ls.tight,color:C.ink};
+DS.h3 = {fontFamily:SF,fontSize:DS.fs.h3,fontWeight:DS.fw.semi,lineHeight:DS.lh.snug,letterSpacing:DS.ls.tight,color:C.ink};
+DS.body = {fontFamily:SS,fontSize:DS.fs.base,fontWeight:DS.fw.normal,lineHeight:DS.lh.normal,color:C.ink};
+DS.bodyDim = {...DS.body,color:C.stone};
+try{window.__oniqDS=DS;}catch(e){}
 
 // Formatage avec espace insécable fine entre chaque 3 chiffres (1 000 000)
 const fmtNb=(n,dec=0)=>{const v=Number(n);if(!isFinite(v))return '0';return v.toLocaleString('fr-FR',{minimumFractionDigits:dec,maximumFractionDigits:dec});};
@@ -13014,7 +13118,7 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version : permet de vérifier en un coup d'œil quelle build est servie.
      À incrémenter à chaque commit qui touche index.html. Aussi exposé via
      <meta name="oniq-version"> et window.__oniqVersion pour debug console. -->
-<div id="oniq-version-badge" aria-hidden="true" style="position:fixed;bottom:6px;right:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:600;color:rgba(31,26,20,0.32);background:rgba(255,255,255,0.55);padding:2px 6px;border-radius:4px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;pointer-events:none;letter-spacing:0.04em;user-select:none">v17</div>
-<script>try{window.__oniqVersion='v17';console.log('%cONIQ %cv17','color:#A06D2E;font-weight:bold','color:#8C8070');}catch(_){}</script>
+<div id="oniq-version-badge" aria-hidden="true" style="position:fixed;bottom:6px;right:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:600;color:rgba(31,26,20,0.32);background:rgba(255,255,255,0.55);padding:2px 6px;border-radius:4px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;pointer-events:none;letter-spacing:0.04em;user-select:none">v18</div>
+<script>try{window.__oniqVersion='v18';console.log('%cONIQ %cv18','color:#A06D2E;font-weight:bold','color:#8C8070');}catch(_){}</script>
 </body>
 </html>
