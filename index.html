@@ -606,6 +606,291 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   PACK HERO CARD — design exclusif pour l'onglet "Pack"
+   Complètement différent des cartes logiciel : grand format,
+   aurora background, particles, logos animés, gold premium feel
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.oniq-pack-hero {
+  position: relative;
+  background: linear-gradient(145deg, #14110D 0%, #1F1A14 30%, #2A2218 60%, #1F1A14 100%);
+  border-radius: 22px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.35),
+    0 0 80px rgba(212,162,76,0.12),
+    inset 0 1px 0 rgba(255,233,168,0.10);
+  border: 1px solid rgba(212,162,76,0.25);
+  animation: oniqPackHeroFadeIn 0.7s ease both;
+  transition: transform 0.3s cubic-bezier(.2,.7,.3,1), box-shadow 0.3s ease;
+}
+.oniq-pack-hero:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 28px 70px rgba(0,0,0,0.4),
+    0 0 100px rgba(212,162,76,0.20),
+    inset 0 1px 0 rgba(255,233,168,0.15);
+}
+@keyframes oniqPackHeroFadeIn {
+  0% { opacity: 0; transform: translateY(24px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Aurora gradient background animé */
+.oniq-pack-hero-aurora {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse 40% 30% at 25% 20%, rgba(212,162,76,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 35% 35% at 75% 30%, rgba(199,121,58,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 80%, rgba(160,109,46,0.18) 0%, transparent 55%);
+  filter: blur(40px);
+  animation: oniqPackHeroAurora 14s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes oniqPackHeroAurora {
+  0%,100% { transform: translate(0,0) scale(1); opacity: 0.85; }
+  50%     { transform: translate(3%,-2%) scale(1.05); opacity: 1; }
+}
+
+/* Grille subtile en fond pour la texture */
+.oniq-pack-hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(244,233,213,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244,233,213,0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 100%);
+}
+
+/* Sparkles dorés qui pulsent */
+.oniq-pack-hero-sparkles {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.oniq-pack-hero-sparkles span {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: #FFE9A8;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #D4A24C, 0 0 16px rgba(232,196,116,0.6);
+  animation: oniqPackHeroSparkle 3.5s ease-in-out infinite;
+}
+@keyframes oniqPackHeroSparkle {
+  0%,100% { opacity: 0; transform: scale(0); }
+  50%     { opacity: 1; transform: scale(1.4); }
+}
+
+.oniq-pack-hero-content {
+  position: relative; z-index: 2;
+  padding: 44px 48px;
+  display: flex; flex-direction: column; gap: 32px;
+}
+
+/* Header : eyebrow + titre */
+.oniq-pack-hero-head {
+  text-align: left;
+}
+.oniq-pack-hero-eyebrow {
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #E8C474;
+  margin-bottom: 16px;
+  padding: 5px 12px;
+  background: rgba(212,162,76,0.10);
+  border: 1px solid rgba(212,162,76,0.30);
+  border-radius: 999px;
+}
+.oniq-pack-hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 44px;
+  font-weight: 700;
+  color: #FFE9A8;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  background: linear-gradient(120deg, #FFE9A8 0%, #D4A24C 50%, #C7793A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 30px rgba(212,162,76,0.35));
+}
+.oniq-pack-hero-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: rgba(244,233,213,0.72);
+  line-height: 1.5;
+  max-width: 620px;
+}
+
+/* Stack des logos inclus */
+.oniq-pack-hero-stack-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(244,233,213,0.45);
+  margin-bottom: 14px;
+}
+.oniq-pack-hero-logos {
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.oniq-pack-hero-logo {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: rgba(244,233,213,0.04);
+  border: 1px solid rgba(212,162,76,0.18);
+  border-radius: 14px;
+  min-width: 92px;
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), background 0.25s, border-color 0.25s;
+  animation: oniqPackLogoPop 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.oniq-pack-hero-logo:hover {
+  transform: translateY(-4px) scale(1.04);
+  background: rgba(212,162,76,0.10);
+  border-color: rgba(212,162,76,0.45);
+}
+@keyframes oniqPackLogoPop {
+  0% { opacity: 0; transform: translateY(12px) scale(0.85); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.oniq-pack-hero-logo-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(244,233,213,0.78);
+  white-space: nowrap;
+}
+.oniq-pack-hero-logo-free {
+  border-color: rgba(125,219,148,0.40);
+  background: rgba(125,219,148,0.06);
+}
+.oniq-pack-hero-free-tag {
+  position: absolute;
+  top: -8px; right: -6px;
+  background: linear-gradient(135deg, #7DDB94, #4A9C77);
+  color: #0E1A11;
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 3px 10px rgba(125,219,148,0.4);
+  border: 1.5px solid #14110D;
+}
+
+/* CTA Row : prix + boutons */
+.oniq-pack-hero-cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 1px solid rgba(212,162,76,0.18);
+}
+.oniq-pack-hero-price {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.oniq-pack-hero-price-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: #FFE9A8;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, #FFE9A8 0%, #D4A24C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.oniq-pack-hero-price-unit {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(244,233,213,0.55);
+}
+.oniq-pack-hero-actions {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.oniq-pack-hero-btn-secondary {
+  background: transparent;
+  color: #E8C474;
+  border: 1px solid rgba(212,162,76,0.40);
+  border-radius: 10px;
+  padding: 13px 22px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.oniq-pack-hero-btn-secondary:hover {
+  background: rgba(212,162,76,0.10);
+  border-color: #D4A24C;
+  color: #FFE9A8;
+}
+.oniq-pack-hero-btn-primary {
+  background: linear-gradient(135deg, #FFE9A8 0%, #D4A24C 50%, #A06D2E 100%);
+  color: #1F1A14;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 26px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(212,162,76,0.45), inset 0 1px 0 rgba(255,255,255,0.30);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.oniq-pack-hero-btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.4) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: oniqPackHeroBtnShimmer 3s ease-in-out infinite;
+}
+@keyframes oniqPackHeroBtnShimmer {
+  0%,100% { transform: translateX(-120%); }
+  50% { transform: translateX(120%); }
+}
+.oniq-pack-hero-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(212,162,76,0.55), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+/* Responsive */
+@media(max-width:768px){
+  .oniq-pack-hero-content { padding: 28px 22px; gap: 24px; }
+  .oniq-pack-hero-title { font-size: 30px; }
+  .oniq-pack-hero-subtitle { font-size: 13.5px; }
+  .oniq-pack-hero-price-value { font-size: 32px; }
+  .oniq-pack-hero-logos { gap: 10px; }
+  .oniq-pack-hero-logo { min-width: 80px; padding: 10px 12px; }
+  .oniq-pack-hero-logo-name { font-size: 10px; }
+  .oniq-pack-hero-cta-row { gap: 14px; }
+  .oniq-pack-hero-actions { width: 100%; }
+  .oniq-pack-hero-btn-primary, .oniq-pack-hero-btn-secondary { flex: 1; padding: 13px 16px; font-size: 11px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    LANDING PAGE — Fixes spécifiques (data-oniq-hero, sections, footer)
    ═══════════════════════════════════════════════════════════════════════ */
 @media(max-width:768px){
@@ -4199,19 +4484,20 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         </div>
       )}
 
-      {/* ─── BANNIÈRE FEATURED PACK BÂTIMENT (épurée) ─── */}
-      {(()=>{ const pack=software.find(s=>s.id===107); if(!pack||isSub(107)) return null; return (
-        <div className="oniq-pack-banner" onClick={()=>setDetail(pack)} role="button" tabIndex={0}
-             onKeyDown={(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setDetail(pack);}}}>
+      {/* ─── BANDEAU GÉNÉRIQUE PACKS (teaser, change d'onglet) ─── */}
+      {cat!=="Pack" && (()=>{ const hasPacks=software.some(s=>s.isPack); if(!hasPacks) return null; return (
+        <div className="oniq-pack-banner" onClick={()=>setCat("Pack")} role="button" tabIndex={0}
+             onKeyDown={(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setCat("Pack");}}}>
           <div style={{position:'relative',zIndex:2,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap',justifyContent:'space-between'}}>
             <div style={{display:'flex',alignItems:'center',gap:18,flex:1,minWidth:260}}>
-              <div style={{width:60,height:60,borderRadius:14,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,flexShrink:0,boxShadow:'0 4px 18px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.2)'}}>🏛</div>
+              <div style={{width:56,height:56,borderRadius:14,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,flexShrink:0,boxShadow:'0 4px 18px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.2)'}}>◆</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:'#FFE9A8',marginBottom:4,letterSpacing:'-0.01em'}}>Pack Bâtiment</div>
-                <div style={{fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>L'écosystème complet — <span style={{fontFamily:SF,fontWeight:700,color:'#FFE9A8'}}>479 €/mois HT</span></div>
+                <div style={{fontFamily:SS,fontSize:9,fontWeight:800,letterSpacing:'0.24em',textTransform:'uppercase',color:'#E8C474',marginBottom:6}}>◆ NOUVEAUTÉ</div>
+                <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:'#FFE9A8',marginBottom:4,letterSpacing:'-0.01em'}}>Découvrez nos <span style={{fontStyle:'italic',fontWeight:600}}>packs</span></div>
+                <div style={{fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>Regroupez plusieurs logiciels et profitez de tarifs préférentiels. Pack Bâtiment disponible — d'autres bientôt.</div>
               </div>
             </div>
-            <button onClick={(e)=>{e.stopPropagation();setDetail(pack);}} style={{background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:10,padding:'13px 26px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:'0 6px 22px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.3)',whiteSpace:'nowrap',flexShrink:0}}>Découvrir →</button>
+            <button onClick={(e)=>{e.stopPropagation();setCat("Pack");}} style={{background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:10,padding:'13px 26px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:'0 6px 22px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.3)',whiteSpace:'nowrap',flexShrink:0}}>Voir les packs →</button>
           </div>
         </div>
       ); })()}
@@ -4257,8 +4543,78 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         </select>
       </div>
 
-      {/* Grille */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14,marginBottom:22}}>
+      {/* ═══ HERO CARDS PACK — design WOW exclusif pour l'onglet Pack ═══ */}
+      {cat==="Pack" && (
+        <div style={{display:'flex',flexDirection:'column',gap:24,marginBottom:22}}>
+          {list.map((pack,pi)=>{
+            const sub=isSub(pack.id);
+            const included=(pack.includes||[]).map(id=>software.find(s=>s.id===id)).filter(Boolean);
+            const free=(pack.bundleIncludesFree||[]).map(id=>software.find(s=>s.id===id)).filter(Boolean);
+            return (
+              <div key={pack.id} className="oniq-pack-hero" data-reveal style={{animationDelay:(pi*0.08)+'s'}}>
+                {/* Aurora background */}
+                <div className="oniq-pack-hero-aurora" aria-hidden="true"/>
+                <div className="oniq-pack-hero-grid" aria-hidden="true"/>
+                <div className="oniq-pack-hero-sparkles" aria-hidden="true">
+                  {[...Array(6)].map((_,k)=>(
+                    <span key={k} style={{left:(15+k*15)+'%',top:(10+(k%3)*30)+'%',animationDelay:(k*0.4)+'s'}}/>
+                  ))}
+                </div>
+
+                <div className="oniq-pack-hero-content">
+                  {/* Header : badge + titre */}
+                  <div className="oniq-pack-hero-head">
+                    <div className="oniq-pack-hero-eyebrow">◆ PACK · ÉCONOMIE & SIMPLICITÉ</div>
+                    <h2 className="oniq-pack-hero-title">{pack.name}</h2>
+                    <div className="oniq-pack-hero-subtitle">L'écosystème complet — tout pour piloter votre entreprise de A à Z.</div>
+                  </div>
+
+                  {/* Logos des inclus */}
+                  <div className="oniq-pack-hero-stack">
+                    <div className="oniq-pack-hero-stack-label">Inclus dans ce pack</div>
+                    <div className="oniq-pack-hero-logos">
+                      {included.map((s,si)=>(
+                        <div key={s.id} className="oniq-pack-hero-logo" style={{animationDelay:(si*0.1)+'s'}} title={s.name}>
+                          <SwLogo slug={s.slug} icon={s.icon} size={52} radius={12}/>
+                          <span className="oniq-pack-hero-logo-name">{s.name}</span>
+                        </div>
+                      ))}
+                      {free.map((s,si)=>(
+                        <div key={s.id} className="oniq-pack-hero-logo oniq-pack-hero-logo-free" style={{animationDelay:((included.length+si)*0.1)+'s'}} title={s.name+' — offert dans le pack'}>
+                          <div className="oniq-pack-hero-free-tag">Offert</div>
+                          <SwLogo slug={s.slug} icon={s.icon} size={52} radius={12}/>
+                          <span className="oniq-pack-hero-logo-name">{s.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prix + CTA */}
+                  <div className="oniq-pack-hero-cta-row">
+                    <div className="oniq-pack-hero-price">
+                      <span className="oniq-pack-hero-price-value">{pack.price} €</span>
+                      <span className="oniq-pack-hero-price-unit">/mois HT</span>
+                    </div>
+                    <div className="oniq-pack-hero-actions">
+                      {!sub && <button className="oniq-pack-hero-btn-secondary" onClick={(e)=>{e.stopPropagation();openCalendlyDemo(pack.name);}}>Demander une démo</button>}
+                      {sub
+                        ? <button className="oniq-pack-hero-btn-primary" onClick={(e)=>{e.stopPropagation();setView('c-hub');}}>Ouvrir mes logiciels →</button>
+                        : <button className="oniq-pack-hero-btn-primary" onClick={(e)=>{e.stopPropagation();setDetail(pack);}}>Découvrir le pack →</button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {list.length===0 && (
+            <div style={{textAlign:'center',padding:60,color:C.stone,fontFamily:SS,fontSize:14,fontStyle:'italic'}}>Aucun pack disponible pour le moment.</div>
+          )}
+        </div>
+      )}
+
+      {/* Grille STANDARD (uniquement pour les onglets non-Pack) */}
+      {cat!=="Pack" && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14,marginBottom:22}}>
         {list.map((sw,i)=>{
           const sub=isSub(sw.id),trial=isTrial(sw.id),inC=isCart(sw.id);
           return (
@@ -4318,7 +4674,7 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
             </div>
           );
         })}
-      </div>
+      </div>}
 
       {/* CTA devis */}
       <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:"20px 26px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:20}}>
