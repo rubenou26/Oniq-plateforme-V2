@@ -33,9 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr">
+<html lang="fr" data-oniq-version="v17">
 <head>
 <meta charset="UTF-8"/>
+<meta name="oniq-version" content="v17"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -13010,5 +13011,10 @@ See DEPLOYMENT.md for the full guide.
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
+<!-- Badge version : permet de vérifier en un coup d'œil quelle build est servie.
+     À incrémenter à chaque commit qui touche index.html. Aussi exposé via
+     <meta name="oniq-version"> et window.__oniqVersion pour debug console. -->
+<div id="oniq-version-badge" aria-hidden="true" style="position:fixed;bottom:6px;right:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:600;color:rgba(31,26,20,0.32);background:rgba(255,255,255,0.55);padding:2px 6px;border-radius:4px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;pointer-events:none;letter-spacing:0.04em;user-select:none">v17</div>
+<script>try{window.__oniqVersion='v17';console.log('%cONIQ %cv17','color:#A06D2E;font-weight:bold','color:#8C8070');}catch(_){}</script>
 </body>
 </html>
