@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v25">
+<html lang="fr" data-oniq-version="v26">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v25"/>
+<meta name="oniq-version" content="v26"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -5867,26 +5867,31 @@ const MonEspace=({user,setUser,software,setView})=>{
   const invoices=invoiceMonths.map((m,i)=>({id:`ONIQ-${m.split(" ")[1]}-${String(12-i).padStart(2,"0")}`,label:`Facture ONIQ — ${m}`,amountHT:i===0?mrr:Math.max(0,mrr-5),amountTTC:Math.round((i===0?mrr:Math.max(0,mrr-5))*1.2*100)/100,date:`01 ${m.split(" ")[0].slice(0,3)} ${m.split(" ")[1]}`,status:"paid",logiciels:myApps.map(s=>s.name).join(", ")||"—"}));
 
   return (
-    <div style={{padding:isMob()?"16px 12px":"28px 36px"}}>
-      <div style={{position:"relative",background:"linear-gradient(135deg,#1F1A14 0%,#2A2218 50%,#1E1812 100%)",borderRadius:12,padding:isMob()?"22px 22px":"28px 32px",marginBottom:24,boxShadow:"0 8px 32px -12px rgba(10,10,8,0.45),inset 0 1px 0 rgba(212,184,122,0.10)",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:-60,right:-40,width:240,height:240,background:"radial-gradient(circle,rgba(212,184,122,0.18) 0%,transparent 60%)",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:-80,left:-60,width:200,height:200,background:"radial-gradient(circle,rgba(184,154,90,0.10) 0%,transparent 70%)",pointerEvents:"none"}}/>
-        <div style={{position:"relative",zIndex:1}}>
-          <div style={{fontFamily:SS,fontSize:10,letterSpacing:"0.22em",textTransform:"uppercase",color:C.goldL,marginBottom:6,fontWeight:600}}>Mon espace</div>
-          <h1 style={{margin:0,fontFamily:SF,fontSize:isMob()?24:32,fontWeight:700,color:"#FAF8F4",letterSpacing:"-0.01em",fontStyle:"italic"}}>Bonjour, {user.company}</h1>
-        </div>
+    <div style={{padding:isMob()?"16px 12px":"40px 36px",maxWidth:1280,margin:"0 auto"}}>
+      {/* En-tête épuré : eyebrow doré discret + grande typo Playfair. Plus de
+          dégradé sombre ni de halos dorés — l'identité ONIQ vient de la typo
+          et du whitespace, pas d'effets décoratifs. */}
+      <div style={{marginBottom:DS.s.x9}}>
+        <div style={{fontFamily:SS,fontSize:DS.fs.xs,letterSpacing:DS.ls.eyebrow,textTransform:"uppercase",color:C.gold,marginBottom:DS.s.x2,fontWeight:DS.fw.semi}}>Mon espace</div>
+        <h1 style={{margin:0,fontFamily:SF,fontSize:isMob()?28:40,fontWeight:DS.fw.bold,color:C.ink,letterSpacing:DS.ls.tight,fontStyle:"italic",lineHeight:1.15}}>Bonjour, {user.company}</h1>
+        <div style={{fontFamily:SS,fontSize:DS.fs.md,color:C.stone,marginTop:DS.s.x2}}>Vue d'ensemble de vos abonnements, accès et facturation.</div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:window.innerWidth<=768?"1fr":"repeat(4,1fr)",gap:14,marginBottom:22}}>
+      {/* Grille KPI : 4 colonnes desktop, 1 colonne mobile. Gap basé sur DS,
+          marge plus généreuse avant la section principale. */}
+      <div style={{display:"grid",gridTemplateColumns:isMob()?"1fr":"repeat(4,1fr)",gap:DS.s.x4,marginBottom:DS.s.x9}}>
         <KPI label="Abonnement mensuel" value={`${mrr} €`} sub={`${myApps.length} logiciel${myApps.length>1?"s":""} souscrit${myApps.length>1?"s":""}`} accent/>
         <KPI label="Accès actifs" value={loadingAccess?"...":activeCount} sub={statusLabel}/>
         <KPI label="Prochaine échéance" value={nextExpiry?formatAccessDate(nextExpiry):"—"} sub={nextExpiry?"Renouvellement à surveiller":"Aucune échéance"}/>
         <KPI label="Client depuis" value={user.since||"2024"} sub="Membre ONIQ"/>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:window.innerWidth<=768?"1fr":"1fr 1fr",gap:window.innerWidth<=768?12:18}}>
-        <div style={{background:"linear-gradient(135deg,rgba(255,255,255,0.92) 0%,rgba(251,249,243,0.94) 100%)",border:`1px solid ${C.linen}`,borderRadius:10,overflow:"hidden",boxShadow:"0 1px 3px rgba(184,154,90,0.08),0 8px 24px -8px rgba(184,154,90,0.10)"}}>
-          <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.linen}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-            <span style={{fontFamily:SF,fontSize:14,fontWeight:600,color:C.ink}}>Mes logiciels</span>
-            <span style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:C.stone}}>{statusLabel}</span>
+      {/* Layout principal — fond plat ivory + bordure linen + ombre légère
+          (DS.card). Plus de gradient sur les cards : c'était le principal
+          bruit visuel signalé dans la spec d'épuration. */}
+      <div style={{display:"grid",gridTemplateColumns:isMob()?"1fr":"1fr 1fr",gap:isMob()?DS.s.x4:DS.s.x6}}>
+        <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,overflow:"hidden",boxShadow:DS.sh.sm}}>
+          <div style={{padding:`${DS.s.x4}px ${DS.s.x6}px`,borderBottom:`1px solid ${C.linen}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:DS.s.x3,flexWrap:"wrap"}}>
+            <span style={{fontFamily:SF,fontSize:DS.fs.lg,fontWeight:DS.fw.semi,color:C.ink}}>Mes logiciels</span>
+            <span style={{fontFamily:SS,fontSize:DS.fs.xs,fontWeight:DS.fw.semi,color:C.stone}}>{statusLabel}</span>
           </div>
           {myApps.length===0&&<div style={{padding:"22px 18px",fontFamily:SS,fontSize:13,color:C.stone,textAlign:"center"}}>Aucun logiciel souscrit.</div>}
           {appStatuses.map(({sw,access,active},i)=>(
@@ -5923,9 +5928,9 @@ const MonEspace=({user,setUser,software,setView})=>{
             <a href={ONIQ_HUB_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",background:C.ink,border:"none",borderRadius:4,padding:"10px",fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:C.ivory,textDecoration:"none",cursor:"pointer"}}>💻 Télécharger le logiciel sur votre PC</a>
           </div>
         </div>
-        <div style={{display:"grid",gap:18}}>
-          <div style={{background:"linear-gradient(135deg,rgba(255,255,255,0.92) 0%,rgba(251,249,243,0.94) 100%)",border:`1px solid ${C.linen}`,borderRadius:10,overflow:"hidden",boxShadow:"0 1px 3px rgba(184,154,90,0.08),0 8px 24px -8px rgba(184,154,90,0.10)"}}>
-            <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:14,fontWeight:600,color:C.ink}}>État de l'abonnement</span></div>
+        <div style={{display:"grid",gap:DS.s.x6}}>
+          <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,overflow:"hidden",boxShadow:DS.sh.sm}}>
+            <div style={{padding:`${DS.s.x4}px ${DS.s.x6}px`,borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:DS.fs.lg,fontWeight:DS.fw.semi,color:C.ink}}>État de l'abonnement</span></div>
             <div style={{padding:"18px"}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
                 <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:6,padding:"12px 14px"}}><div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:C.stone,marginBottom:5}}>Statut</div><div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:activeCount>0?C.green:C.red}}>{loadingAccess?"Synchronisation":activeCount>0?"Actif":"Inactif"}</div></div>
@@ -5936,8 +5941,8 @@ const MonEspace=({user,setUser,software,setView})=>{
               </div>
             </div>
           </div>
-          <div style={{background:"linear-gradient(135deg,rgba(255,255,255,0.92) 0%,rgba(251,249,243,0.94) 100%)",border:`1px solid ${C.linen}`,borderRadius:10,overflow:"hidden",boxShadow:"0 1px 3px rgba(184,154,90,0.08),0 8px 24px -8px rgba(184,154,90,0.10)"}}>
-            <div style={{padding:"14px 18px",borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:14,fontWeight:600,color:C.ink}}>Mes factures ONIQ</span></div>
+          <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,overflow:"hidden",boxShadow:DS.sh.sm}}>
+            <div style={{padding:`${DS.s.x4}px ${DS.s.x6}px`,borderBottom:`1px solid ${C.linen}`}}><span style={{fontFamily:SF,fontSize:DS.fs.lg,fontWeight:DS.fw.semi,color:C.ink}}>Mes factures ONIQ</span></div>
             {invoices.map((inv,i)=>(
               <div key={inv.id}><div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 18px",flexWrap:"wrap"}}>
                 <div style={{flex:1,minWidth:180}}>
@@ -6288,30 +6293,48 @@ const SoftwareHub=({user,software,setUser,setView})=>{
       window.oniqNotify("Upload logo impossible : "+(err?.message||"erreur inconnue"),"err");
     }
   };
-  return <div style={{padding:isMob()?'16px 14px':'28px 36px'}}>
-    <PH section={t('hub')} title={t('ourSoftware')} action={<div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:C.gold}}>{myApps.length} logiciel{myApps.length>1?'s':''}</div>}/>
-    <div style={{display:'grid',gridTemplateColumns:window.innerWidth<=768?'1fr':'1.3fr 0.9fr',gap:18,marginBottom:20,alignItems:'stretch'}}>
-      <div style={{background:"linear-gradient(135deg,rgba(255,255,255,0.92) 0%,rgba(251,249,243,0.94) 100%)",border:`1px solid ${C.linen}`,borderRadius:12,padding:'22px 26px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:18,flexWrap:'wrap',boxShadow:"0 1px 3px rgba(184,154,90,0.08),0 8px 24px -8px rgba(184,154,90,0.10)"}}>
-        <div>
-          <div style={{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink,marginBottom:5,fontStyle:"italic",letterSpacing:"-0.01em"}}>Tous les logiciels souscrits par {user.company}</div>
-          <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.6}}>Le patron ouvre ses logiciels ici et peut gérer les accès de son équipe dans l'onglet dédié.</div>
+  return <div style={{padding:isMob()?'16px 14px':'40px 36px',maxWidth:1280,margin:"0 auto"}}>
+    {/* En-tête épuré (cf. spec d'épuration) : eyebrow doré + titre Playfair,
+        pas de bandeau décoratif. Compteur logiciels en discret à droite. */}
+    <div style={{marginBottom:DS.s.x9,display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:DS.s.x4,flexWrap:'wrap'}}>
+      <div>
+        <div style={{fontFamily:SS,fontSize:DS.fs.xs,letterSpacing:DS.ls.eyebrow,textTransform:"uppercase",color:C.gold,marginBottom:DS.s.x2,fontWeight:DS.fw.semi}}>{t('hub')}</div>
+        <h1 style={{margin:0,fontFamily:SF,fontSize:isMob()?28:40,fontWeight:DS.fw.bold,color:C.ink,letterSpacing:DS.ls.tight,fontStyle:"italic",lineHeight:1.15}}>{t('ourSoftware')}</h1>
+      </div>
+      <div style={{fontFamily:SS,fontSize:DS.fs.sm,color:C.stone,fontWeight:DS.fw.medium}}>{myApps.length} logiciel{myApps.length>1?'s':''} actif{myApps.length>1?'s':''}</div>
+    </div>
+    {/* Deux cartes en deux colonnes : récap + logo entreprise. Fond plat ivory,
+        sans gradient, ombre légère (DS.sh.sm). Whitespace renforcé. */}
+    <div style={{display:'grid',gridTemplateColumns:isMob()?'1fr':'1.3fr 0.9fr',gap:DS.s.x6,marginBottom:DS.s.x9,alignItems:'stretch'}}>
+      <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,padding:`${DS.s.x6}px ${DS.s.x7}px`,display:'flex',alignItems:'center',justifyContent:'space-between',gap:DS.s.x6,flexWrap:'wrap',boxShadow:DS.sh.sm}}>
+        <div style={{flex:1,minWidth:200}}>
+          <div style={{fontFamily:SF,fontSize:DS.fs.xl,fontWeight:DS.fw.semi,color:C.ink,marginBottom:DS.s.x2,letterSpacing:DS.ls.tight}}>Tous les logiciels souscrits par {user.company}</div>
+          <div style={{fontFamily:SS,fontSize:DS.fs.md,color:C.stone,lineHeight:DS.lh.normal}}>Le patron ouvre ses logiciels ici et peut gérer les accès de son équipe dans l'onglet dédié.</div>
         </div>
-        <div style={{display:'flex',gap:22,alignItems:'center',flexWrap:'wrap'}}>
-          <div><div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:C.stone,marginBottom:4}}>Logiciels actifs</div><div style={{fontFamily:SF,fontSize:24,fontWeight:700,color:C.ink,fontStyle:"italic"}}>{myApps.length}</div></div>
-          <div><div style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:C.stone,marginBottom:4}}>Valeur mensuelle</div><div style={{fontFamily:SF,fontSize:24,fontWeight:700,color:C.gold,fontStyle:"italic"}}>{total} €</div></div>
+        <div style={{display:'flex',gap:DS.s.x7,alignItems:'center',flexWrap:'wrap'}}>
+          <div><div style={{fontFamily:SS,fontSize:DS.fs.xs,fontWeight:DS.fw.semi,color:C.stone,marginBottom:DS.s.x1}}>Logiciels actifs</div><div style={{fontFamily:SF,fontSize:DS.fs.h3,fontWeight:DS.fw.bold,color:C.ink}}>{myApps.length}</div></div>
+          <div><div style={{fontFamily:SS,fontSize:DS.fs.xs,fontWeight:DS.fw.semi,color:C.stone,marginBottom:DS.s.x1}}>Valeur mensuelle</div><div style={{fontFamily:SF,fontSize:DS.fs.h3,fontWeight:DS.fw.bold,color:C.gold}}>{total} €</div></div>
         </div>
       </div>
-      <div style={{background:"linear-gradient(135deg,rgba(255,255,255,0.92) 0%,rgba(251,249,243,0.94) 100%)",border:`1px solid ${C.linen}`,borderRadius:12,padding:'22px 26px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap',boxShadow:"0 1px 3px rgba(184,154,90,0.08),0 8px 24px -8px rgba(184,154,90,0.10)"}}>
-        <div style={{display:'flex',alignItems:'center',gap:16}}>
-          {user.companyLogo?(<img src={user.companyLogo} alt='Logo entreprise' style={{width:68,height:68,objectFit:'contain',borderRadius:10,background:C.ivory,border:`1px solid ${C.linen}`,padding:8}}/>):(<div style={{width:68,height:68,borderRadius:12,background:"linear-gradient(135deg,#1F1A14 0%,#2A2218 50%,#1E1812 100%)",border:`1px solid ${C.gold}55`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:SF,fontSize:24,fontWeight:700,color:C.goldL,boxShadow:"0 2px 8px rgba(10,10,8,0.30),inset 0 1px 0 rgba(212,184,122,0.18)",fontStyle:"italic"}}>{(user.company||'ON').slice(0,2).toUpperCase()}</div>)}
-          <div><div style={{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink,marginBottom:5,fontStyle:"italic",letterSpacing:"-0.01em"}}>Logo de l’entreprise</div><div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.6}}>Affiché sur l'invitation équipe et dans l'accès membre.</div></div>
+      {/* Carte logo : ancienne version avait un dégradé sombre + ombre dorée
+          sur le placeholder. Remplacé par un fond ink uni et une bordure
+          subtile — beaucoup plus calme visuellement. */}
+      <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,padding:`${DS.s.x6}px ${DS.s.x7}px`,display:'flex',alignItems:'center',justifyContent:'space-between',gap:DS.s.x4,flexWrap:'wrap',boxShadow:DS.sh.sm}}>
+        <div style={{display:'flex',alignItems:'center',gap:DS.s.x4,flex:1,minWidth:160}}>
+          {user.companyLogo
+            ?(<img src={user.companyLogo} alt='Logo entreprise' style={{width:64,height:64,objectFit:'contain',borderRadius:DS.r.sm,background:C.dim,border:`1px solid ${C.linen}`,padding:DS.s.x2}}/>)
+            :(<div style={{width:64,height:64,borderRadius:DS.r.sm,background:C.ink,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:SF,fontSize:22,fontWeight:DS.fw.bold,color:C.goldL,fontStyle:"italic"}}>{(user.company||'ON').slice(0,2).toUpperCase()}</div>)
+          }
+          <div><div style={{fontFamily:SF,fontSize:DS.fs.lg,fontWeight:DS.fw.semi,color:C.ink,marginBottom:DS.s.x1,letterSpacing:DS.ls.tight}}>Logo de l'entreprise</div><div style={{fontFamily:SS,fontSize:DS.fs.sm,color:C.stone,lineHeight:DS.lh.normal}}>Affiché sur l'invitation équipe et dans l'accès membre.</div></div>
         </div>
-        <label style={{background:"linear-gradient(135deg,#1F1A14,#2A2218)",border:'none',borderRadius:7,padding:'11px 18px',fontFamily:SS,fontSize:11,fontWeight:800,letterSpacing:'0.1em',textTransform:'uppercase',color:'#FAF8F4',cursor:'pointer',boxShadow:"0 2px 8px rgba(10,10,8,0.30),inset 0 1px 0 rgba(212,184,122,0.10)"}}>Upload du logo<input type='file' accept='image/*' onChange={onLogoChange} style={{display:'none'}}/></label>
+        <label style={{...DS.btnPrimary,cursor:'pointer'}}>Upload du logo<input type='file' accept='image/*' onChange={onLogoChange} style={{display:'none'}}/></label>
       </div>
     </div>
-    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,marginBottom:18,flexWrap:'wrap'}}>
-      <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:C.ink,fontStyle:"italic",letterSpacing:"-0.01em"}}>Nos logiciels</div>
-      <button onClick={()=>setView&&setView('c-team')} style={{background:'rgba(255,255,255,0.6)',border:'1px solid '+C.linen,borderRadius:7,padding:'10px 16px',fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:C.stone,cursor:'pointer',display:'inline-flex',alignItems:'center',gap:8,boxShadow:"0 1px 2px rgba(184,154,90,0.05)"}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Gérer mon équipe →</button>
+    {/* Bandeau "Nos logiciels" + bouton secondaire. Plus de texte uppercase
+        décoratif, hiérarchie portée par la typo Playfair. */}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:DS.s.x4,marginBottom:DS.s.x6,flexWrap:'wrap'}}>
+      <div style={{fontFamily:SF,fontSize:DS.fs.h3,fontWeight:DS.fw.bold,color:C.ink,fontStyle:"italic",letterSpacing:DS.ls.tight}}>Nos logiciels</div>
+      <button onClick={()=>setView&&setView('c-team')} style={{...DS.btnSecondary,display:'inline-flex',alignItems:'center',gap:DS.s.x2}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Gérer mon équipe →</button>
     </div>
     <SoftwareGrid apps={myApps}/>
     {launchedSoftware&&<SoftwareLaunchModal software={launchedSoftware} onClose={()=>openSoftware(null)} user={user} onAuth={setView?(m=>{try{window.dispatchEvent(new CustomEvent('oniq-open-auth',{detail:{mode:m}}));}catch(_){}}):undefined}/>}
@@ -13118,7 +13141,7 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version : permet de vérifier en un coup d'œil quelle build est servie.
      À incrémenter à chaque commit qui touche index.html. Aussi exposé via
      <meta name="oniq-version"> et window.__oniqVersion pour debug console. -->
-<div id="oniq-version-badge" aria-hidden="true" style="position:fixed;bottom:6px;right:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:600;color:rgba(31,26,20,0.32);background:rgba(255,255,255,0.55);padding:2px 6px;border-radius:4px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;pointer-events:none;letter-spacing:0.04em;user-select:none">v25</div>
-<script>try{window.__oniqVersion='v25';console.log('%cONIQ %cv25','color:#A06D2E;font-weight:bold','color:#8C8070');}catch(_){}</script>
+<div id="oniq-version-badge" aria-hidden="true" style="position:fixed;bottom:6px;right:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:600;color:rgba(31,26,20,0.32);background:rgba(255,255,255,0.55);padding:2px 6px;border-radius:4px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;pointer-events:none;letter-spacing:0.04em;user-select:none">v26</div>
+<script>try{window.__oniqVersion='v26';console.log('%cONIQ %cv26','color:#A06D2E;font-weight:bold','color:#8C8070');}catch(_){}</script>
 </body>
 </html>
