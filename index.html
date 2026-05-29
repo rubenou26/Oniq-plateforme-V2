@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v28">
+<html lang="fr" data-oniq-version="v29">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v28"/>
+<meta name="oniq-version" content="v29"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -12978,13 +12978,28 @@ async function openSoftwareProtected(slug){
 </script>
 <script>(function(){if(window.__ONIQ_FX_INIT__)return;window.__ONIQ_FX_INIT__=1;
 function $(s,r){return (r||document).querySelector(s)}function $$(s,r){return (r||document).querySelectorAll(s)}
+/* PERF v29 : les observers ci-dessous surveillaient document.body en subtree
+   et relançaient un querySelectorAll plein-DOM à CHAQUE mutation. Dans une app
+   React qui re-render en continu, ça saturait le thread principal → lenteur
+   générale. On debounce désormais chaque callback (rAF + délai) et on cesse
+   d'observer après une période d'inactivité du DOM (les effets cosmétiques se
+   re-lient quand même sur le contenu déjà monté). */
+function __oniqDebObs(fn,ms){var t,raf;return function(){clearTimeout(t);t=setTimeout(function(){cancelAnimationFrame(raf);raf=requestAnimationFrame(fn);},ms||300);};}
+function __oniqIdleObs(fn,ms,stopAfter){
+  var obs=new MutationObserver(__oniqDebObs(fn,ms||300));
+  obs.observe(document.body,{childList:true,subtree:true});
+  /* Auto-déconnexion après stopAfter ms sans intérêt à rescanner en boucle.
+     Par défaut 20 s : largement assez pour couvrir les montages initiaux. */
+  setTimeout(function(){try{obs.disconnect();}catch(e){}},stopAfter||20000);
+  return obs;
+}
 var prefersReduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
 try{var cg=document.createElement('div');cg.id='oniq-cursor-glow';document.body.appendChild(cg);var tx=0,ty=0,cx=0,cy=0;document.addEventListener('mousemove',function(e){tx=e.clientX;ty=e.clientY});function lerp(){cx+=(tx-cx)*0.18;cy+=(ty-cy)*0.18;cg.style.transform='translate3d('+(cx-12)+'px,'+(cy-12)+'px,0)';requestAnimationFrame(lerp)}lerp();}catch(e){}
 try{var sb=document.createElement('div');sb.id='oniq-scroll-bar';document.body.appendChild(sb);function upd(){var h=document.documentElement;var p=h.scrollTop/(h.scrollHeight-h.clientHeight)*100;sb.style.width=Math.min(100,Math.max(0,p))+'%';}window.addEventListener('scroll',upd);upd();}catch(e){}
-try{function bindSpot(){var hero=$('[data-oniq-hero]');if(!hero||hero.__oniqSpotBound)return;hero.__oniqSpotBound=1;var sp=document.createElement('div');sp.id='oniq-spotlight';if(getComputedStyle(hero).position==='static')hero.style.position='relative';hero.appendChild(sp);hero.addEventListener('mousemove',function(e){var r=hero.getBoundingClientRect();sp.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');sp.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');});}bindSpot();new MutationObserver(bindSpot).observe(document.body,{childList:true,subtree:true});}catch(e){}
-try{function bindMag(){$$('[data-magnetic]').forEach(function(el){if(el.__oniqMag)return;el.__oniqMag=1;el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();var mx=e.clientX-r.left-r.width/2;var my=e.clientY-r.top-r.height/2;el.style.transform='translate('+(mx*0.3)+'px,'+(my*0.3)+'px)';});el.addEventListener('mouseleave',function(){el.style.transform='translate(0,0)';});});}bindMag();new MutationObserver(bindMag).observe(document.body,{childList:true,subtree:true});}catch(e){}
-try{function bindTilt(){$$('[data-tilt]').forEach(function(el){if(el.__oniqTilt)return;el.__oniqTilt=1;el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();var rx=-((e.clientY-r.top)/r.height-0.5)*8;var ry=((e.clientX-r.left)/r.width-0.5)*8;el.style.transform='perspective(800px) rotateX('+rx+'deg) rotateY('+ry+'deg)';});el.addEventListener('mouseleave',function(){el.style.transform='perspective(800px) rotateX(0) rotateY(0)';});});}bindTilt();new MutationObserver(bindTilt).observe(document.body,{childList:true,subtree:true});}catch(e){}
-try{function reveal(){$$('[data-reveal]:not(.oniq-reveal):not(.oniq-rise-in)').forEach(function(el){if(el.__oniqIO)return;el.__oniqIO=1;});var io=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var s=e.target.getAttribute('data-reveal-style');if(s==='rise'){e.target.classList.add('oniq-rise');setTimeout(function(){e.target.classList.add('oniq-rise-in')},20)}else{e.target.classList.add('oniq-reveal')}io.unobserve(e.target)})},{rootMargin:'-40px',threshold:.12});$$('[data-reveal]').forEach(function(el){if(!el.classList.contains('oniq-reveal')&&!el.classList.contains('oniq-rise-in'))io.observe(el)})}reveal();new MutationObserver(reveal).observe(document.body,{childList:true,subtree:true});}catch(e){}
+try{function bindSpot(){var hero=$('[data-oniq-hero]');if(!hero||hero.__oniqSpotBound)return;hero.__oniqSpotBound=1;var sp=document.createElement('div');sp.id='oniq-spotlight';if(getComputedStyle(hero).position==='static')hero.style.position='relative';hero.appendChild(sp);hero.addEventListener('mousemove',function(e){var r=hero.getBoundingClientRect();sp.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');sp.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');});}bindSpot();__oniqIdleObs(bindSpot);}catch(e){}
+try{function bindMag(){$$('[data-magnetic]').forEach(function(el){if(el.__oniqMag)return;el.__oniqMag=1;el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();var mx=e.clientX-r.left-r.width/2;var my=e.clientY-r.top-r.height/2;el.style.transform='translate('+(mx*0.3)+'px,'+(my*0.3)+'px)';});el.addEventListener('mouseleave',function(){el.style.transform='translate(0,0)';});});}bindMag();__oniqIdleObs(bindMag);}catch(e){}
+try{function bindTilt(){$$('[data-tilt]').forEach(function(el){if(el.__oniqTilt)return;el.__oniqTilt=1;el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();var rx=-((e.clientY-r.top)/r.height-0.5)*8;var ry=((e.clientX-r.left)/r.width-0.5)*8;el.style.transform='perspective(800px) rotateX('+rx+'deg) rotateY('+ry+'deg)';});el.addEventListener('mouseleave',function(){el.style.transform='perspective(800px) rotateX(0) rotateY(0)';});});}bindTilt();__oniqIdleObs(bindTilt);}catch(e){}
+try{function reveal(){$$('[data-reveal]:not(.oniq-reveal):not(.oniq-rise-in)').forEach(function(el){if(el.__oniqIO)return;el.__oniqIO=1;});var io=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var s=e.target.getAttribute('data-reveal-style');if(s==='rise'){e.target.classList.add('oniq-rise');setTimeout(function(){e.target.classList.add('oniq-rise-in')},20)}else{e.target.classList.add('oniq-reveal')}io.unobserve(e.target)})},{rootMargin:'-40px',threshold:.12});$$('[data-reveal]').forEach(function(el){if(!el.classList.contains('oniq-reveal')&&!el.classList.contains('oniq-rise-in'))io.observe(el)})}reveal();__oniqIdleObs(reveal);}catch(e){}
 try{$$('[data-oniq-split]:not([data-split-done])').forEach(function(el){el.setAttribute('data-split-done','1');var txt=el.textContent||'';if(!txt)return;el.textContent='';for(var k=0;k<txt.length;k++){var ch=txt[k];var s=document.createElement('span');s.textContent=ch;s.style.display='inline-block';s.style.whiteSpace=ch===' '?'pre':'normal';if(!prefersReduced){s.style.opacity='0';s.style.animation='oniqLetterRise .9s cubic-bezier(.2,.7,.2,1) forwards';s.style.animationDelay=(5.6+k*0.05)+'s';}el.appendChild(s);}});}catch(e){}
 try{var counters=$$('[data-count]');if(counters.length){var cio=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var el=e.target;cio.unobserve(el);if(el.classList.contains('oniq-counted'))return;el.classList.add('oniq-counted');try{var raw=el.getAttribute('data-count')||el.textContent||'';var m=raw.match(/(-?\d+(?:[.,]\d+)?)/);if(!m)return;var num=parseFloat(m[1].replace(',','.'));var pre=raw.slice(0,m.index);var suf=raw.slice(m.index+m[1].length);var dur=1600,start=performance.now(),sign=num<0?-1:1,abs=Math.abs(num);function tick(now){var p=Math.min(1,(now-start)/dur);var eased=1-Math.pow(1-p,3);var cur=(abs*eased*sign);el.textContent=pre+Math.round(cur)+suf;if(p<1)requestAnimationFrame(tick);else el.textContent=raw;}requestAnimationFrame(tick);}catch(err){}});},{threshold:0.4});counters.forEach(function(el){cio.observe(el)});}}catch(e){}
 })();</script>
@@ -13127,21 +13142,24 @@ See DEPLOYMENT.md for the full guide.
     const isLanding=document.querySelector('.oniq-landing-root, [data-landing]')||window.location.pathname==='/'||(window.__oniqView&&window.__oniqView==='landing');
     /* Best-effort detection: si on est sur landing, animate gradient text */
   }
-  /* Ré-applique l'init sur changement de DOM (React rerenders) */
-  if(typeof MutationObserver!=='undefined'){
+  /* Ré-applique l'init sur changement de DOM (React rerenders).
+     PERF v29 : debounce porté de 80ms à 400ms + déconnexion après 20s.
+     L'ancien 80ms relançait init() en boucle à chaque re-render React, ce
+     qui saturait le thread principal et rendait l'app lente. */
+  if(typeof MutationObserver!=='undefined'&&document.body){
     const mo=new MutationObserver(()=>{
       clearTimeout(window._oniqWowDebounce);
-      window._oniqWowDebounce=setTimeout(init,80);
+      window._oniqWowDebounce=setTimeout(()=>requestAnimationFrame(init),400);
     });
-    if(document.body)mo.observe(document.body,{childList:true,subtree:true});
+    mo.observe(document.body,{childList:true,subtree:true});
+    setTimeout(()=>{try{mo.disconnect();}catch(e){}},20000);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
-<!-- Badge version : permet de vérifier en un coup d'œil quelle build est servie.
-     À incrémenter à chaque commit qui touche index.html. Aussi exposé via
-     <meta name="oniq-version"> et window.__oniqVersion pour debug console. -->
-<div id="oniq-version-badge" aria-hidden="true" style="position:fixed;bottom:6px;right:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:600;color:rgba(31,26,20,0.32);background:rgba(255,255,255,0.55);padding:2px 6px;border-radius:4px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:2147483647;pointer-events:none;letter-spacing:0.04em;user-select:none">v28</div>
-<script>try{window.__oniqVersion='v28';console.log('%cONIQ %cv28','color:#A06D2E;font-weight:bold','color:#8C8070');}catch(_){}</script>
+<!-- Badge version retiré (v29). La version reste traçable via
+     <meta name="oniq-version"> et window.__oniqVersion (console) — sans
+     élément visible à l'écran. -->
+<script>try{window.__oniqVersion='v29';}catch(_){}</script>
 </body>
 </html>
