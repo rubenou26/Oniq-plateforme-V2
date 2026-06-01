@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v40">
+<html lang="fr" data-oniq-version="v41">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v40"/>
+<meta name="oniq-version" content="v41"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
@@ -11105,7 +11105,7 @@ const TeamMemberAvatar=({name,email,size=40})=>(
 const TeamStatusBadge=({status})=>{
   const map={
     actif:{bg:'rgba(74,124,89,0.15)',color:'#3a6347',label:'Actif'},
-    invite:{bg:'rgba(196,123,43,0.18)',color:'#8C5418',label:'Invité'},
+    invite:{bg:'rgba(196,123,43,0.18)',color:'#8C5418',label:'À rattacher'},
     desactive:{bg:'rgba(166,60,60,0.15)',color:'#7d2c2c',label:'Désactivé'}
   };
   const s=map[status]||map.invite;
@@ -11138,9 +11138,14 @@ const TeamRolesPage=({user,setUser,setView})=>{
 
   // ── Member handlers ──
   const addMember=(data)=>{
+    const emailNorm=String(data.email||'').trim().toLowerCase();
+    if(!emailNorm){try{window.oniqNotify&&window.oniqNotify('Email requis','warn')}catch(e){};return false;}
+    const dup=(members||[]).find(m=>String(m.email||'').trim().toLowerCase()===emailNorm);
+    if(dup){try{window.oniqNotify&&window.oniqNotify('Ce membre est déjà dans votre équipe ('+dup.email+')','warn')}catch(e){};return false;}
     const id='m_'+Math.random().toString(36).slice(2,9);
-    setMembers(prev=>[...prev,{id,name:data.name||'',email:data.email,roleId:data.roleId||'lecture',status:'invite',invitedAt:Date.now(),lastActivity:null}]);
+    setMembers(prev=>[...prev,{id,name:data.name||'',email:data.email.trim(),roleId:data.roleId||'lecture',status:'invite',invitedAt:Date.now(),lastActivity:null}]);
     try{window.oniqNotify&&window.oniqNotify('Membre ajouté — partagez-lui le lien d\'invitation ou le code entreprise','ok')}catch(e){}
+    return true;
   };
   const updateMember=(id,patch)=>setMembers(prev=>prev.map(m=>m.id===id?{...m,...patch}:m));
   const removeMember=(id)=>{
@@ -11226,10 +11231,10 @@ const TeamRolesPage=({user,setUser,setView})=>{
                         <TeamRoleBadge role={role}/>
                         <TeamStatusBadge status={m.status}/>
                       </div>
-                      <div style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:'0.04em',whiteSpace:'nowrap',minWidth:90,textAlign:M?'left':'right'}}>{m.status==='invite'?'Invité '+teamRelTime(m.invitedAt):teamRelTime(m.lastActivity)}</div>
+                      <div style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:'0.04em',whiteSpace:'nowrap',minWidth:90,textAlign:M?'left':'right'}}>{m.status==='invite'?'Ajouté '+teamRelTime(m.invitedAt):teamRelTime(m.lastActivity)}</div>
                       <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                         <button onClick={()=>{setEditingMember(m);setShowInvite(true);}} style={{background:'transparent',border:`1px solid ${C.linen}`,borderRadius:3,padding:'5px 10px',fontFamily:SS,fontSize:9,fontWeight:700,color:C.stone,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em'}}>Modifier</button>
-                        {m.status==='invite'&&<button onClick={()=>resendInvite(m)} style={{background:C.amberDim,border:`1px solid ${C.amber}55`,borderRadius:3,padding:'5px 10px',fontFamily:SS,fontSize:9,fontWeight:700,color:C.amber,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em'}}>Renvoyer</button>}
+                        {m.status==='invite'&&<button onClick={()=>resendInvite(m)} title="Met à jour la date du dernier rappel. Aucun mail n'est envoyé — repartagez le lien d'invitation ou le code entreprise." style={{background:C.amberDim,border:`1px solid ${C.amber}55`,borderRadius:3,padding:'5px 10px',fontFamily:SS,fontSize:9,fontWeight:700,color:C.amber,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em'}}>Marquer relancé</button>}
                         <button onClick={()=>toggleMemberStatus(m)} style={{background:'transparent',border:`1px solid ${C.linen}`,borderRadius:3,padding:'5px 10px',fontFamily:SS,fontSize:9,fontWeight:700,color:C.stone,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em'}}>{m.status==='desactive'?'Réactiver':'Désactiver'}</button>
                         <button onClick={()=>removeMember(m.id)} style={{background:'transparent',border:`1px solid ${C.red}33`,borderRadius:3,padding:'5px 10px',fontFamily:SS,fontSize:9,fontWeight:700,color:C.red,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.08em'}}>✕</button>
                       </div>
@@ -11265,7 +11270,7 @@ const TeamRolesPage=({user,setUser,setView})=>{
           </div>
         )}
 
-        {showInvite&&<TeamInviteModal member={editingMember} roles={roles} onClose={()=>{setShowInvite(false);setEditingMember(null);}} onSave={(data)=>{if(editingMember){updateMember(editingMember.id,data);}else{addMember(data);}setShowInvite(false);setEditingMember(null);}}/>}
+        {showInvite&&<TeamInviteModal member={editingMember} roles={roles} onClose={()=>{setShowInvite(false);setEditingMember(null);}} onSave={(data)=>{if(editingMember){updateMember(editingMember.id,data);setShowInvite(false);setEditingMember(null);}else{const ok=addMember(data);if(ok!==false){setShowInvite(false);setEditingMember(null);}}}}/>}
         {showRoleEditor&&<TeamRoleEditor role={editingRole} onClose={()=>{setShowRoleEditor(false);setEditingRole(null);}} onSave={(data)=>{saveRole(editingRole?{...data,id:editingRole.id,system:editingRole.system}:data);setShowRoleEditor(false);setEditingRole(null);}}/>}
       </div>
     </div>
@@ -11282,7 +11287,8 @@ const TeamInviteModal=({member,roles,onClose,onSave})=>{
   };
   return (
     <Overlay title={member?'Modifier le membre':'Ajouter un membre'} subtitle={member?'Mettez à jour ses informations':"Le membre sera ajouté à votre équipe. Partagez-lui ensuite le lien d'invitation ou le code entreprise depuis le bloc « Inviter un membre » pour qu'il rejoigne votre espace."} onClose={onClose}>
-      <TI label="Email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="prenom.nom@entreprise.fr"/>
+      <TI label="Email (identifiant du futur compte)" value={email} onChange={e=>setEmail(e.target.value)} placeholder="prenom.nom@entreprise.fr"/>
+      <div style={{fontFamily:SS,fontSize:10,color:C.stone,lineHeight:1.5,marginTop:-8,marginBottom:14,fontStyle:'italic'}}>Aucun mail n'est envoyé. Cet email sert à identifier le compte que votre collaborateur créera en cliquant sur votre lien d'invitation ou en saisissant votre code entreprise.</div>
       <TI label="Nom (optionnel)" value={name} onChange={e=>setName(e.target.value)} placeholder="Jean Dupont"/>
       <div style={{marginBottom:16}}>
         <label style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:'0.16em',textTransform:'uppercase',color:C.stone,display:'block',marginBottom:7}}>Rôle</label>
@@ -13408,6 +13414,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v40';}catch(_){}</script>
+<script>try{window.__oniqVersion='v41';}catch(_){}</script>
 </body>
 </html>
