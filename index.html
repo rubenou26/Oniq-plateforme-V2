@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v36">
+<html lang="fr" data-oniq-version="v37">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v36"/>
+<meta name="oniq-version" content="v37"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -10969,7 +10969,7 @@ const TeamRolesPage=({user,setUser,setView})=>{
   const addMember=(data)=>{
     const id='m_'+Math.random().toString(36).slice(2,9);
     setMembers(prev=>[...prev,{id,name:data.name||'',email:data.email,roleId:data.roleId||'lecture',status:'invite',invitedAt:Date.now(),lastActivity:null}]);
-    try{window.oniqNotify&&window.oniqNotify('Invitation envoyée à '+data.email,'ok')}catch(e){}
+    try{window.oniqNotify&&window.oniqNotify('Membre ajouté — partagez-lui le lien d\'invitation ou le code entreprise','ok')}catch(e){}
   };
   const updateMember=(id,patch)=>setMembers(prev=>prev.map(m=>m.id===id?{...m,...patch}:m));
   const removeMember=(id)=>{
@@ -10982,7 +10982,7 @@ const TeamRolesPage=({user,setUser,setView})=>{
   };
   const resendInvite=(m)=>{
     updateMember(m.id,{invitedAt:Date.now()});
-    try{window.oniqNotify&&window.oniqNotify('Invitation renvoyée à '+m.email,'ok')}catch(e){}
+    try{window.oniqNotify&&window.oniqNotify('Date de relance mise à jour — repartagez-lui le lien ou le code','ok')}catch(e){}
   };
 
   // ── Role handlers ──
@@ -11017,7 +11017,7 @@ const TeamRolesPage=({user,setUser,setView})=>{
             <div style={{fontFamily:SS,fontSize:12,color:C.stone,marginTop:6}}>Invitez vos collaborateurs et définissez leurs droits sur chaque logiciel.</div>
           </div>
           {tab==='team'?(
-            <button onClick={()=>{setEditingMember(null);setShowInvite(true);}} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>+ Inviter un membre</button>
+            <button onClick={()=>{setEditingMember(null);setShowInvite(true);}} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>+ Ajouter un membre</button>
           ):(
             <button onClick={()=>{setEditingRole(null);setShowRoleEditor(true);}} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>+ Créer un rôle</button>
           )}
@@ -11110,7 +11110,7 @@ const TeamInviteModal=({member,roles,onClose,onSave})=>{
     onSave({email:email.trim(),name:name.trim(),roleId});
   };
   return (
-    <Overlay title={member?'Modifier le membre':'Inviter un membre'} subtitle={member?'Mettez à jour ses informations':"Il recevra un email d'invitation pour rejoindre votre espace."} onClose={onClose}>
+    <Overlay title={member?'Modifier le membre':'Ajouter un membre'} subtitle={member?'Mettez à jour ses informations':"Le membre sera ajouté à votre équipe. Partagez-lui ensuite le lien d'invitation ou le code entreprise depuis le bloc « Inviter un membre » pour qu'il rejoigne votre espace."} onClose={onClose}>
       <TI label="Email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="prenom.nom@entreprise.fr"/>
       <TI label="Nom (optionnel)" value={name} onChange={e=>setName(e.target.value)} placeholder="Jean Dupont"/>
       <div style={{marginBottom:16}}>
@@ -11121,7 +11121,7 @@ const TeamInviteModal=({member,roles,onClose,onSave})=>{
       </div>
       <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:24}}>
         <button onClick={onClose} style={{background:'transparent',border:`1px solid ${C.linen}`,borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>Annuler</button>
-        <button onClick={submit} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>{member?'Enregistrer':"Envoyer l'invitation"}</button>
+        <button onClick={submit} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>{member?'Enregistrer':"Ajouter le membre"}</button>
       </div>
     </Overlay>
   );
@@ -13051,9 +13051,13 @@ function __oniqDebObs(fn,ms){var t,raf;return function(){clearTimeout(t);t=setTi
 function __oniqIdleObs(fn,ms,stopAfter){
   var obs=new MutationObserver(__oniqDebObs(fn,ms||300));
   obs.observe(document.body,{childList:true,subtree:true});
-  /* Auto-déconnexion après stopAfter ms sans intérêt à rescanner en boucle.
-     Par défaut 20 s : largement assez pour couvrir les montages initiaux. */
-  setTimeout(function(){try{obs.disconnect();}catch(e){}},stopAfter||20000);
+  /* Auto-déconnexion après stopAfter ms (défaut 20 s) — sauf si stopAfter
+     vaut Infinity : on garde l'observer actif tant que la page vit, pour
+     que les re-rendus React tardifs (ex: changement de catégorie dans la
+     marketplace après 20 s) déclenchent toujours le rescan. */
+  if(stopAfter!==Infinity){
+    setTimeout(function(){try{obs.disconnect();}catch(e){}},stopAfter||20000);
+  }
   return obs;
 }
 var prefersReduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -13062,7 +13066,7 @@ try{var sb=document.createElement('div');sb.id='oniq-scroll-bar';document.body.a
 try{function bindSpot(){var hero=$('[data-oniq-hero]');if(!hero||hero.__oniqSpotBound)return;hero.__oniqSpotBound=1;var sp=document.createElement('div');sp.id='oniq-spotlight';if(getComputedStyle(hero).position==='static')hero.style.position='relative';hero.appendChild(sp);hero.addEventListener('mousemove',function(e){var r=hero.getBoundingClientRect();sp.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');sp.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');});}bindSpot();__oniqIdleObs(bindSpot);}catch(e){}
 try{function bindMag(){$$('[data-magnetic]').forEach(function(el){if(el.__oniqMag)return;el.__oniqMag=1;el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();var mx=e.clientX-r.left-r.width/2;var my=e.clientY-r.top-r.height/2;el.style.transform='translate('+(mx*0.3)+'px,'+(my*0.3)+'px)';});el.addEventListener('mouseleave',function(){el.style.transform='translate(0,0)';});});}bindMag();__oniqIdleObs(bindMag);}catch(e){}
 try{function bindTilt(){$$('[data-tilt]').forEach(function(el){if(el.__oniqTilt)return;el.__oniqTilt=1;el.addEventListener('mousemove',function(e){var r=el.getBoundingClientRect();var rx=-((e.clientY-r.top)/r.height-0.5)*8;var ry=((e.clientX-r.left)/r.width-0.5)*8;el.style.transform='perspective(800px) rotateX('+rx+'deg) rotateY('+ry+'deg)';});el.addEventListener('mouseleave',function(){el.style.transform='perspective(800px) rotateX(0) rotateY(0)';});});}bindTilt();__oniqIdleObs(bindTilt);}catch(e){}
-try{function reveal(){$$('[data-reveal]:not(.oniq-reveal):not(.oniq-rise-in)').forEach(function(el){if(el.__oniqIO)return;el.__oniqIO=1;});var io=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var s=e.target.getAttribute('data-reveal-style');if(s==='rise'){e.target.classList.add('oniq-rise');setTimeout(function(){e.target.classList.add('oniq-rise-in')},20)}else{e.target.classList.add('oniq-reveal')}io.unobserve(e.target)})},{rootMargin:'-40px',threshold:.12});$$('[data-reveal]').forEach(function(el){if(!el.classList.contains('oniq-reveal')&&!el.classList.contains('oniq-rise-in'))io.observe(el)})}reveal();__oniqIdleObs(reveal);}catch(e){}
+try{function reveal(){$$('[data-reveal]:not(.oniq-reveal):not(.oniq-rise-in)').forEach(function(el){if(el.__oniqIO)return;el.__oniqIO=1;});var io=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var s=e.target.getAttribute('data-reveal-style');if(s==='rise'){e.target.classList.add('oniq-rise');setTimeout(function(){e.target.classList.add('oniq-rise-in')},20)}else{e.target.classList.add('oniq-reveal')}io.unobserve(e.target)})},{rootMargin:'-40px',threshold:.12});$$('[data-reveal]').forEach(function(el){if(!el.classList.contains('oniq-reveal')&&!el.classList.contains('oniq-rise-in'))io.observe(el)})}reveal();__oniqIdleObs(reveal,300,Infinity);}catch(e){}
 try{$$('[data-oniq-split]:not([data-split-done])').forEach(function(el){el.setAttribute('data-split-done','1');var txt=el.textContent||'';if(!txt)return;el.textContent='';for(var k=0;k<txt.length;k++){var ch=txt[k];var s=document.createElement('span');s.textContent=ch;s.style.display='inline-block';s.style.whiteSpace=ch===' '?'pre':'normal';if(!prefersReduced){s.style.opacity='0';s.style.animation='oniqLetterRise .9s cubic-bezier(.2,.7,.2,1) forwards';s.style.animationDelay=(5.6+k*0.05)+'s';}el.appendChild(s);}});}catch(e){}
 try{var counters=$$('[data-count]');if(counters.length){var cio=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var el=e.target;cio.unobserve(el);if(el.classList.contains('oniq-counted'))return;el.classList.add('oniq-counted');try{var raw=el.getAttribute('data-count')||el.textContent||'';var m=raw.match(/(-?\d+(?:[.,]\d+)?)/);if(!m)return;var num=parseFloat(m[1].replace(',','.'));var pre=raw.slice(0,m.index);var suf=raw.slice(m.index+m[1].length);var dur=1600,start=performance.now(),sign=num<0?-1:1,abs=Math.abs(num);function tick(now){var p=Math.min(1,(now-start)/dur);var eased=1-Math.pow(1-p,3);var cur=(abs*eased*sign);el.textContent=pre+Math.round(cur)+suf;if(p<1)requestAnimationFrame(tick);else el.textContent=raw;}requestAnimationFrame(tick);}catch(err){}});},{threshold:0.4});counters.forEach(function(el){cio.observe(el)});}}catch(e){}
 })();</script>
@@ -13223,6 +13227,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v36';}catch(_){}</script>
+<script>try{window.__oniqVersion='v37';}catch(_){}</script>
 </body>
 </html>
