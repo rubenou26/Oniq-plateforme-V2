@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v47">
+<html lang="fr" data-oniq-version="v48">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v47"/>
+<meta name="oniq-version" content="v48"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
@@ -11497,9 +11497,15 @@ function App() {
   // perdre les filtres marketplace (?cat=Pack&q=…) ni les paramètres Stripe (?payment=success).
   useEffect(()=>{
     if(!view) return;
-    /* v34 : si on est sur une route /app/<slug>/..., on laisse l'iframe gérer
-       l'URL (oniq-internal-route). Sinon on synchronise comme avant. */
-    if(window.location.pathname.startsWith('/app/')) return;
+    /* v34 : si on est sur une route /app/<slug>/... ET qu'on RESTE dans
+       l'iframe (view='c-hub'), on laisse l'iframe gérer l'URL via
+       oniq-internal-route. v48 : si on QUITTE l'iframe vers une autre
+       vue (c-market, c-espace, c-team...), il faut au contraire
+       synchroniser l'URL pour qu'elle quitte le préfixe /app/. Sinon
+       l'URL reste figée sur le dernier mode du logiciel (bug rapporté
+       par Melvyn : URL coincée sur /app/metrimanager/comparatif après
+       retour à la Marketplace). */
+    if(window.location.pathname.startsWith('/app/') && view === 'c-hub') return;
     try{
       const targetPath=(typeof pathFromView==='function')?pathFromView(view):'/';
       const fullTarget=targetPath+window.location.search;
@@ -13476,6 +13482,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v47';}catch(_){}</script>
+<script>try{window.__oniqVersion='v48';}catch(_){}</script>
 </body>
 </html>
