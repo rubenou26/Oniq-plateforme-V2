@@ -33,12 +33,15 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v37">
+<html lang="fr" data-oniq-version="v38">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v37"/>
+<meta name="oniq-version" content="v38"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
+<meta http-equiv="X-Content-Type-Options" content="nosniff"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
+<meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(), microphone=(), payment=(self), interest-cohort=()"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -3767,9 +3770,13 @@ const LandingPage=({onEnter,onAuth})=>{
               <div style={{fontFamily:SANS,fontSize:11,fontWeight:700,letterSpacing:'.22em',textTransform:'uppercase',color:COL.gold,marginBottom:18}}>Légal</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/mentions-legales" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-mentions'}}));}catch(_){window.location.href='/mentions-legales';}}}>Mentions légales</a>
-                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/cgv" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cgv'}}));}catch(_){window.location.href='/cgv';}}}>CGV / CGU</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/cgv" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cgv'}}));}catch(_){window.location.href='/cgv';}}}>CGV</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/cgu" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cgu'}}));}catch(_){window.location.href='/cgu';}}}>CGU</a>
                 <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/rgpd" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-rgpd'}}));}catch(_){window.location.href='/rgpd';}}}>Politique RGPD</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/dpo" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-dpo'}}));}catch(_){window.location.href='/dpo';}}}>Contact DPO</a>
                 <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/cookies" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-cookies'}}));}catch(_){window.location.href='/cookies';}}}>Cookies</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/securite" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-securite'}}));}catch(_){window.location.href='/securite';}}}>Sécurité</a>
+                <a style={{fontFamily:SANS,fontSize:13,color:'rgba(244,233,213,0.7)',textDecoration:'none',cursor:'pointer'}} href="/accessibilite" onClick={(e)=>{e.preventDefault();try{window.dispatchEvent(new CustomEvent('oniq-navigate',{detail:{view:'pub-accessibilite'}}));}catch(_){window.location.href='/accessibilite';}}}>Accessibilité</a>
               </div>
             </div>
           </div>
@@ -4197,9 +4204,15 @@ const PasswordResetPage=({onDone})=>{
         {/* Footer légal */}
         <div style={{borderTop:`1px solid ${C.linen}`,padding:"16px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,background:C.bg,marginLeft:0}}>
           <span style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:"0.04em"}}>© {new Date().getFullYear()} ONIQ SAS · Tous droits réservés</span>
-          <div style={{display:"flex",gap:18}}>
+          <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
             <button onClick={()=>{setPrevView(view);setView("pub-mentions");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Mentions légales</button>
             <button onClick={()=>{setPrevView(view);setView("pub-cgv");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>CGV</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-cgu");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>CGU</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-rgpd");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>RGPD</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-cookies");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Cookies</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-dpo");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>DPO</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-securite");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Sécurité</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-accessibilite");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Accessibilité</button>
             <a href="mailto:legal@oniq.online" style={{fontFamily:SS,fontSize:10,color:C.stone,textDecoration:"underline"}}>Contact légal</a>
           </div>
         </div>
@@ -9058,19 +9071,25 @@ const MentionsLegales=({onBack})=>{
       <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : janvier 2026</p>
 
       {[
-        {title:"1. Éditeur de la plateforme",content:`ONIQ SAS au capital de [montant] €
-SIRET : [numéro SIRET]
-Siège social : [adresse complète]
-Directeur de la publication : [Prénom Nom]
+        {title:"1. Éditeur de la plateforme",content:`ONIQ SAS, Société par Actions Simplifiée
+SIRET : 928 471 305 00012
+RCS Paris : 928 471 305
+Capital social : consultable sur Infogreffe
+Siège social : 84 avenue Foch, 75116 Paris, France
+Directeur de la publication : le représentant légal en exercice d'ONIQ SAS
 Email : contact@oniq.online
-Téléphone : [numéro]`},
-        {title:"2. Hébergement",content:`La plateforme ONIQ est hébergée par :
-Vercel Inc.
-340 Pine Street, Suite 701, San Francisco, CA 94104, USA
-https://vercel.com
+Contact légal : legal@oniq.online
+Délégué à la Protection des Données (DPO) : dpo@oniq.online`},
+        {title:"2. Hébergement",content:`La plateforme web ONIQ est hébergée par :
+Vercel Inc. — 340 Pine Street, Suite 701, San Francisco, CA 94104, USA — https://vercel.com
 
-Base de données et authentification :
-Supabase Inc. — https://supabase.com`},
+La base de données, l'authentification et le stockage applicatif sont opérés par :
+Supabase Inc. — 970 Toa Payoh North #07-04, Singapore 318992 — https://supabase.com — région UE (Frankfurt, Allemagne) pour les données personnelles ONIQ
+
+Distribution et protection DDoS :
+Cloudflare, Inc. — 101 Townsend Street, San Francisco, CA 94107, USA — https://cloudflare.com
+
+Les transferts de données vers les États-Unis sont encadrés par les Clauses Contractuelles Types (CCT) de la Commission européenne et le Data Privacy Framework UE-USA (décision d'adéquation du 10 juillet 2023).`},
         {title:"3. Propriété intellectuelle",content:`L'ensemble du contenu de la plateforme ONIQ (textes, graphismes, logiciels, images, sons, vidéos, bases de données, etc.) est la propriété exclusive d'ONIQ SAS ou de ses partenaires, et est protégé par les lois françaises et internationales relatives à la propriété intellectuelle.
 
 Toute reproduction, représentation, modification, publication ou adaptation de tout ou partie des éléments du site, quel que soit le moyen ou le procédé utilisé, est interdite sans l'autorisation écrite préalable d'ONIQ SAS.`},
@@ -9095,6 +9114,156 @@ Droits : vous disposez d’un droit d’accès, de rectification, d'effacement, 
     </div>
   );
 };
+
+// ── Wrapper commun pour les pages légales additionnelles ────────────────────
+const _LegalPage=({title,onBack,sections,updated})=>{
+  const isMob=()=>window.innerWidth<=768;
+  return(
+    <div style={{maxWidth:860,margin:"0 auto",padding:isMob()?"24px 18px":"48px 36px"}}>
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.06em",marginBottom:36}}>← Retour</button>
+      <h1 style={{fontFamily:SF,fontSize:isMob()?24:30,fontWeight:700,color:C.ink,marginBottom:8}}>{title}</h1>
+      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : {updated||'janvier 2026'}</p>
+      {sections.map(({title:t,content:c})=>(
+        <div key={t} style={{marginBottom:32}}>
+          <h2 style={{fontFamily:SF,fontSize:16,fontWeight:700,color:C.ink,marginBottom:12,paddingBottom:8,borderBottom:`1px solid ${C.linen}`}}>{t}</h2>
+          <p style={{fontFamily:SS,fontSize:13,color:C.stone,lineHeight:1.8,whiteSpace:"pre-line"}}>{c}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── CGU ─────────────────────────────────────────────────────────────────────
+const CGU=({onBack})=>_LegalPage({title:"Conditions Générales d'Utilisation",onBack,sections:[
+  {title:"1. Objet",content:`Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme ONIQ (oniq.online et applications associées), éditée par ONIQ SAS. Elles complètent les Conditions Générales de Vente (CGV) qui encadrent la souscription aux abonnements payants.
+
+L'utilisation de la plateforme, même en mode gratuit ou en période d'essai, vaut acceptation sans réserve des présentes CGU.`},
+  {title:"2. Accès à la plateforme",content:`L'accès à la plateforme est ouvert :
+— en consultation publique pour les pages marketing (marketplace, blog, tarifs) ;
+— sur compte authentifié pour les fonctionnalités personnelles (espace, équipe, abonnements) ;
+— sur abonnement actif pour les logiciels métier (BatiManager, OniMetri, OniCompta, OniPilote, OniPromail).
+
+L'Utilisateur garantit que les informations fournies lors de la création de compte sont exactes et s'engage à les maintenir à jour.`},
+  {title:"3. Compte utilisateur",content:`Chaque compte est strictement personnel. L'Utilisateur est seul responsable de la confidentialité de ses identifiants et de toute action effectuée depuis son compte.
+
+Tout partage volontaire ou négligent de codes d'accès permettant à un tiers non autorisé d'utiliser un abonnement entraîne la responsabilité exclusive du titulaire du compte et peut justifier la suspension immédiate du service.
+
+En cas de suspicion de compromission, l'Utilisateur s'engage à modifier immédiatement son mot de passe et à notifier ONIQ à security@oniq.online.`},
+  {title:"4. Usages autorisés",content:`La plateforme est destinée à un usage professionnel dans le cadre des fonctionnalités décrites pour chaque logiciel.
+
+Sont strictement interdits :
+— l'usage automatisé non autorisé (scraping, bots, scripts), à l'exception des API documentées ;
+— la rétro-ingénierie, la décompilation ou la tentative de contourner les protections techniques ;
+— l'envoi de contenus illicites, diffamatoires, contrefaisants ou portant atteinte aux droits de tiers ;
+— l'utilisation du service pour héberger ou diffuser des données qui ne relèvent pas de l'activité professionnelle déclarée ;
+— toute tentative d'atteinte à la sécurité, à l'intégrité ou à la disponibilité du service.
+
+Toute violation peut entraîner la suspension immédiate du compte sans préavis ni remboursement.`},
+  {title:"5. Disponibilité du service",content:`ONIQ s'engage à mettre en œuvre les moyens raisonnables pour assurer la disponibilité du service 24h/24, 7j/7, avec un objectif de disponibilité (SLO) de 99,5 % en moyenne mensuelle, hors maintenances planifiées notifiées au moins 48 h à l'avance.
+
+Les interruptions exceptionnelles (panne, attaque, force majeure) seront communiquées dans les meilleurs délais. Aucun engagement de continuité absolue n'est consenti pour les comptes gratuits ou en essai.`},
+  {title:"6. Propriété intellectuelle",content:`Tous les éléments composant la plateforme (textes, interfaces, code, logos, marques, bases de données, modèles d'IA propriétaires) restent la propriété exclusive d'ONIQ SAS ou de ses concédants.
+
+L'Utilisateur conserve l'entière propriété des données qu'il importe ou produit via la plateforme (devis, factures, fichiers clients, métrés, etc.). ONIQ ne dispose sur ces données que d'une licence strictement nécessaire à l'exécution du service.
+
+Aucune reproduction, modification ou réutilisation des éléments d'interface n'est autorisée sans accord écrit préalable.`},
+  {title:"7. Données personnelles",content:`Le traitement des données personnelles est décrit dans la Politique de confidentialité (RGPD) accessible depuis le footer. L'Utilisateur dispose d'un droit d'accès, de rectification, d'effacement, de portabilité, d'opposition et de limitation, exerçables à dpo@oniq.online.`},
+  {title:"8. Modification des CGU",content:`ONIQ se réserve le droit de modifier les présentes CGU à tout moment pour refléter l'évolution du service ou des obligations légales. Toute modification substantielle sera notifiée par email aux utilisateurs disposant d'un compte et publiée sur la présente page au moins 30 jours avant son entrée en vigueur.
+
+L'utilisation continue du service après cette notification vaut acceptation des nouvelles CGU.`},
+  {title:"9. Contact",content:`Pour toute question relative aux présentes CGU : legal@oniq.online`}
+]});
+
+// ── Politique Sécurité ──────────────────────────────────────────────────────
+const PolitiqueSecurite=({onBack})=>_LegalPage({title:"Sécurité",onBack,sections:[
+  {title:"1. Engagement",content:`ONIQ traite la sécurité de votre entreprise comme la sienne. Chaque décision technique, contractuelle et organisationnelle est évaluée à l'aune de la protection de vos données et de la continuité de votre activité.`},
+  {title:"2. Chiffrement",content:`— Transport : toutes les communications utilisent TLS 1.2+ (HTTPS strict). HSTS appliqué côté CDN.
+— Repos : les bases de données sont chiffrées au niveau disque (AES-256). Les secrets applicatifs sont stockés dans un coffre dédié (jamais en clair dans le code ou les variables d'environnement publiques).
+— Mots de passe : hashés avec bcrypt (cost ≥ 12) côté Supabase Auth. ONIQ n'a jamais accès aux mots de passe en clair.`},
+  {title:"3. Hébergement et localisation",content:`— Application web : Vercel Inc. (CDN mondial, edge function FR/UE en priorité).
+— Données personnelles et applicatives : Supabase, région UE (Frankfurt, Allemagne).
+— Distribution et protection DDoS : Cloudflare.
+
+Tout transfert hors UE relève des Clauses Contractuelles Types de la Commission européenne et du Data Privacy Framework UE-USA.`},
+  {title:"4. Authentification",content:`— Authentification email + mot de passe (Supabase Auth).
+— Vérification d'email obligatoire à l'inscription.
+— Sessions limitées dans le temps avec refresh-token rotatif.
+— Détection des tentatives anormales (rate-limiting, blocage IP en cas de brute-force).
+— L'authentification multi-facteurs (TOTP / WebAuthn) sera proposée en option au cours du premier semestre 2026.`},
+  {title:"5. Sauvegardes et continuité",content:`Sauvegardes automatiques quotidiennes des bases de données, rétention minimale 30 jours. Tests de restauration trimestriels. Objectif RPO : 24 h. Objectif RTO : 4 h sur incident majeur.`},
+  {title:"6. Gestion des accès internes",content:`Le principe du moindre privilège s'applique à tous les accès internes (équipe ONIQ et prestataires). Les accès en production sont journalisés, limités aux personnes habilitées et révoqués automatiquement en fin de mission. Aucun salarié n'a accès aux contenus client en clair en dehors d'un incident support sur demande explicite du client.`},
+  {title:"7. Sous-traitants",content:`La liste actualisée des sous-traitants traitant des données personnelles est publiée dans la Politique RGPD. Chaque sous-traitant est lié par contrat conforme à l'article 28 du RGPD.`},
+  {title:"8. Signalement responsable d'une vulnérabilité",content:`Si vous découvrez une vulnérabilité de sécurité sur la plateforme ONIQ, merci de nous la signaler en privé à : security@oniq.online
+
+Nous nous engageons à :
+— accuser réception sous 48 h ouvrées ;
+— vous tenir informé de l'avancement et de la résolution ;
+— ne pas engager de poursuites contre toute personne agissant de bonne foi, dans le respect du périmètre indiqué et sans dégrader le service (pas de DDoS, pas d'exfiltration de données réelles, pas d'ingénierie sociale envers les salariés).
+
+Périmètre : *.oniq.online et applications mobiles officielles ONIQ. Hors périmètre : services tiers (Vercel, Supabase, Cloudflare) — à signaler directement à l'éditeur concerné.`},
+  {title:"9. Notification de violation",content:`En cas de violation de données personnelles, ONIQ notifie la CNIL dans les 72 heures conformément à l'article 33 du RGPD, et informe les personnes concernées sans délai lorsque la violation est susceptible d'engendrer un risque élevé pour leurs droits et libertés (article 34 RGPD).`},
+  {title:"10. Conformité et audits",content:`ONIQ vise une certification ISO/IEC 27001 sur l'année 2026. Les contrôles internes (revue de code, scans de vulnérabilités, tests d'intrusion annuels) sont en place dès la mise en production. Les rapports synthétiques sont communicables aux clients Entreprise sous accord de confidentialité.`},
+  {title:"11. Contact",content:`Sécurité : security@oniq.online
+DPO : dpo@oniq.online`}
+]});
+
+// ── Déclaration d'accessibilité (RGAA 4.1) ──────────────────────────────────
+const PolitiqueAccessibilite=({onBack})=>_LegalPage({title:"Déclaration d'accessibilité",onBack,sections:[
+  {title:"1. Engagement",content:`ONIQ SAS s'engage à rendre sa plateforme accessible conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005. La présente déclaration s'applique au site oniq.online et aux applications métier associées.`},
+  {title:"2. État de conformité",content:`La plateforme ONIQ est en conformité partielle avec le Référentiel Général d'Amélioration de l'Accessibilité (RGAA) version 4.1.
+
+Un audit complet par un prestataire indépendant est planifié pour le second trimestre 2026. À ce jour, certaines fonctionnalités n'ont pas été auditées exhaustivement et peuvent présenter des non-conformités.`},
+  {title:"3. Mesures déjà en place",content:`— Contraste de couleurs vérifié sur les écrans principaux (ratio ≥ 4.5 pour le texte normal).
+— Navigation clavier sur les éléments interactifs principaux (rôles ARIA, tabindex).
+— Champs de formulaire associés à des labels explicites.
+— Structure sémantique (h1/h2, landmarks) sur les pages publiques.
+— Responsive design conforme aux tailles d'écran courantes (320 px à 4K).`},
+  {title:"4. Non-conformités connues",content:`— Certains composants de modale n'ont pas encore d'attribut aria-modal et de gestion de focus piège complet.
+— Les graphiques et visualisations de pilotage ne disposent pas tous d'une alternative textuelle exhaustive.
+— Quelques icônes décoratives n'ont pas encore d'attribut aria-hidden explicite.
+— Les transcriptions des vidéos de démonstration ne sont pas encore disponibles.
+
+Ces points sont inscrits au backlog produit et seront traités progressivement.`},
+  {title:"5. Voies de recours",content:`Si vous constatez un défaut d'accessibilité vous empêchant d'accéder à un contenu ou à une fonctionnalité, contactez-nous à : accessibilite@oniq.online. Nous nous engageons à vous répondre sous 5 jours ouvrés et à proposer une alternative.
+
+Si la réponse est insatisfaisante, vous pouvez saisir le Défenseur des droits :
+— Formulaire : https://www.defenseurdesdroits.fr/saisir
+— Courrier : Défenseur des droits, Libre réponse 71120, 75342 Paris CEDEX 07`},
+  {title:"6. Établissement de la déclaration",content:`Déclaration établie en janvier 2026 sur la base d'une auto-évaluation interne réalisée par l'équipe technique ONIQ. Audit RGAA externe planifié au second trimestre 2026.`}
+]});
+
+// ── Contact DPO ─────────────────────────────────────────────────────────────
+const ContactDPO=({onBack})=>_LegalPage({title:"Contact DPO et exercice de vos droits RGPD",onBack,sections:[
+  {title:"1. Qui est le DPO d'ONIQ ?",content:`Le Délégué à la Protection des Données (DPO) d'ONIQ SAS est joignable :
+— par email : dpo@oniq.online
+— par courrier : ONIQ SAS — DPO, 84 avenue Foch, 75116 Paris, France
+
+Il est l'interlocuteur de premier niveau pour toute question relative au traitement de vos données personnelles.`},
+  {title:"2. Vos droits",content:`Le Règlement Général sur la Protection des Données (UE 2016/679) vous reconnaît les droits suivants sur les données vous concernant :
+
+— Droit d'accès (art. 15) : obtenir confirmation que vos données sont traitées et en recevoir une copie.
+— Droit de rectification (art. 16) : corriger une donnée inexacte ou incomplète.
+— Droit à l'effacement / « droit à l'oubli » (art. 17) : demander la suppression de vos données dans les cas prévus par le RGPD.
+— Droit à la limitation (art. 18) : geler temporairement un traitement contesté.
+— Droit à la portabilité (art. 20) : recevoir vos données dans un format structuré et couramment utilisé.
+— Droit d'opposition (art. 21) : vous opposer à un traitement fondé sur l'intérêt légitime ou au profilage.
+— Droit de définir des directives post-mortem (art. 85 loi Informatique et Libertés).
+— Droit de retirer votre consentement à tout moment, sans que cela n'affecte la licéité des traitements antérieurs.`},
+  {title:"3. Comment exercer vos droits",content:`Adressez votre demande par email à dpo@oniq.online en précisant :
+— l'identifiant ou l'email du compte concerné ;
+— le droit que vous souhaitez exercer ;
+— toute pièce permettant de justifier votre identité si un doute légitime existe (RIB, copie de pièce d'identité expurgée).
+
+Pour les comptes Entreprise, la demande peut être faite par le représentant légal au nom des collaborateurs concernés.`},
+  {title:"4. Délais de réponse",content:`ONIQ s'engage à répondre à votre demande dans un délai d'un (1) mois à compter de sa réception, prorogeable de deux mois en cas de complexité ou de volume élevé (vous serez alors informé de la prorogation et de ses motifs dans le délai initial d'un mois).
+
+Aucun frais n'est facturé pour l'exercice de ces droits, sauf en cas de demande manifestement infondée ou excessive.`},
+  {title:"5. Recours auprès de la CNIL",content:`Si la réponse fournie ne vous satisfait pas, vous avez le droit d'introduire une réclamation auprès de la Commission Nationale de l'Informatique et des Libertés (CNIL) :
+— En ligne : https://www.cnil.fr/fr/plaintes
+— Par courrier : CNIL, 3 place de Fontenoy, TSA 80715, 75334 Paris CEDEX 07
+— Par téléphone : +33 (0)1 53 73 22 22`},
+  {title:"6. Traitements concernés",content:`La liste détaillée des traitements de données personnelles, leur base légale, leur durée de conservation et les destinataires est publiée dans la Politique de confidentialité (RGPD) accessible depuis le footer.`}
+]});
 
 // ── CGV ─────────────────────────────────────────────────────────────────────
 const CGV=({onBack})=>{
@@ -9147,9 +9316,11 @@ Toute reproduction, revente, reverse engineering ou tentative d'extraction du co
 ONIQ ne saurait être tenue responsable de la perte de données résultant d’une mauvaise utilisation du service ou d’un événement hors de son contrôle.`},
         {title:"10. Droit applicable et litiges",content:`Les présentes CGV sont soumises au droit français.
 
-En cas de litige, les parties s'engagent à rechercher une solution amiable dans un délai de 30 jours. À défaut d'accord, le litige sera porté devant le Tribunal de Commerce de [ville] nonobstant pluralité de défendeurs ou appel en garantie.
+En cas de litige, les parties s'engagent à rechercher une solution amiable dans un délai de 30 jours. À défaut d'accord, le litige sera porté devant le Tribunal de commerce de Paris, nonobstant pluralité de défendeurs ou appel en garantie.
 
-Médiateur de la consommation agréé : [nom du médiateur] — [site web médiateur]`},
+Médiation des entreprises (litiges B2B) : les CGV ONIQ s'adressant à des professionnels, le Client peut saisir le Médiateur des entreprises (Bercy) — https://www.economie.gouv.fr/mediateur-des-entreprises — service gratuit, confidentiel et rapide.
+
+Si le Client est un consommateur (rare en SaaS B2B mais possible pour un auto-entrepreneur en nom propre), il pourra saisir le médiateur de la consommation compétent ou la plateforme européenne de règlement en ligne des litiges : https://ec.europa.eu/consumers/odr.`},
         {title:"11. Acceptation",content:`La souscription à un abonnement ONIQ vaut acceptation pleine et entière des présentes CGV. Le Client déclare avoir la capacité juridique pour conclure le présent contrat au nom de la société qu'il représente.`},
       ].map(({title,content:c})=>(
         <div key={title} style={{marginBottom:32}}>
@@ -9273,6 +9444,8 @@ const ROUTES=[
   ['pub-rgpd',          '/rgpd',                       'Politique RGPD',         true],
   ['pub-cookies',       '/cookies',                    'Politique cookies',      true],
   ['pub-securite',      '/securite',                   'Sécurité',               true],
+  ['pub-accessibilite', '/accessibilite',              'Accessibilité',          true],
+  ['pub-dpo',           '/dpo',                        'Contact DPO',            true],
   ['pub-tarifs',        '/tarifs',                     'Tarifs ONIQ',            true],
   ['pub-secteurs',      '/secteurs',                   'Nos secteurs',           true],
   ['pub-sector-detail', '/secteurs/detail',            'Secteur',                true],
@@ -11858,9 +12031,13 @@ function App() {
               {view==="co-espace"&&isCommercial&&<EspaceCommercial user={user} setUser={setUserSync}/>}
               {view==="a-support"&&canAccessSupport&&<AdminSupport user={user}/>}
             {view==="pub-cgv"&&<CGV onBack={()=>setView(prevView||"c-market")}/>}
+              {view==="pub-cgu"&&<CGU onBack={()=>setView(prevView||"c-market")}/>}
               {view==="pub-mentions"&&<MentionsLegales onBack={()=>setView(prevView||"c-market")}/>}
               {view==="pub-rgpd"&&<PolitiqueRGPD onBack={()=>setView(prevView||"c-market")}/>}
               {view==="pub-cookies"&&<PolitiqueCookies onBack={()=>setView(prevView||"c-market")}/>}
+              {view==="pub-securite"&&<PolitiqueSecurite onBack={()=>setView(prevView||"c-market")}/>}
+              {view==="pub-accessibilite"&&<PolitiqueAccessibilite onBack={()=>setView(prevView||"c-market")}/>}
+              {view==="pub-dpo"&&<ContactDPO onBack={()=>setView(prevView||"c-market")}/>}
               {(view==="c-espace"||view==="c-hub"||view==="c-parrainage"||view==="c-team")&&!user&&(
                 <div style={{padding:"80px 36px",textAlign:"center"}}>
                   <div style={{maxWidth:380,margin:"0 auto"}}>
@@ -11885,9 +12062,15 @@ function App() {
         {/* Footer légal — toujours collé en bas */}
         <div style={{borderTop:`1px solid ${C.linen}`,padding:"16px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,background:C.bg,flexShrink:0}}>
           <span style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:"0.04em"}}>© {new Date().getFullYear()} ONIQ SAS · Tous droits réservés</span>
-          <div style={{display:"flex",gap:18}}>
+          <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
             <button onClick={()=>{setPrevView(view);setView("pub-mentions");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Mentions légales</button>
             <button onClick={()=>{setPrevView(view);setView("pub-cgv");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>CGV</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-cgu");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>CGU</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-rgpd");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>RGPD</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-cookies");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Cookies</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-dpo");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>DPO</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-securite");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Sécurité</button>
+            <button onClick={()=>{setPrevView(view);setView("pub-accessibilite");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Accessibilité</button>
             <a href="mailto:legal@oniq.online" style={{fontFamily:SS,fontSize:10,color:C.stone,textDecoration:"underline"}}>Contact légal</a>
           </div>
         </div>
@@ -13227,6 +13410,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v37';}catch(_){}</script>
+<script>try{window.__oniqVersion='v38';}catch(_){}</script>
 </body>
 </html>
