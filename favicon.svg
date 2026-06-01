@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ONIQ">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1F1A14"/>
+      <stop offset="100%" stop-color="#3A2410"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F2D08A"/>
+      <stop offset="45%" stop-color="#D4A24C"/>
+      <stop offset="100%" stop-color="#A06D2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <text x="32" y="46" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-style="italic" font-weight="700" font-size="42"
+        fill="url(#gold)">O</text>
+</svg>

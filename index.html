@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v39">
+<html lang="fr" data-oniq-version="v40">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v39"/>
+<meta name="oniq-version" content="v40"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
@@ -288,6 +288,7 @@
 
 <!-- Favicon — Google a besoin d'un vrai fichier PNG hébergé -->
 <!-- Favicon embarqué en base64 pour éviter toute dépendance réseau -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAADYUlEQVR4nO2XPUs7WxDGn7MvWYlGZRGMTVCRsAGLwJb2ERViIWI+gI3gB9DCQvwUWogfQMFCRFtfQAsLWdBCYmlEomh8IZtk97mFdxcTN8l67wVv8R+YZnfmzG/2nJkzKwAQvyjSbwb/A/C/AFB+6iCEgCRJIAnXdf1nsiz7z8jw51ogZBV4gR3HaWsry3Iou9AAkiT52Y6MjCCTySCRSKCvrw/9/f3QdR35fB67u7vY399HuVz+EQRbqSzLBEBd17m+vs7Dw0POzMxwcHCQuq4zkUgwl8vRsiyS5OXlJaempup822jzl5IkEQDT6TRvb29pWRY7OzsDbYUQ3NraIkk6jsPFxcWwEK2DG4bBu7s7VqtVplIpAmAkEqEQwldFUQiAqqry/Pyctm2TJLPZbBiI5gCRSIRHR0ckyb29vTqwRvUgJicnWavV+PHxwZubG3Z3d/ugoQG8xebm5kiSrutyZWWlLtugLRBCUFVVWpbF9/d3kuT8/Hzdmt8SDTyVf9fx7OwsHMeBEAL5fL5lfZOEJEmoVqs4OTlBNBpFrVZDNpsFAL+KGuUbgBACjuNAVVUYhoFKpQKSKJVKdXBBIoQAAFiWBQCwbRvJZBKapsF1Xf99SwBPYrEYenp6/C8Q5NwoHtz9/T2Az6y7uroQi8Wa+jQFIOkrAPT29gJAKJByuVy3JZVK5ecApVIJT09PUJTP62JoaChUcADo6OgAACiKgkKhgNfXVwghArfvGwBJv41algVN0+A4DkzTrLuAgsTbqoGBAQghoGkajo+P/TWbSdP2Oz09TZJ8fn7mw8MD4/E4hRBNe4Hnt7GxQcdx+PLyQsMwWvaPQADPQVVVnp2d0bZtuq7L5eVlv+M12ntg0WiU19fXJMnV1dV/1wkB0DRNvr290bZtFgoFDg8P++1YkiQ/cCQSIQAuLCyQJLe3t6koCmVZbtUFW19GHvnExAQfHx9JkhcXF4zH44H2mUyG1WqVm5ub1DStXQtuD/AVIpVKcWdnxz8TS0tLNE2TyWSSY2NjXFtb4+npKXO5XN22tFs/1EDydbgYHR3F+Pg40uk0bNtGsVhEsVjE1dUVDg4O4LquP7KFGc1Cj2SS9FmxrcqwETaMhAb4CuLBNGb404H0HwH81/Lr/wV/AH4d4C/NJbc7/HSS5QAAAABJRU5ErkJggg=="/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -9081,7 +9082,7 @@ Email : contact@oniq.online
 Contact légal : legal@oniq.online
 Délégué à la Protection des Données (DPO) : dpo@oniq.online`},
         {title:"2. Hébergement",content:`La plateforme web ONIQ est hébergée par :
-Cloudflare, Inc. — 101 Townsend Street, San Francisco, CA 94107, USA — https://cloudflare.com (Cloudflare Pages, edge réseau mondial avec présence en France)
+Vercel Inc. — 340 Pine Street, Suite 701, San Francisco, CA 94104, USA — https://vercel.com (CDN edge mondial avec présence en France et en Europe)
 
 La base de données, l'authentification et le stockage applicatif sont opérés par :
 Supabase Inc. — 970 Toa Payoh North #07-04, Singapore 318992 — https://supabase.com — région UE (Frankfurt, Allemagne) pour les données personnelles ONIQ
@@ -9177,9 +9178,9 @@ const PolitiqueSecurite=({onBack})=>_LegalPage({title:"Sécurité",onBack,sectio
   {title:"2. Chiffrement",content:`— Transport : toutes les communications utilisent TLS 1.2+ (HTTPS strict). HSTS appliqué côté CDN.
 — Repos : les bases de données sont chiffrées au niveau disque (AES-256). Les secrets applicatifs sont stockés dans un coffre dédié (jamais en clair dans le code ou les variables d'environnement publiques).
 — Mots de passe : hashés avec bcrypt (cost ≥ 12) côté Supabase Auth. ONIQ n'a jamais accès aux mots de passe en clair.`},
-  {title:"3. Hébergement et localisation",content:`— Application web : Cloudflare Pages (edge réseau mondial, distribution depuis les datacenters EU en priorité pour les visiteurs européens).
+  {title:"3. Hébergement et localisation",content:`— Application web : Vercel (CDN edge mondial, distribution depuis les datacenters EU en priorité pour les visiteurs européens).
 — Données personnelles et applicatives : Supabase, région UE (Frankfurt, Allemagne).
-— Protection DDoS et CDN : Cloudflare (intégré avec Cloudflare Pages).
+— Protection DDoS, anti-bot et WAF : intégrés à la plateforme Vercel.
 
 Tout transfert hors UE relève des Clauses Contractuelles Types de la Commission européenne et du Data Privacy Framework UE-USA.`},
   {title:"4. Authentification",content:`— Authentification email + mot de passe (Supabase Auth).
@@ -13407,6 +13408,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v39';}catch(_){}</script>
+<script>try{window.__oniqVersion='v40';}catch(_){}</script>
 </body>
 </html>
