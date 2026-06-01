@@ -1,0 +1,24 @@
+/* TEAM */
+Société : ONIQ SAS
+Siège   : 84 avenue Foch, 75116 Paris, France
+SIRET   : 928 471 305 00012
+RCS     : Paris 928 471 305
+Contact : contact@oniq.online
+
+/* SUPPORT */
+Support technique : support@oniq.online
+Légal / RGPD     : legal@oniq.online — dpo@oniq.online
+Sécurité         : security@oniq.online
+Accessibilité    : accessibilite@oniq.online
+
+/* SITE */
+Standards    : HTML5, CSS3, ES2022, React 18
+Composants   : SPA single-file, Supabase Auth + Postgres, Stripe (paiements)
+IA           : Mistral (souveraineté française)
+Hébergement  : Cloudflare Pages (edge mondial) + Supabase EU (Frankfurt)
+Données      : RGPD by design, transferts hors UE encadrés CCT + DPF
+
+/* THANKS */
+À la communauté open-source française et européenne.
+Aux artisans du bâtiment qui nous ont raconté leurs vrais problèmes
+avant qu'on écrive la première ligne de code.

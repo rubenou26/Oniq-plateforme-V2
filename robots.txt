@@ -1,0 +1,51 @@
+# ONIQ — robots.txt
+# Plateforme : https://www.oniq.online
+# Documentation : https://developers.google.com/search/docs/crawling-indexing/robots/intro
+
+User-agent: *
+Allow: /
+Disallow: /espace
+Disallow: /hub
+Disallow: /team
+Disallow: /admin
+Disallow: /commercial
+Disallow: /support
+Disallow: /api/
+
+# Pages publiques explicitement autorisées (redondant avec Allow: / mais
+# explicite pour les crawlers paranoïaques)
+Allow: /marketplace
+Allow: /tarifs
+Allow: /blog
+Allow: /cles-en-main
+Allow: /mentions-legales
+Allow: /cgv
+Allow: /cgu
+Allow: /rgpd
+Allow: /cookies
+Allow: /securite
+Allow: /accessibilite
+Allow: /dpo
+
+# Bloquer les scrapers AI extractifs non-autorisés. ONIQ n'autorise pas
+# l'entraînement de modèles tiers sur ses contenus marketing/produit.
+User-agent: GPTBot
+Disallow: /
+User-agent: CCBot
+Disallow: /
+User-agent: ClaudeBot
+Disallow: /
+User-agent: Claude-Web
+Disallow: /
+User-agent: anthropic-ai
+Disallow: /
+User-agent: Google-Extended
+Disallow: /
+User-agent: PerplexityBot
+Disallow: /
+User-agent: cohere-ai
+Disallow: /
+User-agent: Bytespider
+Disallow: /
+
+Sitemap: https://www.oniq.online/sitemap.xml

@@ -1,0 +1,6 @@
+# Cloudflare Pages — SPA fallback. Toutes les routes inconnues servent index.html
+# en HTTP 200 (sinon, F5 sur /marketplace renverrait un 404).
+# Les paramètres de query string et le hash sont préservés automatiquement par
+# Cloudflare. Les hashes Supabase auth (#access_token=, #type=recovery) passent
+# donc intacts à l'application côté client.
+/*    /index.html    200
