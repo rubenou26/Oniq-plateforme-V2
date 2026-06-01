@@ -1,0 +1,42 @@
+{
+  "name": "ONIQ — Marketplace française de logiciels SaaS B2B avec IA",
+  "short_name": "ONIQ",
+  "description": "Marketplace française de logiciels SaaS B2B avec IA Mistral : BatiManager (gestion chantier), OniMetri (métré DPGF), OniCompta (Factur-X 2026), OniPilote (CRM hub), OniPromail (email pro). Données hébergées en France, conformité RGPD by design.",
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#1F1A14",
+  "background_color": "#F4E9D5",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Marketplace",
+      "short_name": "Marketplace",
+      "url": "/marketplace",
+      "description": "Découvrir les logiciels ONIQ"
+    },
+    {
+      "name": "Mon espace",
+      "short_name": "Espace",
+      "url": "/espace",
+      "description": "Gérer vos abonnements et factures"
+    },
+    {
+      "name": "Tarifs",
+      "short_name": "Tarifs",
+      "url": "/tarifs",
+      "description": "Voir les tarifs ONIQ"
+    }
+  ]
+}

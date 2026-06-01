@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v38">
+<html lang="fr" data-oniq-version="v39">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v38"/>
+<meta name="oniq-version" content="v39"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
@@ -9081,13 +9081,10 @@ Email : contact@oniq.online
 Contact légal : legal@oniq.online
 Délégué à la Protection des Données (DPO) : dpo@oniq.online`},
         {title:"2. Hébergement",content:`La plateforme web ONIQ est hébergée par :
-Vercel Inc. — 340 Pine Street, Suite 701, San Francisco, CA 94104, USA — https://vercel.com
+Cloudflare, Inc. — 101 Townsend Street, San Francisco, CA 94107, USA — https://cloudflare.com (Cloudflare Pages, edge réseau mondial avec présence en France)
 
 La base de données, l'authentification et le stockage applicatif sont opérés par :
 Supabase Inc. — 970 Toa Payoh North #07-04, Singapore 318992 — https://supabase.com — région UE (Frankfurt, Allemagne) pour les données personnelles ONIQ
-
-Distribution et protection DDoS :
-Cloudflare, Inc. — 101 Townsend Street, San Francisco, CA 94107, USA — https://cloudflare.com
 
 Les transferts de données vers les États-Unis sont encadrés par les Clauses Contractuelles Types (CCT) de la Commission européenne et le Data Privacy Framework UE-USA (décision d'adéquation du 10 juillet 2023).`},
         {title:"3. Propriété intellectuelle",content:`L'ensemble du contenu de la plateforme ONIQ (textes, graphismes, logiciels, images, sons, vidéos, bases de données, etc.) est la propriété exclusive d'ONIQ SAS ou de ses partenaires, et est protégé par les lois françaises et internationales relatives à la propriété intellectuelle.
@@ -9180,9 +9177,9 @@ const PolitiqueSecurite=({onBack})=>_LegalPage({title:"Sécurité",onBack,sectio
   {title:"2. Chiffrement",content:`— Transport : toutes les communications utilisent TLS 1.2+ (HTTPS strict). HSTS appliqué côté CDN.
 — Repos : les bases de données sont chiffrées au niveau disque (AES-256). Les secrets applicatifs sont stockés dans un coffre dédié (jamais en clair dans le code ou les variables d'environnement publiques).
 — Mots de passe : hashés avec bcrypt (cost ≥ 12) côté Supabase Auth. ONIQ n'a jamais accès aux mots de passe en clair.`},
-  {title:"3. Hébergement et localisation",content:`— Application web : Vercel Inc. (CDN mondial, edge function FR/UE en priorité).
+  {title:"3. Hébergement et localisation",content:`— Application web : Cloudflare Pages (edge réseau mondial, distribution depuis les datacenters EU en priorité pour les visiteurs européens).
 — Données personnelles et applicatives : Supabase, région UE (Frankfurt, Allemagne).
-— Distribution et protection DDoS : Cloudflare.
+— Protection DDoS et CDN : Cloudflare (intégré avec Cloudflare Pages).
 
 Tout transfert hors UE relève des Clauses Contractuelles Types de la Commission européenne et du Data Privacy Framework UE-USA.`},
   {title:"4. Authentification",content:`— Authentification email + mot de passe (Supabase Auth).
@@ -13410,6 +13407,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v38';}catch(_){}</script>
+<script>try{window.__oniqVersion='v39';}catch(_){}</script>
 </body>
 </html>

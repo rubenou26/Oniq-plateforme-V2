@@ -1,0 +1,42 @@
+# Cloudflare Pages — Headers HTTP de sécurité appliqués à toutes les routes.
+# Documentation format : https://developers.cloudflare.com/pages/configuration/headers/
+#
+# Les headers ci-dessous complètent les <meta http-equiv> du HTML (qui ne
+# peuvent pas porter HSTS, X-Frame-Options, ni un CSP serveur). Ils sont
+# évalués par le edge Cloudflare avant la livraison de la réponse.
+
+/*
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=(self), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Cross-Origin-Resource-Policy: same-origin
+  X-DNS-Prefetch-Control: on
+
+# Cache long pour les assets versionnés (immuables)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Le HTML principal ne doit pas être caché agressivement (sinon l'utilisateur
+# resterait coincé sur une vieille version après chaque déploiement)
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Manifest et favicon — TTL court mais cachable
+/manifest.json
+  Cache-Control: public, max-age=3600
+/favicon.svg
+  Cache-Control: public, max-age=86400
+
+# security.txt et robots.txt — toujours frais
+/.well-known/security.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+/robots.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+  Content-Type: application/xml; charset=utf-8
