@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OniMarketer — Suite marketing 360° du bâtiment</title>
+<!--
+  OniMarketer — App autonome ONIQ (chargée en iframe par index.html)
+  ───────────────────────────────────────────────────────────────────
+  • Vanilla JS, zéro dépendance de build (pas de Babel/React runtime)
+  • Design system aligné sur ONIQ (palette or/ivoire/encre, Playfair + DM Sans)
+  • v0.1 — Shell complet (4 piliers) + 2 modules fonctionnels :
+        · Tableau de bord (KPIs + sources + activité)
+        · Leads (pipeline de capture & qualification)
+  • Persistance : en mémoire de session (v0.1). La sync Supabase via postMessage
+    au parent ONIQ est le prochain branchement (voir window.parent.postMessage).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --ink:#0A0A08; --deep:#060504; --paper:#F5F2EC; --dim:#EFEBE3;
+    --linen:#E8E2D8; --ivory:#FAF8F4; --stone:#8C8070; --sand:#B5A898;
+    --gold:#B89A5A; --gold-l:#D4B87A; --gold-dim:rgba(184,154,90,.13);
+    --green:#4A7C59; --amber:#C47B2B; --red:#A63C3C; --blue:#3E5C76;
+    --ff-serif:'Playfair Display', Georgia, serif;
+    --ff-sans:'DM Sans','Helvetica Neue',sans-serif;
+    --sb-w:248px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--ff-sans); color:var(--ink);
+    background:var(--dim); font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--sand);border-radius:8px;border:2px solid var(--dim)}
+  ::-webkit-scrollbar-track{background:transparent}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  input,select,textarea{font-family:inherit;font-size:13px}
+  .app{display:flex;height:100vh;overflow:hidden}
+
+  /* ───── Sidebar ───── */
+  .sb{
+    width:var(--sb-w); flex:0 0 var(--sb-w); background:var(--ink);
+    color:var(--paper); display:flex; flex-direction:column;
+    border-right:1px solid #00000022;
+  }
+  .sb-head{padding:22px 20px 18px;border-bottom:1px solid #ffffff12}
+  .sb-logo{font-family:var(--ff-serif);font-style:italic;font-weight:700;font-size:23px;letter-spacing:-.5px;color:var(--ivory)}
+  .sb-logo b{color:var(--gold-l);font-style:italic}
+  .sb-sub{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--sand);margin-top:4px;font-weight:600}
+  .sb-nav{flex:1;overflow-y:auto;padding:10px 10px 18px}
+  .sb-group{margin-top:14px}
+  .sb-group-t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;padding:6px 10px 4px}
+  .nav-i{
+    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;
+    color:#D8D2C6;font-size:13px;font-weight:500;position:relative;transition:.13s;
+  }
+  .nav-i:hover{background:#ffffff0f;color:var(--ivory)}
+  .nav-i.on{background:var(--gold);color:var(--ink);font-weight:600}
+  .nav-i.on .ni-ic{opacity:1}
+  .ni-ic{width:17px;text-align:center;opacity:.75;font-size:14px}
+  .nav-i .soon{margin-left:auto;font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:#ffffff14;color:var(--sand);padding:2px 6px;border-radius:20px;font-weight:600}
+  .nav-i.on .soon{background:#00000018;color:#5a4f1f}
+  .sb-foot{padding:13px 18px;border-top:1px solid #ffffff12;font-size:11px;color:var(--sand)}
+  .sb-foot b{color:var(--gold-l);font-weight:600}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle}
+
+  /* ───── Main ───── */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--dim)}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:18px 30px;background:var(--ivory);border-bottom:1px solid var(--linen);flex-wrap:wrap;
+  }
+  .tb-eyebrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:3px}
+  .tb-title{font-family:var(--ff-serif);font-style:italic;font-weight:700;font-size:27px;color:var(--ink);letter-spacing:-.4px;line-height:1.1}
+  .content{flex:1;overflow-y:auto;padding:28px 30px 60px}
+  .wrap{max-width:1180px;margin:0 auto}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;
+    font-size:13px;font-weight:600;transition:.13s;white-space:nowrap;
+  }
+  .btn-gold{background:var(--ink);color:var(--gold-l)}
+  .btn-gold:hover{background:#000;transform:translateY(-1px)}
+  .btn-ghost{background:transparent;border:1px solid var(--linen);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--gold);background:var(--gold-dim)}
+  .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:6px}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kpi{background:var(--ivory);border:1px solid var(--linen);border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px #0a0a0809}
+  .kpi-l{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--stone);font-weight:600;margin-bottom:9px}
+  .kpi-v{font-family:var(--ff-serif);font-weight:700;font-size:30px;color:var(--ink);line-height:1}
+  .kpi-v.gold{color:var(--gold)}
+  .kpi-t{font-size:11.5px;margin-top:8px;font-weight:600}
+  .up{color:var(--green)} .down{color:var(--red)}
+
+  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
+  .card{background:var(--ivory);border:1px solid var(--linen);border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px #0a0a0809}
+  .card-t{font-family:var(--ff-serif);font-weight:600;font-size:17px;color:var(--ink);margin-bottom:3px}
+  .card-sub{font-size:12px;color:var(--stone);margin-bottom:16px}
+
+  /* bar chart */
+  .bars{display:flex;flex-direction:column;gap:11px}
+  .bar-row{display:grid;grid-template-columns:118px 1fr 42px;align-items:center;gap:11px}
+  .bar-lab{font-size:12.5px;color:var(--ink);font-weight:500}
+  .bar-track{height:9px;background:var(--dim);border-radius:20px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--gold),var(--gold-l))}
+  .bar-val{font-size:12px;color:var(--stone);font-weight:600;text-align:right}
+
+  .feed{display:flex;flex-direction:column;gap:2px}
+  .feed-i{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--linen)}
+  .feed-i:last-child{border-bottom:none}
+  .feed-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:0 0 8px}
+  .feed-tx{font-size:12.5px;color:var(--ink)}
+  .feed-tx b{font-weight:600}
+  .feed-ti{font-size:11px;color:var(--stone);margin-top:1px}
+
+  /* Pipeline */
+  .pipe-stats{display:flex;gap:22px;margin-bottom:20px;flex-wrap:wrap}
+  .pstat b{font-family:var(--ff-serif);font-size:22px;color:var(--ink);font-weight:700}
+  .pstat span{font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.05em;font-weight:600;display:block;margin-top:2px}
+  .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;align-items:flex-start}
+  .col{flex:0 0 248px;background:var(--paper);border:1px solid var(--linen);border-radius:11px;padding:10px;min-height:120px}
+  .col-h{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 10px}
+  .col-h .nm{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:7px}
+  .col-h .ct{font-size:11px;color:var(--stone);font-weight:600;background:var(--dim);padding:2px 8px;border-radius:20px}
+  .col-stripe{width:7px;height:7px;border-radius:50%}
+  .lead{
+    background:var(--ivory);border:1px solid var(--linen);border-radius:9px;padding:11px 12px;margin-bottom:9px;
+    cursor:grab;transition:.12s;box-shadow:0 1px 1px #0a0a0808;
+  }
+  .lead:hover{border-color:var(--gold);box-shadow:0 3px 10px #0a0a0814}
+  .lead.dragging{opacity:.4}
+  .lead-nm{font-weight:600;font-size:13.5px;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .lead-meta{font-size:11.5px;color:var(--stone);margin-top:3px}
+  .lead-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+  .tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-dim);color:#8a6d2e;text-transform:uppercase;letter-spacing:.03em}
+  .tag.bud{background:#4a7c5918;color:var(--green)}
+  .lead-mv{display:flex;gap:4px;margin-top:9px}
+  .mv{font-size:15px;line-height:1;color:var(--stone);padding:2px 7px;border-radius:5px;background:var(--dim)}
+  .mv:hover{background:var(--gold);color:var(--ink)}
+  .col.drop{outline:2px dashed var(--gold);outline-offset:-3px;background:var(--gold-dim)}
+
+  /* "coming soon" module panel */
+  .soon-panel{text-align:center;max-width:620px;margin:30px auto;padding:44px 30px;background:var(--ivory);border:1px solid var(--linen);border-radius:16px}
+  .soon-ic{font-size:46px;margin-bottom:14px}
+  .soon-panel h2{font-family:var(--ff-serif);font-style:italic;font-size:28px;color:var(--ink);margin-bottom:6px}
+  .soon-tag{display:inline-block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:700;background:#c47b2b16;padding:4px 12px;border-radius:20px;margin-bottom:18px}
+  .soon-panel p{font-size:14px;color:var(--stone);line-height:1.65;margin-bottom:20px}
+  .soon-feats{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-top:10px}
+  .soon-feat{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink)}
+  .soon-feat .ck{color:var(--gold);font-weight:700;flex:0 0 auto}
+
+  /* Modal */
+  .ov{position:fixed;inset:0;background:rgba(10,10,8,.55);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:20px;z-index:9999}
+  .ov.show{display:flex}
+  .modal{background:var(--ivory);border-radius:16px;width:min(480px,96vw);box-shadow:0 30px 80px rgba(10,10,8,.4);overflow:hidden;animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+  .modal-h{padding:20px 24px 14px;border-bottom:1px solid var(--linen)}
+  .modal-h h3{font-family:var(--ff-serif);font-style:italic;font-size:21px;color:var(--ink)}
+  .modal-b{padding:20px 24px}
+  .fld{margin-bottom:13px}
+  .fld label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);margin-bottom:5px}
+  .fld input,.fld select{width:100%;padding:9px 11px;border:1px solid var(--linen);border-radius:8px;background:#fff;color:var(--ink)}
+  .fld input:focus,.fld select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+  .fld-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .modal-f{padding:14px 24px 20px;display:flex;gap:10px;justify-content:flex-end}
+
+  @media(max-width:880px){
+    :root{--sb-w:0px}
+    .sb{display:none}
+    .kpis{grid-template-columns:1fr 1fr}
+    .grid2{grid-template-columns:1fr}
+    .content{padding:20px 16px 50px}
+    .topbar{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sb">
+    <div class="sb-head">
+      <div class="sb-logo">Oni<b>Marketer</b></div>
+      <div class="sb-sub">Suite marketing · Bâtiment</div>
+    </div>
+    <nav class="sb-nav" id="nav"></nav>
+    <div class="sb-foot"><span class="dot"></span>Connecté à <b>OniPilote</b> &amp; <b>OniPromail</b></div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="tb-eyebrow" id="tbEye">Pilotage</div>
+        <div class="tb-title" id="tbTitle">Tableau de bord</div>
+      </div>
+      <div id="tbActions"></div>
+    </div>
+    <div class="content"><div class="wrap" id="view"></div></div>
+  </div>
+</div>
+
+<!-- Modal : nouveau lead -->
+<div class="ov" id="ov">
+  <div class="modal">
+    <div class="modal-h"><h3>Nouveau lead</h3></div>
+    <div class="modal-b">
+      <div class="fld"><label>Nom du prospect</label><input id="f-name" placeholder="Jean & Marie Dupont"/></div>
+      <div class="fld-row">
+        <div class="fld"><label>Email</label><input id="f-email" placeholder="jean@email.fr"/></div>
+        <div class="fld"><label>Téléphone</label><input id="f-tel" placeholder="06 12 34 56 78"/></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label>Source</label>
+          <select id="f-src">
+            <option>Configurateur</option><option>Simulateur PTZ</option><option>Google Ads</option>
+            <option>Meta / Insta</option><option>SEO local</option><option>Salon / JPO</option>
+            <option>Apporteur</option><option>Bouche-à-oreille</option>
+          </select>
+        </div>
+        <div class="fld"><label>Budget projet</label>
+          <select id="f-bud">
+            <option>< 200 k€</option><option>200–300 k€</option><option>300–400 k€</option><option>> 400 k€</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld"><label>Zone / Projet</label><input id="f-zone" placeholder="Maison 110 m² — secteur Vannes"/></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveLead()">Ajouter le lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════ DONNÉES & ÉTAT ════════════════════════ */
+const STAGES = [
+  {id:'new',  nm:'Nouveau',   c:'#3E5C76'},
+  {id:'cont', nm:'Contacté',  c:'#C47B2B'},
+  {id:'qual', nm:'Qualifié',  c:'#B89A5A'},
+  {id:'rdv',  nm:'RDV pris',  c:'#7A4FA0'},
+  {id:'sign', nm:'Signé',     c:'#4A7C59'},
+  {id:'lost', nm:'Perdu',     c:'#A63C3C'},
+];
+
+// Seed démo (en mémoire de session — branchement Supabase = prochaine étape)
+let LEADS = [
+  {id:1, name:'Jean & Marie Dupont', email:'jm.dupont@email.fr', tel:'06 12 34 56 78', src:'Configurateur', bud:'300–400 k€', zone:'Maison 120 m² — Vannes', stage:'qual'},
+  {id:2, name:'Famille Bernard', email:'bernard@email.fr', tel:'06 22 11 33 44', src:'Simulateur PTZ', bud:'200–300 k€', zone:'Plain-pied 90 m² — Auray', stage:'new'},
+  {id:3, name:'Sophie Lemaire', email:'s.lemaire@email.fr', tel:'07 88 99 00 11', src:'Google Ads', bud:'> 400 k€', zone:'Villa 160 m² — Arradon', stage:'rdv'},
+  {id:4, name:'Thomas Petit', email:'t.petit@email.fr', tel:'06 55 44 33 22', src:'SEO local', bud:'200–300 k€', zone:'Maison 100 m² — Theix', stage:'cont'},
+  {id:5, name:'Léa & Hugo Moreau', email:'moreau@email.fr', tel:'06 77 66 55 44', src:'Apporteur', bud:'300–400 k€', zone:'Contemporaine 135 m² — Séné', stage:'sign'},
+  {id:6, name:'Karim Benali', email:'k.benali@email.fr', tel:'07 12 23 34 45', src:'Meta / Insta', bud:'< 200 k€', zone:'Studio + extension — Vannes', stage:'new'},
+  {id:7, name:'Claire Rousseau', email:'c.rousseau@email.fr', tel:'06 33 22 11 00', src:'Salon / JPO', bud:'300–400 k€', zone:'Maison 115 m² — Pluneret', stage:'cont'},
+];
+let seq = 100;
+
+/* ════════════════════════ MENU ════════════════════════ */
+const MENU = [
+  {grp:'Acquisition', items:[
+    {id:'oniseo',   ic:'🔎', nm:'OniSEO',   soon:1, eye:'Acquisition', desc:'SEO programmatique à l’échelle nationale.', tag:'Bientôt', long:'Génère et publie automatiquement des milliers de pages locales optimisées (« Construire à [ville] », « Maison PTZ zone B1 à [commune] ») pour capter du trafic gratuit en continu.', feats:['Pages locales × communes × gammes','Optimisation IA du contenu','Maillage interne automatique','Suivi du positionnement Google']},
+    {id:'onisocial',ic:'📱', nm:'OniSocial',soon:1, eye:'Acquisition', desc:'Réseaux sociaux multi-agences automatisés.', tag:'Bientôt', long:'Production et publication automatique sur Instagram, TikTok, Facebook et YouTube, avec déclinaison locale par agence et calendrier éditorial piloté par IA.', feats:['Calendrier éditorial IA','Déclinaison par agence','Publication multi-réseaux','Bibliothèque de visuels chantier']},
+    {id:'oniads',   ic:'🎯', nm:'OniAds',   soon:1, eye:'Acquisition', desc:'Régie pub centralisée Google + Meta.', tag:'Bientôt', long:'Pilotage centralisé de toutes les campagnes Google Ads, Meta et TikTok avec créations dynamiques (DCO) pré-optimisées pour le CCMI.', feats:['Templates pub CCMI','Créations dynamiques (DCO)','Budget centralisé multi-agences','ROAS en temps réel']},
+    {id:'oniradar', ic:'📡', nm:'OniRadar', soon:1, eye:'Acquisition', desc:'Détection de projets avant les concurrents.', tag:'R&D', long:'Croise les données open data (permis de construire, DIA, mutations cadastrales, terrains en vente) pour détecter les futurs projets de construction et alerter le commercial avant la première recherche Google du prospect.', feats:['Veille permis & DIA','Scoring signaux faibles','Alertes terrain acheté','Attribution commercial/agence']},
+  ]},
+  {grp:'Conversion', items:[
+    {id:'leads',    ic:'🧲', nm:'Leads',    soon:0, eye:'Conversion', desc:'Pipeline de capture & qualification.'},
+    {id:'onisimu',  ic:'🧮', nm:'OniSimu',  soon:1, eye:'Conversion', desc:'Simulateur PTZ & capacité d’emprunt.', tag:'Bientôt', long:'Landing interactive : le visiteur entre ses revenus, découvre sa capacité d’emprunt, sa mensualité et son PTZ 2025, puis voit les modèles compatibles — et devient un lead qualifié.', feats:['Calcul capacité d’emprunt','PTZ 2025 (zonage à jour)','Mensualité & assurance','Modèles compatibles + capture lead']},
+    {id:'oniconfig',ic:'🏠', nm:'OniConfig',soon:1, eye:'Conversion', desc:'Configurateur 3D de maison.', tag:'Bientôt', long:'Le visiteur compose sa future maison (plan, étages, façade, options), voit le prix se mettre à jour en direct, et devient un lead chaud au moment de recevoir son dossier.', feats:['Composition plan & façade','Prix en temps réel','Galerie d’options','Export dossier + lead chaud']},
+    {id:'oniforms', ic:'📝', nm:'OniForms', soon:1, eye:'Conversion', desc:'Formulaires intelligents + scoring.', tag:'Bientôt', long:'Formulaires de capture avec scoring automatique en temps réel et routage du lead vers la bonne agence ou le bon commercial.', feats:['Scoring en temps réel','Routage par zone','A/B test intégré','Anti-spam IA']},
+    {id:'onibot',   ic:'💬', nm:'OniBot',   soon:1, eye:'Conversion', desc:'Agent IA conversationnel 24/7.', tag:'Bientôt', long:'Agent IA (chat web, WhatsApp, voix) qui qualifie les prospects 24h/24, prend les RDV dans l’agenda du commercial et livre un dossier qualifié au format CCMI.', feats:['Chat web + WhatsApp','Qualification 8 critères','Prise de RDV automatique','Voix naturelle (option)']},
+  ]},
+  {grp:'Activation', items:[
+    {id:'oniflow',  ic:'🔁', nm:'OniFlow',  soon:1, eye:'Activation', desc:'Automation cycle long 6–18 mois.', tag:'Bientôt', long:'Scénarios conditionnels par étape du projet CCMI (visite terrain → RDV banque → dépôt PC → signature → livraison). Aucun outil grand public ne modélise ce cycle.', feats:['Déclencheurs par étape projet','Email + SMS + WhatsApp','Relances commerciales auto','Synchro OniPilote']},
+    {id:'onisms',   ic:'✉️', nm:'OniSMS',   soon:1, eye:'Activation', desc:'SMS & WhatsApp Business.', tag:'Bientôt', long:'Campagnes et relances SMS / WhatsApp Business avec envoi de documents PDF et qualification automatique.', feats:['SMS transactionnel & marketing','WhatsApp Business','Envoi de PDF (devis, plans)','Modèles dynamiques']},
+    {id:'oniscore', ic:'🌡️', nm:'OniScore', soon:1, eye:'Activation', desc:'Lead scoring prédictif IA.', tag:'Bientôt', long:'Un modèle IA prédit les leads chauds vs froids et alerte le commercial au bon moment pour maximiser le taux de signature.', feats:['Score chaud/froid','Alerte « moment idéal »','Priorisation du pipe','Apprentissage continu']},
+    {id:'onirepu',  ic:'⭐', nm:'OniRépu',  soon:1, eye:'Activation', desc:'Avis & e-réputation locale.', tag:'Bientôt', long:'Agrège les avis Google par agence, déclenche automatiquement une demande d’avis après livraison, surveille les nouveaux avis et propose des réponses pré-rédigées.', feats:['Demande d’avis post-livraison','Agrégation multi-agences','Alerte avis négatif','Réponses pré-rédigées']},
+  ]},
+  {grp:'Pilotage', items:[
+    {id:'dash',     ic:'📊', nm:'Tableau de bord', soon:0, eye:'Pilotage', desc:'Vue d’ensemble de la performance.'},
+    {id:'oniattrib',ic:'🧭', nm:'OniAttrib',soon:1, eye:'Pilotage', desc:'Attribution multi-touch 12–18 mois.', tag:'Bientôt', long:'Identifie quel canal a réellement converti sur l’ensemble du cycle long, au-delà du dernier clic.', feats:['Modèle multi-touch','Cycle 12–18 mois','ROI par canal','Export rapports']},
+    {id:'oniroi',   ic:'💰', nm:'OniROI',   soon:1, eye:'Pilotage', desc:'ROI marketing par € investi.', tag:'Bientôt', long:'ROI marketing par euro investi, par canal, par campagne et par commercial, avec prévision des signatures.', feats:['ROI par campagne','Coût par lead / signature','Prévision IA','Tableaux de bord direction']},
+  ]},
+];
+const FLAT = {}; MENU.forEach(g=>g.items.forEach(i=>FLAT[i.id]=i));
+let current = 'dash';
+
+/* ════════════════════════ RENDER : NAV ════════════════════════ */
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = MENU.map(g=>`
+    <div class="sb-group">
+      <div class="sb-group-t">${g.grp}</div>
+      ${g.items.map(i=>`
+        <div class="nav-i ${i.id===current?'on':''}" onclick="go('${i.id}')">
+          <span class="ni-ic">${i.ic}</span>
+          <span>${i.nm}</span>
+          ${i.soon?`<span class="soon">${i.tag||'Bientôt'}</span>`:''}
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function go(id){ current = id; renderNav(); renderView(); }
+
+/* ════════════════════════ RENDER : TOPBAR + VUE ════════════════════════ */
+function renderView(){
+  const item = FLAT[current];
+  document.getElementById('tbEye').textContent = item.eye;
+  document.getElementById('tbTitle').textContent = item.nm;
+  const actions = document.getElementById('tbActions');
+  const view = document.getElementById('view');
+
+  if(current==='dash'){ actions.innerHTML=''; view.innerHTML = viewDash(); }
+  else if(current==='leads'){
+    actions.innerHTML = `<button class="btn btn-gold" onclick="openModal()">+ Nouveau lead</button>`;
+    view.innerHTML = viewLeads();
+    bindDnD();
+  }
+  else { actions.innerHTML=''; view.innerHTML = viewSoon(item); }
+}
+
+/* ──────── Vue : Tableau de bord ──────── */
+function viewDash(){
+  const total = LEADS.length;
+  const signed = LEADS.filter(l=>l.stage==='sign').length;
+  const active = LEADS.filter(l=>!['sign','lost'].includes(l.stage)).length;
+  const conv = total? Math.round(signed/total*100):0;
+  // leads par source
+  const bySrc = {};
+  LEADS.forEach(l=> bySrc[l.src]=(bySrc[l.src]||0)+1);
+  const maxSrc = Math.max(...Object.values(bySrc),1);
+  const bars = Object.entries(bySrc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-lab">${k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxSrc*100)}%"></div></div>
+      <div class="bar-val">${v}</div>
+    </div>`).join('');
+
+  const feed = [
+    {c:'#4A7C59', tx:'<b>Léa & Hugo Moreau</b> ont signé leur CCMI', ti:'il y a 2 h · via Apporteur'},
+    {c:'#7A4FA0', tx:'RDV agence programmé avec <b>Sophie Lemaire</b>', ti:'il y a 5 h · via Google Ads'},
+    {c:'#3E5C76', tx:'Nouveau lead <b>Karim Benali</b> (configurateur)', ti:'hier · Meta / Insta'},
+    {c:'#C47B2B', tx:'<b>Thomas Petit</b> a été contacté par le commercial', ti:'hier · SEO local'},
+    {c:'#B89A5A', tx:'<b>Jean & Marie Dupont</b> qualifiés — budget 300–400 k€', ti:'il y a 2 j · Configurateur'},
+  ].map(f=>`<div class="feed-i"><div class="feed-dot" style="background:${f.c}"></div><div><div class="feed-tx">${f.tx}</div><div class="feed-ti">${f.ti}</div></div></div>`).join('');
+
+  return `
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-l">Leads ce mois</div><div class="kpi-v">${total}</div><div class="kpi-t up">▲ +18 % vs mois dernier</div></div>
+    <div class="kpi"><div class="kpi-l">Pipeline actif</div><div class="kpi-v">${active}</div><div class="kpi-t up">▲ 3 nouveaux aujourd’hui</div></div>
+    <div class="kpi"><div class="kpi-l">Taux de signature</div><div class="kpi-v gold">${conv}%</div><div class="kpi-t up">▲ +4 pts</div></div>
+    <div class="kpi"><div class="kpi-l">Coût par lead</div><div class="kpi-v">38&nbsp;€</div><div class="kpi-t down">▼ −12 % (optimisé)</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Leads par source</div>
+      <div class="card-sub">D’où viennent vos prospects ce mois-ci</div>
+      <div class="bars">${bars}</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Activité récente</div>
+      <div class="card-sub">Derniers mouvements du pipeline</div>
+      <div class="feed">${feed}</div>
+    </div>
+  </div>`;
+}
+
+/* ──────── Vue : Pipeline leads ──────── */
+function viewLeads(){
+  const total = LEADS.length;
+  const active = LEADS.filter(l=>!['sign','lost'].includes(l.stage)).length;
+  const signed = LEADS.filter(l=>l.stage==='sign').length;
+  const conv = total? Math.round(signed/total*100):0;
+
+  const stats = `
+    <div class="pipe-stats">
+      <div class="pstat"><b>${total}</b><span>Total leads</span></div>
+      <div class="pstat"><b>${active}</b><span>En cours</span></div>
+      <div class="pstat"><b>${signed}</b><span>Signés</span></div>
+      <div class="pstat"><b>${conv}%</b><span>Conversion</span></div>
+    </div>`;
+
+  const cols = STAGES.map(s=>{
+    const list = LEADS.filter(l=>l.stage===s.id);
+    const cards = list.map(l=>leadCard(l)).join('') || `<div style="font-size:12px;color:var(--stone);padding:10px 6px;text-align:center">—</div>`;
+    return `
+      <div class="col" data-stage="${s.id}">
+        <div class="col-h">
+          <div class="nm"><span class="col-stripe" style="background:${s.c}"></span>${s.nm}</div>
+          <div class="ct">${list.length}</div>
+        </div>
+        ${cards}
+      </div>`;
+  }).join('');
+
+  return stats + `<div class="board">${cols}</div>`;
+}
+
+function leadCard(l){
+  const idx = STAGES.findIndex(s=>s.id===l.stage);
+  const prev = idx>0 ? `<span class="mv" title="Reculer" onclick="move(${l.id},-1)">←</span>` : '';
+  const next = idx<STAGES.length-1 ? `<span class="mv" title="Avancer" onclick="move(${l.id},1)">→</span>` : '';
+  return `
+  <div class="lead" draggable="true" data-id="${l.id}">
+    <div class="lead-nm">${l.name}</div>
+    <div class="lead-meta">${l.zone}</div>
+    <div class="lead-tags"><span class="tag">${l.src}</span><span class="tag bud">${l.bud}</span></div>
+    <div class="lead-mv">${prev}${next}</div>
+  </div>`;
+}
+
+function move(id, dir){
+  const l = LEADS.find(x=>x.id===id); if(!l) return;
+  const idx = STAGES.findIndex(s=>s.id===l.stage);
+  const ni = Math.min(Math.max(idx+dir,0),STAGES.length-1);
+  l.stage = STAGES[ni].id;
+  renderView();
+}
+
+/* drag & drop */
+let dragId = null;
+function bindDnD(){
+  document.querySelectorAll('.lead').forEach(el=>{
+    el.addEventListener('dragstart',e=>{ dragId=+el.dataset.id; el.classList.add('dragging'); });
+    el.addEventListener('dragend',e=>{ el.classList.remove('dragging'); dragId=null; });
+  });
+  document.querySelectorAll('.col').forEach(col=>{
+    col.addEventListener('dragover',e=>{ e.preventDefault(); col.classList.add('drop'); });
+    col.addEventListener('dragleave',e=>col.classList.remove('drop'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault(); col.classList.remove('drop');
+      const l = LEADS.find(x=>x.id===dragId);
+      if(l){ l.stage = col.dataset.stage; renderView(); }
+    });
+  });
+}
+
+/* ──────── Vue : module à venir ──────── */
+function viewSoon(item){
+  const feats = (item.feats||[]).map(f=>`<div class="soon-feat"><span class="ck">✦</span><span>${f}</span></div>`).join('');
+  return `
+  <div class="soon-panel">
+    <div class="soon-ic">${item.ic}</div>
+    <div class="soon-tag">${item.tag||'Bientôt'}</div>
+    <h2>${item.nm}</h2>
+    <p>${item.long||item.desc}</p>
+    <div class="soon-feats">${feats}</div>
+  </div>`;
+}
+
+/* ──────── Modal nouveau lead ──────── */
+function openModal(){ document.getElementById('ov').classList.add('show'); }
+function closeModal(){ document.getElementById('ov').classList.remove('show'); }
+function saveLead(){
+  const v = id=>document.getElementById(id).value.trim();
+  const name = v('f-name');
+  if(!name){ document.getElementById('f-name').focus(); return; }
+  LEADS.unshift({
+    id:++seq, name, email:v('f-email'), tel:v('f-tel'),
+    src:v('f-src'), bud:v('f-bud'), zone:v('f-zone')||'Projet à préciser', stage:'new'
+  });
+  ['f-name','f-email','f-tel','f-zone'].forEach(i=>document.getElementById(i).value='');
+  closeModal();
+  if(current!=='leads') go('leads'); else renderView();
+}
+document.getElementById('ov').addEventListener('click',e=>{ if(e.target.id==='ov') closeModal(); });
+
+/* ──────── Boot ──────── */
+renderNav();
+renderView();
+
+/* Annonce au parent ONIQ que l'app est prête (pour future sync Supabase) */
+try{ window.parent && window.parent.postMessage({type:'onimarketer:ready'}, '*'); }catch(e){}
+</script>
+</body>
+</html>

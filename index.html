@@ -2441,6 +2441,26 @@ const SW_DB=[
     highlights:["Génère DOE, CCTP, contrats, notices en quelques secondes","Vérifie vos factures d'achat automatiquement (OCR + contrôle IA)","Coffre documentaire : interrogez tous vos docs en langage naturel","Rédige vos réponses email professionnelles","Assistant administratif & métier 24/7","Interface ultra-simple — utilisable sans formation","IA française Mistral · données hébergées en France"],
     userReviews:[]
   },
+  {
+    id:108,
+    slug:"onimarketer",
+    name:"OniMarketer",
+    price:129,
+    cat:"Marketing",
+    sector:"Tous secteurs,Bâtiment,Construction,Maîtrise d'œuvre",
+    icon:"📣",
+    desc:"La suite marketing 360° du bâtiment. Capter, convertir et fidéliser vos prospects construction — pipeline, simulateur PTZ, configurateur, automation cycle long. Le HubSpot du CCMI.",
+    features:["Pipeline leads multi-sources","Tableau de bord performance","Simulateur PTZ & configurateur","Automation cycle long 6–18 mois","Sync OniPilote + OniPromail"],
+    popular:true,
+    inDev:true,
+    rating:0,
+    reviews:0,
+    longDesc:"Vos confrères perdent 60 % de leurs prospects dans le tunnel parce qu'aucun outil marketing ne sait modéliser le cycle long de la construction. OniMarketer est conçu pour ça — nativement bâtiment.\n\nUne seule plateforme orchestre toute votre acquisition, votre conversion et votre fidélisation, structurée en 4 piliers. **Acquisition** : SEO programmatique local, réseaux sociaux multi-agences, régie pub centralisée, et OniRadar qui détecte les projets de construction avant vos concurrents (permis, DIA, mutations cadastrales). **Conversion** : pipeline de leads multi-sources, simulateur PTZ 2025, configurateur 3D de maison, agent IA conversationnel 24/7. **Activation** : marketing automation par étape projet (visite terrain → RDV banque → dépôt PC → signature), SMS & WhatsApp, lead scoring prédictif, gestion des avis. **Pilotage** : attribution multi-touch sur 12-18 mois et ROI par euro investi.\n\nContrairement à HubSpot ou Brevo, chaque module connaît le cycle CCMI (terrain → PC → CCMI → livraison) et se synchronise nativement avec OniPilote (CRM) et OniPromail (email). Vous arrêtez de jongler entre 8 logiciels : tout converge sur une seule fiche prospect.\n\nDéploiement progressif, module par module. Le pipeline de leads et le tableau de bord sont déjà opérationnels.",
+    videoId:"dQw4w9WgXcQ",
+    screenshots:["Tableau de bord performance marketing","Pipeline de leads multi-sources","Simulateur PTZ & capacité d'emprunt","Automation des scénarios cycle long"],
+    highlights:["Pipeline de leads multi-sources (déjà disponible)","Tableau de bord performance en temps réel","4 piliers : Acquisition · Conversion · Activation · Pilotage","Simulateur PTZ 2025 & configurateur 3D","Automation orientée cycle long CCMI (6-18 mois)","OniRadar : détection de projets via open data","Sync native OniPilote (CRM) + OniPromail (email)","Pensé bâtiment — pas un CRM marketing généraliste"],
+    userReviews:[]
+  },
 ];
 window.__SW_DB__ = SW_DB;
 
@@ -2558,6 +2578,8 @@ const softwareLaunchers={
   onipromail:{src:ONIPROMAIL_DATA_URL,mode:"iframe"}
 ,
   oniassist:{src:ONIASSIST_DATA_URL,mode:"iframe"}
+,
+  onimarketer:{src:"/apps/onimarketer.html",mode:"iframe"}
 };
 const openSoftwareApp=(sw)=>{
   const launcher=sw?.slug&&softwareLaunchers[sw.slug];
