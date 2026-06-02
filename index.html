@@ -11255,9 +11255,11 @@ const TeamRolesPage=({user,setUser,setView})=>{
             <h1 style={{margin:0,fontFamily:SF,fontSize:M?24:32,fontWeight:700,color:C.ink,fontStyle:'italic'}}>Équipe & Rôles</h1>
             <div style={{fontFamily:SS,fontSize:12,color:C.stone,marginTop:6}}>Invitez vos collaborateurs et définissez leurs droits sur chaque logiciel.</div>
           </div>
-          {tab==='team'?(
-            <button onClick={()=>{setEditingMember(null);setShowInvite(true);}} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>+ Ajouter un membre</button>
-          ):(
+          {/* Sur l'onglet "Mon équipe", l'invitation se fait via le code
+              entreprise + le bouton "Générer un lien d'invitation" du bloc
+              "Envoyer une invitation" ci-dessous — plus besoin d'un bouton
+              "+ Ajouter un membre" qui faisait doublon. */}
+          {tab==='roles' && (
             <button onClick={()=>{setEditingRole(null);setShowRoleEditor(true);}} style={{background:C.gold,border:'none',borderRadius:4,padding:'10px 18px',fontFamily:SS,fontSize:11,fontWeight:800,color:C.ink,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.1em'}}>+ Créer un rôle</button>
           )}
         </div>
