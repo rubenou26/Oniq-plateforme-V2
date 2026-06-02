@@ -7275,6 +7275,7 @@ const TeamManagementPanel=({owner,software,setRefreshSeed})=>{
 
 
 const TeamAccessPage=({token,owner,software})=>{
+  const {t}=useLang();
   const [member,setMember]=useState(null);
   const [mode,setMode]=useState('login');
   const [form,setForm]=useState({name:'',email:'',password:'',companyCode:''});
