@@ -5903,7 +5903,7 @@ const MonEspace=({user,setUser,software,setView})=>{
   const invoices=invoiceMonths.map((m,i)=>({id:`ONIQ-${m.split(" ")[1]}-${String(12-i).padStart(2,"0")}`,label:`Facture ONIQ — ${m}`,amountHT:i===0?mrr:Math.max(0,mrr-5),amountTTC:Math.round((i===0?mrr:Math.max(0,mrr-5))*1.2*100)/100,date:`01 ${m.split(" ")[0].slice(0,3)} ${m.split(" ")[1]}`,status:"paid",logiciels:myApps.map(s=>s.name).join(", ")||"—"}));
 
   return (
-    <div style={{padding:isMob()?"16px 12px":"40px 36px",maxWidth:1280,margin:"0 auto"}}>
+    <div style={{padding:isMob()?"16px 12px":"28px 36px",position:"relative"}}>
       {/* En-tête épuré : eyebrow doré discret + grande typo Playfair. Plus de
           dégradé sombre ni de halos dorés — l'identité ONIQ vient de la typo
           et du whitespace, pas d'effets décoratifs. */}
@@ -6329,7 +6329,7 @@ const SoftwareHub=({user,software,setUser,setView})=>{
       window.oniqNotify("Upload logo impossible : "+(err?.message||"erreur inconnue"),"err");
     }
   };
-  return <div style={{padding:isMob()?'16px 14px':'40px 36px',maxWidth:1280,margin:"0 auto"}}>
+  return <div style={{padding:isMob()?'16px 14px':'28px 36px',position:'relative'}}>
     {/* En-tête épuré (cf. spec d'épuration) : eyebrow doré + titre Playfair,
         pas de bandeau décoratif. Compteur logiciels en discret à droite. */}
     <div style={{marginBottom:DS.s.x9,display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:DS.s.x4,flexWrap:'wrap'}}>
@@ -11247,8 +11247,8 @@ const TeamRolesPage=({user,setUser,setView})=>{
   const M=isMob&&isMob();
 
   return (
-    <div style={{padding:M?'24px 16px':'40px 36px',background:C.paper,minHeight:'100%'}}>
-      <div style={{maxWidth:1180,margin:'0 auto'}}>
+    <div style={{padding:M?'24px 16px':'28px 36px',background:C.paper,minHeight:'100%'}}>
+      <div>
         <div style={{borderBottom:`1px solid ${C.linen}`,paddingBottom:18,marginBottom:24,display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:16}}>
           <div>
             <div style={{fontFamily:SS,fontSize:9,letterSpacing:'0.22em',textTransform:'uppercase',color:C.stone,marginBottom:6}}>Administration</div>
