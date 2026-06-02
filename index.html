@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v53">
+<html lang="fr" data-oniq-version="v54">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v53"/>
+<meta name="oniq-version" content="v54"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
@@ -11960,12 +11960,35 @@ function App() {
         <div style={{position:'absolute',bottom:0,right:0,width:180,height:200,background:'radial-gradient(ellipse at 100% 100%,rgba(160,109,46,0.06) 0%,transparent 70%),radial-gradient(ellipse at 100% 100%,rgba(214,205,185,0.10) 0%,transparent 60%)',pointerEvents:'none',zIndex:0}}/>
 
         {!mob&&<div style={{padding:"26px 22px 18px",borderBottom:'1px solid rgba(212,162,76,0.22)',position:'relative',zIndex:2,background:'radial-gradient(ellipse 80% 100% at 50% 0%,rgba(232,196,116,0.14) 0%,transparent 70%)'}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-            <div onClick={()=>setView('landing')} style={{fontFamily:SF,fontSize:28,fontWeight:700,color:'#F4E9D5',letterSpacing:6,cursor:'pointer',lineHeight:1,textShadow:'0 0 32px rgba(232,196,116,0.55),0 1px 0 rgba(255,255,255,0.06)'}}>ONIQ</div>
-            <LangProvider><LangSwitcher compact/></LangProvider>
-          </div>
-          <div style={{height:1,background:'linear-gradient(90deg,#E8C474 0%,rgba(212,162,76,0.45) 50%,transparent 100%)',marginBottom:10,opacity:0.85}}/>
-          <div style={{fontFamily:SS,fontSize:9.5,letterSpacing:"0.28em",textTransform:"uppercase",color:'#E8C474',fontWeight:700,textShadow:'0 0 12px rgba(212,162,76,0.30)'}}>{isAdmin?"Admin":isCommercial?"Commercial":user?"Espace Client":"Marketplace"}</div>
+          {/* v54 — Marque blanche : si l'utilisateur a uploadé un VRAI logo
+              entreprise, on l'affiche à la place du wordmark ONIQ + signature
+              discrète "Propulsé par ONIQ" en dessous. Si pas de logo (même si
+              un nom de société est renseigné), on garde le wordmark ONIQ —
+              plus impactant qu'un texte stylisé. */}
+          {(user&&user.companyLogo)?(
+            <>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,gap:10}}>
+                <div onClick={()=>setView('landing')} style={{flex:1,minWidth:0,cursor:'pointer',display:'flex',alignItems:'center'}} title={user.company||''}>
+                  <img src={user.companyLogo} alt={user.company||'Logo entreprise'} style={{maxWidth:'100%',maxHeight:48,objectFit:'contain',objectPosition:'left center',filter:'drop-shadow(0 1px 2px rgba(0,0,0,0.18))'}}/>
+                </div>
+                <LangProvider><LangSwitcher compact/></LangProvider>
+              </div>
+              <div style={{height:1,background:'linear-gradient(90deg,#E8C474 0%,rgba(212,162,76,0.45) 50%,transparent 100%)',marginBottom:8,opacity:0.85}}/>
+              <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}>
+                <span style={{fontFamily:SS,fontSize:8.5,letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(244,233,213,0.55)',fontWeight:500}}>Propulsé par <span style={{fontFamily:SF,fontWeight:700,letterSpacing:'0.10em',color:'#E8C474'}}>ONIQ</span></span>
+                <span style={{fontFamily:SS,fontSize:9,letterSpacing:'0.22em',textTransform:'uppercase',color:'#E8C474',fontWeight:700,marginLeft:'auto'}}>{isAdmin?"Admin":isCommercial?"Commercial":"Espace Client"}</span>
+              </div>
+            </>
+          ):(
+            <>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                <div onClick={()=>setView('landing')} style={{fontFamily:SF,fontSize:28,fontWeight:700,color:'#F4E9D5',letterSpacing:6,cursor:'pointer',lineHeight:1,textShadow:'0 0 32px rgba(232,196,116,0.55),0 1px 0 rgba(255,255,255,0.06)'}}>ONIQ</div>
+                <LangProvider><LangSwitcher compact/></LangProvider>
+              </div>
+              <div style={{height:1,background:'linear-gradient(90deg,#E8C474 0%,rgba(212,162,76,0.45) 50%,transparent 100%)',marginBottom:10,opacity:0.85}}/>
+              <div style={{fontFamily:SS,fontSize:9.5,letterSpacing:"0.28em",textTransform:"uppercase",color:'#E8C474',fontWeight:700,textShadow:'0 0 12px rgba(212,162,76,0.30)'}}>{isAdmin?"Admin":isCommercial?"Commercial":user?"Espace Client":"Marketplace"}</div>
+            </>
+          )}
         </div>}
 
         <nav style={{flex:1,padding:"16px 12px 12px",display:"flex",flexDirection:"column",gap:2,overflowY:"auto",position:'relative',zIndex:2}}>
@@ -13482,6 +13505,6 @@ See DEPLOYMENT.md for the full guide.
 <!-- Badge version retiré (v29). La version reste traçable via
      <meta name="oniq-version"> et window.__oniqVersion (console) — sans
      élément visible à l'écran. -->
-<script>try{window.__oniqVersion='v53';}catch(_){}</script>
+<script>try{window.__oniqVersion='v54';}catch(_){}</script>
 </body>
 </html>
