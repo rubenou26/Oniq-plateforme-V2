@@ -19,6 +19,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet"/>
+<!-- Supabase client : pour la persistance réelle des données (Phase 1).
+     L'iframe charge la lib via CDN puis récupère la session JWT du
+     parent ONIQ par postMessage. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
   :root{
     --ink:#0A0A08; --ink-2:#1F1A14; --ink-3:#2A2218; --deep:#060504;
@@ -509,7 +513,116 @@ const MENU = [
 const FLAT = {}; MENU.forEach(g=>g.items.forEach(i=>FLAT[i.id]=i));
 let current = 'dash';
 
-/* ════════════════════════ DONNÉES LEADS (démo) ════════════════════════ */
+/* ════════════════════════ SUPABASE — pont vers ONIQ ═════════════════
+   L'iframe demande la session au parent ONIQ via postMessage. Le parent
+   renvoie URL + anonKey + accessToken + userId, on configure le client.
+   Si pas de parent ou erreur réseau, on tombe en mode démo (données seed
+   locales restent affichées, écritures silencieusement ignorées).        */
+let SB = null;          // client Supabase (window.supabase.createClient)
+let SB_USER_ID = null;  // UUID auth.users.id du commercial connecté
+let SB_READY = false;   // true quand l'auth est confirmée
+
+function initSupabase(){
+  return new Promise(resolve=>{
+    if (!window.parent || window.parent === window) { resolve(false); return; }
+    const timeout = setTimeout(()=>{ window.removeEventListener('message', handler); resolve(false); }, 3000);
+    function handler(e){
+      const d = e.data; if (!d || d.type !== 'om:session') return;
+      window.removeEventListener('message', handler); clearTimeout(timeout);
+      if (!d.url || !d.anonKey || !window.supabase) { resolve(false); return; }
+      try {
+        SB = window.supabase.createClient(d.url, d.anonKey, {
+          global:{ headers:{ Authorization: 'Bearer ' + (d.accessToken||d.anonKey) } },
+          auth:{ persistSession:false, autoRefreshToken:false }
+        });
+        SB_USER_ID = d.userId || null;
+        SB_READY   = !!SB_USER_ID;
+        resolve(SB_READY);
+      } catch(err){ console.error('[OM] init SB:', err); resolve(false); }
+    }
+    window.addEventListener('message', handler);
+    window.parent.postMessage({type:'om:get-session'}, '*');
+  });
+}
+
+/* Mapping DB ↔ structures locales (les tables om_* utilisent des
+   noms en snake_case côté SQL, on convertit pour rester compatible
+   avec le code de rendu existant). */
+const mapLeadFromDB        = r => ({id:r.id, name:r.name, email:r.email||'', tel:r.tel||'', src:r.src||'', bud:r.bud||'', zone:r.zone||'', stage:r.stage||'new', apporteur_id:r.apporteur_id||null});
+const mapApporteurFromDB   = r => ({id:r.id, nm:r.nm, org:r.org||'', type:r.type, tel:r.tel||'', email:r.email||'', com:r.com||'', status:r.status||'actif', leads:0, signed:0, due:0});
+const mapCommissionFromDB  = (r, appByid) => ({id:r.id, appNm:(appByid[r.apporteur_id]||{}).nm||'?', client:r.client_name, ccmi:r.ccmi_amount, com:r.com_amount, dec:r.deblocage_date||'', etat:r.status==='payée'?'payée':'à verser', payDate:r.paid_date||null, apporteur_id:r.apporteur_id});
+const mapRadarFromDB       = r => ({id:r.id, type:r.type, zone:r.zone, sig:r.signal_info||'', terrain:r.terrain_size||'', score:r.score||0, st:r.score>=80?'chaud':r.score>=50?'tiède':'froid', date:r.detected_at?(new Date(r.detected_at)).toLocaleDateString('fr-FR'):'', status:r.status});
+
+/* Charge l'état initial depuis Supabase. Si succès, remplace les arrays
+   seed locaux. Si échec, on garde les données démo (fallback gracieux). */
+async function loadFromSupabase(){
+  if (!SB_READY) return false;
+  try {
+    const [leads, apps, comms, parr, fill, radar] = await Promise.all([
+      SB.from('om_leads').select('*').order('created_at',{ascending:false}),
+      SB.from('om_apporteurs').select('*').order('created_at',{ascending:false}),
+      SB.from('om_commissions').select('*').order('created_at',{ascending:false}),
+      SB.from('om_parrains').select('*').order('created_at',{ascending:false}),
+      SB.from('om_filleuls').select('*'),
+      SB.from('om_radar_signaux').select('*').order('detected_at',{ascending:false}).limit(50),
+    ]);
+    if (leads.data) LEADS = leads.data.map(mapLeadFromDB);
+    if (apps.data)  APPORTEURS = apps.data.map(mapApporteurFromDB);
+    if (comms.data) {
+      const appByid = Object.fromEntries(APPORTEURS.map(a=>[a.id,a]));
+      COMMISSIONS = comms.data.map(r=>mapCommissionFromDB(r, appByid));
+      // Stats apporteurs : leads apportés + signés + commission cumulée
+      APPORTEURS.forEach(a=>{
+        const cs = COMMISSIONS.filter(c=>c.apporteur_id===a.id);
+        a.leads  = cs.length;
+        a.signed = cs.filter(c=>c.ccmi>0).length;
+        a.due    = cs.filter(c=>c.etat==='à verser').reduce((s,c)=>s+c.com,0);
+      });
+    }
+    if (parr.data) PARRAINS = parr.data.map(p=>({
+      id:p.id, nm:p.client_name, livre:p.livraison_date||'',
+      filleuls: (fill.data||[]).filter(f=>f.parrain_id===p.id).map(f=>({
+        id:f.id, nm:f.nm, etat:f.etat, prime:f.prime||0, date:f.signed_date||''
+      }))
+    }));
+    if (radar.data && radar.data.length) RADAR_SIG = radar.data.map(mapRadarFromDB);
+    return true;
+  } catch(e){ console.error('[OM] loadFromSupabase:', e); return false; }
+}
+
+/* Helpers d'écriture — versions safe (no-op si Supabase pas prêt). */
+async function sbInsertLead(lead){
+  if (!SB_READY) return null;
+  const { data, error } = await SB.from('om_leads').insert({
+    owner_id: SB_USER_ID,
+    name: lead.name, email: lead.email||null, tel: lead.tel||null,
+    src: lead.src||null, bud: lead.bud||null, zone: lead.zone||null,
+    stage: lead.stage||'new'
+  }).select().single();
+  if (error) { console.error('[OM] insertLead:', error); return null; }
+  return data.id;
+}
+async function sbUpdateLeadStage(id, stage){
+  if (!SB_READY || typeof id !== 'number') return;
+  const { error } = await SB.from('om_leads').update({stage}).eq('id', id);
+  if (error) console.error('[OM] updateLeadStage:', error);
+}
+async function sbInsertApporteur(a){
+  if (!SB_READY) return null;
+  const { data, error } = await SB.from('om_apporteurs').insert({
+    owner_id: SB_USER_ID, nm: a.nm, org: a.org||null, type: a.type,
+    tel: a.tel||null, email: a.email||null, com: a.com||null, status: a.status||'actif'
+  }).select().single();
+  if (error) { console.error('[OM] insertApporteur:', error); return null; }
+  return data.id;
+}
+async function sbMarkCommissionsPaid(ids, payDate){
+  if (!SB_READY || !ids.length) return;
+  const { error } = await SB.from('om_commissions').update({status:'payée', paid_date:payDate}).in('id', ids);
+  if (error) console.error('[OM] markCommissionsPaid:', error);
+}
+
+/* ════════════════════════ DONNÉES LEADS (seed démo, écrasé par BD) ═══ */
 const STAGES = [
   {id:'new',  nm:'Nouveau',  c:'#3E5C76'},
   {id:'cont', nm:'Contacté', c:'#C47B2B'},
@@ -687,6 +800,7 @@ function move(id, dir){
   const idx = STAGES.findIndex(s=>s.id===l.stage);
   const ni = Math.min(Math.max(idx+dir,0),STAGES.length-1);
   l.stage = STAGES[ni].id;
+  sbUpdateLeadStage(l.id, l.stage);   // persist en BG (async, non bloquant)
   renderView();
 }
 
@@ -702,7 +816,7 @@ function bindDnD(){
     col.addEventListener('drop',e=>{
       e.preventDefault(); col.classList.remove('drop');
       const l = LEADS.find(x=>x.id===dragId);
-      if(l){ l.stage = col.dataset.stage; renderView(); }
+      if(l){ l.stage = col.dataset.stage; sbUpdateLeadStage(l.id, l.stage); renderView(); }
     });
   });
 }
@@ -765,16 +879,14 @@ function openAppModal(){
   ov.classList.add('show');
 }
 function closeAppModal(){ document.getElementById('ovApp').classList.remove('show'); }
-function saveApporteur(){
+async function saveApporteur(){
   const v = id => (document.getElementById(id).value || '').trim();
   const nm = v('a-nm'); if(!nm){ document.getElementById('a-nm').focus(); return; }
-  APPORTEURS.unshift({
-    id:++appSeq, nm,
-    org:v('a-org')||'—', type:v('a-type'),
-    tel:v('a-tel')||'—', email:v('a-email')||'—',
-    com:v('a-com')||'1.0 %',
-    leads:0, signed:0, due:0, status:'actif',
-  });
+  const app = { nm, org:v('a-org')||'—', type:v('a-type'),
+                tel:v('a-tel')||'—', email:v('a-email')||'—',
+                com:v('a-com')||'1.0 %', status:'actif' };
+  const dbId = await sbInsertApporteur(app);
+  APPORTEURS.unshift({ id: dbId || (++appSeq), ...app, leads:0, signed:0, due:0 });
   ['a-nm','a-org','a-tel','a-email','a-com'].forEach(i=>document.getElementById(i).value='');
   closeAppModal();
   renderView();
@@ -1430,12 +1542,14 @@ function viewCommissions(){
     </table>
   </div>`;
 }
-function commPay(){
+async function commPay(){
   const aVerser = COMMISSIONS.filter(c=>c.etat==='à verser');
   if(!aVerser.length){ alert('Aucune commission en attente'); return; }
   const total = aVerser.reduce((s,c)=>s+c.com,0);
   if(!confirm('Confirmer le paiement SEPA groupé de '+aVerser.length+' commissions ('+fmtEur(total)+') ?')) return;
   const today = new Date().toISOString().slice(0,10);
+  const dbIds = aVerser.map(c=>c.id).filter(id=>typeof id === 'number');
+  await sbMarkCommissionsPaid(dbIds, today);
   aVerser.forEach(c=>{ c.etat='payée'; c.payDate=today; });
   renderView();
 }
@@ -1627,14 +1741,17 @@ function viewSoon(item){
 /* ════════════════════════ MODAL ════════════════════════ */
 function openModal(){ document.getElementById('ov').classList.add('show'); }
 function closeModal(){ document.getElementById('ov').classList.remove('show'); }
-function saveLead(){
+async function saveLead(){
   const v = id=>document.getElementById(id).value.trim();
   const name = v('f-name');
   if(!name){ document.getElementById('f-name').focus(); return; }
-  LEADS.unshift({
-    id:++seq, name, email:v('f-email'), tel:v('f-tel'),
-    src:v('f-src'), bud:v('f-bud'), zone:v('f-zone')||'Projet à préciser', stage:'new'
-  });
+  const lead = { name, email:v('f-email'), tel:v('f-tel'),
+                 src:v('f-src'), bud:v('f-bud'),
+                 zone:v('f-zone')||'Projet à préciser', stage:'new' };
+  /* Persist Supabase si dispo ; sinon ID local fallback. */
+  const dbId = await sbInsertLead(lead);
+  lead.id = dbId || (++seq);
+  LEADS.unshift(lead);
   ['f-name','f-email','f-tel','f-zone'].forEach(i=>document.getElementById(i).value='');
   closeModal();
   if(current!=='leads') go('leads'); else renderView();
@@ -1643,9 +1760,24 @@ document.getElementById('ov').addEventListener('click',e=>{ if(e.target.id==='ov
 document.getElementById('ovApp').addEventListener('click',e=>{ if(e.target.id==='ovApp') closeAppModal(); });
 
 /* ════════════════════════ BOOT ════════════════════════ */
-renderNav();
-renderView();
-try{ window.parent && window.parent.postMessage({type:'onimarketer:ready'}, '*'); }catch(e){}
+(async function boot(){
+  /* 1) Premier render avec données seed locales → UI s'affiche immédiatement. */
+  renderNav();
+  renderView();
+  try{ window.parent && window.parent.postMessage({type:'onimarketer:ready'}, '*'); }catch(e){}
+
+  /* 2) En background : init Supabase + chargement données réelles.
+        Si succès → re-render avec les vraies données du commercial.
+        Si échec (pas de parent, pas de session, pas de tables) → on garde
+        les seeds (pour la démo). Pas bloquant. */
+  try{
+    const ok = await initSupabase();
+    if (ok){
+      await loadFromSupabase();
+      renderView();
+    }
+  } catch(e){ console.warn('[OM] boot Supabase:', e); }
+})();
 </script>
 </body>
 </html>

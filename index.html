@@ -1705,6 +1705,32 @@ const supabaseUrl = "https://kxdxxhepewziazfnfnkq.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZHh4aGVwZXd6aWF6Zm5mbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjkyMDMsImV4cCI6MjA4OTIwNTIwM30.erlLC8zLX3rucPE7-CzJyLGwCljWpzIeGwa6oWXfbMM";
 const supabaseClient = window.supabase ? supabase.createClient(supabaseUrl, supabaseKey) : null;
 
+/* ──────────────────────────────────────────────────────────────────
+   Pont Supabase pour les iframes logiciels (OniMarketer Phase 1).
+   Une iframe peut demander la session courante en postMessage
+   { type:'om:get-session' } → on répond avec URL, anonKey, JWT,
+   userId pour qu'elle configure son propre client Supabase.
+   ────────────────────────────────────────────────────────────────── */
+window.addEventListener('message', async (e)=>{
+  if (!e.data || e.data.type !== 'om:get-session') return;
+  if (!e.source || !e.source.postMessage) return;
+  let accessToken = null, userId = null;
+  try {
+    const sess = await supabaseClient?.auth.getSession();
+    accessToken = sess?.data?.session?.access_token || null;
+    userId      = sess?.data?.session?.user?.id || null;
+  } catch(_){}
+  /* targetOrigin '*' acceptable : iframes data:/blob:/same-origin uniquement.
+     Le token reste limité par RLS côté Supabase. */
+  e.source.postMessage({
+    type:'om:session',
+    url: supabaseUrl,
+    anonKey: supabaseKey,
+    accessToken,
+    userId,
+  }, '*');
+});
+
 async function uploadCompanyLogoToCloud(file,userId){
   if(!supabaseClient) throw new Error("Supabase n’est pas configuré.");
   if(!userId) throw new Error("Utilisateur non connecté.");
