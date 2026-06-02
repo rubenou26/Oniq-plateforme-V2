@@ -74,11 +74,10 @@
     background:linear-gradient(90deg,transparent 0%,rgba(232,196,116,.55) 50%,transparent 100%);
   }
   .wordmark{
-    font-family:var(--SF); font-weight:700;
-    font-size:24px; letter-spacing:-.01em; color:#F4E9D5;
+    font-family:var(--SF); font-style:italic; font-weight:700;
+    font-size:24px; letter-spacing:.30em; color:#F4E9D5;
     text-shadow:0 0 22px rgba(232,196,116,.40);
   }
-  .wordmark i{font-style:italic; color:var(--gold-xl); font-weight:600}
   .wordmark-sub{
     margin-top:7px;
     font-family:var(--SS); font-size:9px; font-weight:700;
@@ -343,8 +342,8 @@
 <div class="app">
   <aside class="side">
     <div class="side-head">
-      <div class="wordmark">Oni<i>Marketer</i></div>
-      <div class="wordmark-sub">Suite marketing · Bâtiment</div>
+      <div class="wordmark">ONIQ</div>
+      <div class="wordmark-sub">Marketer · Bâtiment</div>
     </div>
     <nav class="side-nav" id="nav"></nav>
 
@@ -478,33 +477,33 @@ const ICO = {
    Les onglets internes ont des libellés métier clairs. */
 const MENU = [
   {grp:'Acquisition', items:[
-    {id:'seo',     ic:ICO.search, nm:'SEO local',         soon:1, eye:'Acquisition', desc:'SEO programmatique à l’échelle nationale.', tag:'Bientôt', long:'Génère et publie automatiquement des milliers de pages locales optimisées (« Construire à [ville] », « Maison PTZ zone B1 à [commune] ») pour capter du trafic gratuit en continu.', feats:['Pages locales × communes × gammes','Optimisation IA du contenu','Maillage interne automatique','Suivi du positionnement Google']},
-    {id:'social',  ic:ICO.share, nm:'Réseaux sociaux',    soon:1, eye:'Acquisition', desc:'Réseaux sociaux multi-agences automatisés.', tag:'Bientôt', long:'Production et publication automatique sur Instagram, TikTok, Facebook et YouTube, avec déclinaison locale par agence et calendrier éditorial piloté par IA.', feats:['Calendrier éditorial IA','Déclinaison par agence','Publication multi-réseaux','Bibliothèque de visuels chantier']},
-    {id:'ads',     ic:ICO.target, nm:'Publicité',         soon:1, eye:'Acquisition', desc:'Régie pub centralisée Google + Meta.', tag:'Bientôt', long:'Pilotage centralisé de toutes les campagnes Google Ads, Meta et TikTok avec créations dynamiques (DCO) pré-optimisées pour le CCMI.', feats:['Templates pub CCMI','Créations dynamiques (DCO)','Budget centralisé multi-agences','ROAS en temps réel']},
-    {id:'radar',   ic:ICO.radar, nm:'Détection projets', soon:1, eye:'Acquisition', desc:'Détection de projets avant les concurrents.', tag:'R&D', long:'Croise les données open data (permis de construire, DIA, mutations cadastrales, terrains en vente) pour détecter les futurs projets de construction et alerter le commercial avant la première recherche Google du prospect.', feats:['Veille permis & DIA','Scoring signaux faibles','Alertes terrain acheté','Attribution commercial/agence']},
+    {id:'seo',     ic:ICO.search, nm:'SEO local',         soon:0, eye:'Acquisition', desc:'SEO programmatique à l’échelle nationale.', tag:'Bientôt', long:'Génère et publie automatiquement des milliers de pages locales optimisées (« Construire à [ville] », « Maison PTZ zone B1 à [commune] ») pour capter du trafic gratuit en continu.', feats:['Pages locales × communes × gammes','Optimisation IA du contenu','Maillage interne automatique','Suivi du positionnement Google']},
+    {id:'social',  ic:ICO.share, nm:'Réseaux sociaux',    soon:0, eye:'Acquisition', desc:'Réseaux sociaux multi-agences automatisés.', tag:'Bientôt', long:'Production et publication automatique sur Instagram, TikTok, Facebook et YouTube, avec déclinaison locale par agence et calendrier éditorial piloté par IA.', feats:['Calendrier éditorial IA','Déclinaison par agence','Publication multi-réseaux','Bibliothèque de visuels chantier']},
+    {id:'ads',     ic:ICO.target, nm:'Publicité',         soon:0, eye:'Acquisition', desc:'Régie pub centralisée Google + Meta.', tag:'Bientôt', long:'Pilotage centralisé de toutes les campagnes Google Ads, Meta et TikTok avec créations dynamiques (DCO) pré-optimisées pour le CCMI.', feats:['Templates pub CCMI','Créations dynamiques (DCO)','Budget centralisé multi-agences','ROAS en temps réel']},
+    {id:'radar',   ic:ICO.radar, nm:'Détection projets', soon:0, eye:'Acquisition', desc:'Détection de projets avant les concurrents.', tag:'R&D', long:'Croise les données open data (permis de construire, DIA, mutations cadastrales, terrains en vente) pour détecter les futurs projets de construction et alerter le commercial avant la première recherche Google du prospect.', feats:['Veille permis & DIA','Scoring signaux faibles','Alertes terrain acheté','Attribution commercial/agence']},
   ]},
   {grp:'Conversion', items:[
     {id:'leads',   ic:ICO.magnet, nm:'Leads',             soon:0, eye:'Conversion', desc:'Pipeline de capture & qualification.'},
-    {id:'simu',    ic:ICO.calc, nm:'Simulateur',         soon:1, eye:'Conversion', desc:'Simulateur PTZ & capacité d’emprunt.', tag:'Bientôt', long:'Landing interactive : le visiteur entre ses revenus, découvre sa capacité d’emprunt, sa mensualité et son PTZ 2025, puis voit les modèles compatibles — et devient un lead qualifié.', feats:['Calcul capacité d’emprunt','PTZ 2025 (zonage à jour)','Mensualité & assurance','Modèles compatibles + capture lead']},
-    {id:'config',  ic:ICO.home, nm:'Configurateur',      soon:1, eye:'Conversion', desc:'Configurateur 3D de maison.', tag:'Bientôt', long:'Le visiteur compose sa future maison (plan, étages, façade, options), voit le prix se mettre à jour en direct, et devient un lead chaud au moment de recevoir son dossier.', feats:['Composition plan & façade','Prix en temps réel','Galerie d’options','Export dossier + lead chaud']},
-    {id:'forms',   ic:ICO.form, nm:'Formulaires',        soon:1, eye:'Conversion', desc:'Formulaires intelligents + scoring.', tag:'Bientôt', long:'Formulaires de capture avec scoring automatique en temps réel et routage du lead vers la bonne agence ou le bon commercial.', feats:['Scoring en temps réel','Routage par zone','A/B test intégré','Anti-spam IA']},
-    {id:'bot',     ic:ICO.chat, nm:'Chatbot IA',         soon:1, eye:'Conversion', desc:'Agent IA conversationnel 24/7.', tag:'Bientôt', long:'Agent IA (chat web, WhatsApp, voix) qui qualifie les prospects 24h/24, prend les RDV dans l’agenda du commercial et livre un dossier qualifié au format CCMI.', feats:['Chat web + WhatsApp','Qualification 8 critères','Prise de RDV automatique','Voix naturelle (option)']},
+    {id:'simu',    ic:ICO.calc, nm:'Simulateur',         soon:0, eye:'Conversion', desc:'Simulateur PTZ & capacité d’emprunt.', tag:'Bientôt', long:'Landing interactive : le visiteur entre ses revenus, découvre sa capacité d’emprunt, sa mensualité et son PTZ 2025, puis voit les modèles compatibles — et devient un lead qualifié.', feats:['Calcul capacité d’emprunt','PTZ 2025 (zonage à jour)','Mensualité & assurance','Modèles compatibles + capture lead']},
+    {id:'config',  ic:ICO.home, nm:'Configurateur',      soon:0, eye:'Conversion', desc:'Configurateur 3D de maison.', tag:'Bientôt', long:'Le visiteur compose sa future maison (plan, étages, façade, options), voit le prix se mettre à jour en direct, et devient un lead chaud au moment de recevoir son dossier.', feats:['Composition plan & façade','Prix en temps réel','Galerie d’options','Export dossier + lead chaud']},
+    {id:'forms',   ic:ICO.form, nm:'Formulaires',        soon:0, eye:'Conversion', desc:'Formulaires intelligents + scoring.', tag:'Bientôt', long:'Formulaires de capture avec scoring automatique en temps réel et routage du lead vers la bonne agence ou le bon commercial.', feats:['Scoring en temps réel','Routage par zone','A/B test intégré','Anti-spam IA']},
+    {id:'bot',     ic:ICO.chat, nm:'Chatbot IA',         soon:0, eye:'Conversion', desc:'Agent IA conversationnel 24/7.', tag:'Bientôt', long:'Agent IA (chat web, WhatsApp, voix) qui qualifie les prospects 24h/24, prend les RDV dans l’agenda du commercial et livre un dossier qualifié au format CCMI.', feats:['Chat web + WhatsApp','Qualification 8 critères','Prise de RDV automatique','Voix naturelle (option)']},
   ]},
   {grp:'Activation', items:[
-    {id:'flow',    ic:ICO.loop, nm:'Automation',         soon:1, eye:'Activation', desc:'Automation cycle long 6–18 mois.', tag:'Bientôt', long:'Scénarios conditionnels par étape du projet CCMI (visite terrain → RDV banque → dépôt PC → signature → livraison). Aucun outil grand public ne modélise ce cycle.', feats:['Déclencheurs par étape projet','Email + SMS + WhatsApp','Relances commerciales auto','Synchro OniPilote']},
-    {id:'sms',     ic:ICO.send, nm:'SMS & WhatsApp',     soon:1, eye:'Activation', desc:'SMS & WhatsApp Business.', tag:'Bientôt', long:'Campagnes et relances SMS / WhatsApp Business avec envoi de documents PDF et qualification automatique.', feats:['SMS transactionnel & marketing','WhatsApp Business','Envoi de PDF (devis, plans)','Modèles dynamiques']},
-    {id:'score',   ic:ICO.thermo, nm:'Lead scoring',     soon:1, eye:'Activation', desc:'Lead scoring prédictif IA.', tag:'Bientôt', long:'Un modèle IA prédit les leads chauds vs froids et alerte le commercial au bon moment pour maximiser le taux de signature.', feats:['Score chaud/froid','Alerte « moment idéal »','Priorisation du pipe','Apprentissage continu']},
-    {id:'repu',    ic:ICO.star, nm:'E-réputation',       soon:1, eye:'Activation', desc:'Avis & e-réputation locale.', tag:'Bientôt', long:'Agrège les avis Google par agence, déclenche automatiquement une demande d’avis après livraison, surveille les nouveaux avis et propose des réponses pré-rédigées.', feats:['Demande d’avis post-livraison','Agrégation multi-agences','Alerte avis négatif','Réponses pré-rédigées']},
+    {id:'flow',    ic:ICO.loop, nm:'Automation',         soon:0, eye:'Activation', desc:'Automation cycle long 6–18 mois.', tag:'Bientôt', long:'Scénarios conditionnels par étape du projet CCMI (visite terrain → RDV banque → dépôt PC → signature → livraison). Aucun outil grand public ne modélise ce cycle.', feats:['Déclencheurs par étape projet','Email + SMS + WhatsApp','Relances commerciales auto','Synchro OniPilote']},
+    {id:'sms',     ic:ICO.send, nm:'SMS & WhatsApp',     soon:0, eye:'Activation', desc:'SMS & WhatsApp Business.', tag:'Bientôt', long:'Campagnes et relances SMS / WhatsApp Business avec envoi de documents PDF et qualification automatique.', feats:['SMS transactionnel & marketing','WhatsApp Business','Envoi de PDF (devis, plans)','Modèles dynamiques']},
+    {id:'score',   ic:ICO.thermo, nm:'Lead scoring',     soon:0, eye:'Activation', desc:'Lead scoring prédictif IA.', tag:'Bientôt', long:'Un modèle IA prédit les leads chauds vs froids et alerte le commercial au bon moment pour maximiser le taux de signature.', feats:['Score chaud/froid','Alerte « moment idéal »','Priorisation du pipe','Apprentissage continu']},
+    {id:'repu',    ic:ICO.star, nm:'E-réputation',       soon:0, eye:'Activation', desc:'Avis & e-réputation locale.', tag:'Bientôt', long:'Agrège les avis Google par agence, déclenche automatiquement une demande d’avis après livraison, surveille les nouveaux avis et propose des réponses pré-rédigées.', feats:['Demande d’avis post-livraison','Agrégation multi-agences','Alerte avis négatif','Réponses pré-rédigées']},
   ]},
   {grp:'Réseau', items:[
     {id:'apporteurs',  ic:ICO.userCheck, nm:'Apporteurs',  soon:0, eye:'Réseau', desc:'Réseau d’apporteurs d’affaires.'},
-    {id:'commissions', ic:ICO.percent, nm:'Commissions',   soon:1, eye:'Réseau', desc:'Suivi des commissions à verser.', tag:'Bientôt', long:'Suivi automatique des commissions à verser à chaque apporteur, déclenchement au moment du déblocage des fonds banque (CCMI), génération des factures d’apport, paiement groupé mensuel par virement SEPA.', feats:['Calcul automatique au déblocage','Factures d’apport générées','Paiement SEPA groupé','Reporting par apporteur · par mois']},
-    {id:'parrain',     ic:ICO.gift, nm:'Parrainage',       soon:1, eye:'Réseau', desc:'Programme parrain pour clients existants.', tag:'Bientôt', long:'Vos clients livrés deviennent vos meilleurs apporteurs. Programme de parrainage avec prime (500 € à 1 500 €) versée à la signature du CCMI parrainé, lien d’invitation personnalisé et suivi des conversions.', feats:['Lien d’invitation personnel','Prime à la signature CCMI','Suivi par client parrain','Notif quand le filleul signe']},
+    {id:'commissions', ic:ICO.percent, nm:'Commissions',   soon:0, eye:'Réseau', desc:'Suivi des commissions à verser.', tag:'Bientôt', long:'Suivi automatique des commissions à verser à chaque apporteur, déclenchement au moment du déblocage des fonds banque (CCMI), génération des factures d’apport, paiement groupé mensuel par virement SEPA.', feats:['Calcul automatique au déblocage','Factures d’apport générées','Paiement SEPA groupé','Reporting par apporteur · par mois']},
+    {id:'parrain',     ic:ICO.gift, nm:'Parrainage',       soon:0, eye:'Réseau', desc:'Programme parrain pour clients existants.', tag:'Bientôt', long:'Vos clients livrés deviennent vos meilleurs apporteurs. Programme de parrainage avec prime (500 € à 1 500 €) versée à la signature du CCMI parrainé, lien d’invitation personnalisé et suivi des conversions.', feats:['Lien d’invitation personnel','Prime à la signature CCMI','Suivi par client parrain','Notif quand le filleul signe']},
   ]},
   {grp:'Pilotage', items:[
     {id:'dash',    ic:ICO.layout, nm:'Tableau de bord',  soon:0, eye:'Pilotage', desc:'Vue d’ensemble de la performance.'},
-    {id:'attrib',  ic:ICO.compass, nm:'Attribution',     soon:1, eye:'Pilotage', desc:'Attribution multi-touch 12–18 mois.', tag:'Bientôt', long:'Identifie quel canal a réellement converti sur l’ensemble du cycle long, au-delà du dernier clic.', feats:['Modèle multi-touch','Cycle 12–18 mois','ROI par canal','Export rapports']},
-    {id:'roi',     ic:ICO.euro, nm:'ROI',                soon:1, eye:'Pilotage', desc:'ROI marketing par € investi.', tag:'Bientôt', long:'ROI marketing par euro investi, par canal, par campagne et par commercial, avec prévision des signatures.', feats:['ROI par campagne','Coût par lead / signature','Prévision IA','Tableaux de bord direction']},
+    {id:'attrib',  ic:ICO.compass, nm:'Attribution',     soon:0, eye:'Pilotage', desc:'Attribution multi-touch 12–18 mois.', tag:'Bientôt', long:'Identifie quel canal a réellement converti sur l’ensemble du cycle long, au-delà du dernier clic.', feats:['Modèle multi-touch','Cycle 12–18 mois','ROI par canal','Export rapports']},
+    {id:'roi',     ic:ICO.euro, nm:'ROI',                soon:0, eye:'Pilotage', desc:'ROI marketing par € investi.', tag:'Bientôt', long:'ROI marketing par euro investi, par canal, par campagne et par commercial, avec prévision des signatures.', feats:['ROI par campagne','Coût par lead / signature','Prévision IA','Tableaux de bord direction']},
   ]},
 ];
 const FLAT = {}; MENU.forEach(g=>g.items.forEach(i=>FLAT[i.id]=i));
@@ -764,7 +763,7 @@ function viewSoon(item){
   return `
   <div class="soon-panel">
     <div class="soon-ic-wrap">${item.ic}</div>
-    <div class="soon-tag">${item.tag||'Bientôt'}</div>
+    <div class="soon-tag">${item.eye||'Module'}</div>
     <h2>${item.nm}</h2>
     <p>${item.long||item.desc}</p>
     <div class="soon-feats">${feats}</div>
