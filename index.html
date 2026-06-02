@@ -6358,7 +6358,7 @@ const SoftwareHub=({user,software,setUser,setView})=>{
       <div style={{background:C.ivory,border:`1px solid ${C.linen}`,borderRadius:DS.r.md,padding:`${DS.s.x6}px ${DS.s.x7}px`,display:'flex',alignItems:'center',justifyContent:'space-between',gap:DS.s.x4,flexWrap:'wrap',boxShadow:DS.sh.sm}}>
         <div style={{display:'flex',alignItems:'center',gap:DS.s.x4,flex:1,minWidth:160}}>
           {user.companyLogo
-            ?(<img src={user.companyLogo} alt='Logo entreprise' style={{width:64,height:64,objectFit:'contain',borderRadius:DS.r.sm,background:C.dim,border:`1px solid ${C.linen}`,padding:DS.s.x2}}/>)
+            ?(<img src={user.companyLogo} alt='Logo entreprise' style={{width:64,height:64,objectFit:'contain',borderRadius:DS.r.sm,background:C.ink,border:`1px solid ${C.linen}`,padding:DS.s.x2,mixBlendMode:'lighten'}}/>)
             :(<div style={{width:64,height:64,borderRadius:DS.r.sm,background:C.ink,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:SF,fontSize:22,fontWeight:DS.fw.bold,color:C.goldL,fontStyle:"italic"}}>{(user.company||'ON').slice(0,2).toUpperCase()}</div>)
           }
           <div><div style={{fontFamily:SF,fontSize:DS.fs.lg,fontWeight:DS.fw.semi,color:C.ink,marginBottom:DS.s.x1,letterSpacing:DS.ls.tight}}>Logo de l'entreprise</div><div style={{fontFamily:SS,fontSize:DS.fs.sm,color:C.stone,lineHeight:DS.lh.normal}}>Affiché sur l'invitation équipe et dans l'accès membre.</div></div>
@@ -7522,7 +7522,7 @@ const TeamAccessPage=({token,owner,software})=>{
         <div style={{maxWidth:1180,margin:'0 auto'}}>
           <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:14,padding:'26px 28px',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:18,flexWrap:'wrap',boxShadow:'0 14px 40px rgba(10,10,8,0.05)'}}>
             <div style={{display:'flex',alignItems:'center',gap:16}}>
-              {resolvedOwner?.companyLogo?(<img src={resolvedOwner.companyLogo} alt='Logo entreprise' style={{width:62,height:62,objectFit:'contain',borderRadius:10,background:C.ivory,border:`1px solid ${C.linen}`,padding:8}}/>):(<div style={{width:62,height:62,borderRadius:10,background:C.ink,border:`1px solid ${C.gold}55`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:SF,fontSize:22,fontWeight:700,color:C.gold}}>{((resolvedOwner?.company)||'ON').slice(0,2).toUpperCase()}</div>)}
+              {resolvedOwner?.companyLogo?(<img src={resolvedOwner.companyLogo} alt='Logo entreprise' style={{width:62,height:62,objectFit:'contain',borderRadius:10,background:C.ink,border:`1px solid ${C.linen}`,padding:8,mixBlendMode:'lighten'}}/>):(<div style={{width:62,height:62,borderRadius:10,background:C.ink,border:`1px solid ${C.gold}55`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:SF,fontSize:22,fontWeight:700,color:C.gold}}>{((resolvedOwner?.company)||'ON').slice(0,2).toUpperCase()}</div>)}
               <div>
                 <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:'0.2em',textTransform:'uppercase',color:C.stone,marginBottom:5}}>Accès équipe</div>
                 <div style={{fontFamily:SF,fontSize:isMob()?22:30,fontWeight:700,color:C.ink,marginBottom:4}}>Nos logiciels</div>
@@ -11991,7 +11991,11 @@ function App() {
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,gap:10}}>
                 <div onClick={()=>setView('landing')} style={{flex:1,minWidth:0,cursor:'pointer',display:'flex',alignItems:'center'}} title={user.company||''}>
-                  <img src={user.companyLogo} alt={user.company||'Logo entreprise'} style={{maxWidth:'100%',maxHeight:48,objectFit:'contain',objectPosition:'left center',filter:'drop-shadow(0 1px 2px rgba(0,0,0,0.18))'}}/>
+                  {/* mixBlendMode:lighten neutralise les fonds sombres uniformes
+                      des PNG uploadés par les clients (très fréquent), sans
+                      dénaturer les logos colorés. Pas de drop-shadow : sur fond
+                      sombre, l'ombre dessinait le contour du PNG en "timbre". */}
+                  <img src={user.companyLogo} alt={user.company||'Logo entreprise'} style={{maxWidth:'100%',maxHeight:48,objectFit:'contain',objectPosition:'left center',mixBlendMode:'lighten'}}/>
                 </div>
                 <LangProvider><LangSwitcher compact/></LangProvider>
               </div>
@@ -12082,8 +12086,12 @@ function App() {
               <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:10,padding:'10px 12px',background:'linear-gradient(135deg,rgba(244,233,213,0.06) 0%,rgba(212,162,76,0.14) 100%)',border:'1px solid rgba(232,196,116,0.36)',borderRadius:10,boxShadow:'0 4px 18px rgba(10,8,5,0.40),inset 0 1px 0 rgba(255,255,255,0.05),0 0 28px rgba(212,162,76,0.10)',position:'relative',overflow:'hidden'}}>
                 <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'linear-gradient(90deg,transparent,rgba(232,196,116,0.7),transparent)'}}/>
                 {user.companyLogo
-                  ?<div style={{width:34,height:34,borderRadius:8,background:'#FBF9F3',display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:'hidden',boxShadow:'0 4px 10px rgba(10,8,5,0.45),inset 0 0 0 1px rgba(232,196,116,0.55),0 0 14px rgba(232,196,116,0.30)',padding:3,boxSizing:'border-box'}}>
-                      <img src={user.companyLogo} alt={user.company||'Logo'} style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
+                  ?<div style={{width:34,height:34,borderRadius:8,background:'transparent',display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:'hidden',padding:2,boxSizing:'border-box'}}>
+                      {/* Pas de pastille ivoire opaque : elle faisait "timbre"
+                          autour des logos qui ont déjà un fond noir intégré au
+                          PNG. mixBlendMode:lighten + fond transparent → le logo
+                          s'intègre dans le gradient de la carte utilisateur. */}
+                      <img src={user.companyLogo} alt={user.company||'Logo'} style={{width:'100%',height:'100%',objectFit:'contain',display:'block',mixBlendMode:'lighten'}}/>
                     </div>
                   :<div style={{width:34,height:34,borderRadius:8,background:`linear-gradient(135deg,#E8C474 0%,#C7793A 100%)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:'#1F1A14',fontFamily:SF,flexShrink:0,boxShadow:'0 4px 10px rgba(10,8,5,0.45),inset 0 1px 0 rgba(255,255,255,0.40),0 0 14px rgba(232,196,116,0.35)',textShadow:'0 1px 0 rgba(255,255,255,0.25)'}}>{user.avatar}</div>}
                 <div style={{overflow:"hidden",flex:1,minWidth:0}}>
