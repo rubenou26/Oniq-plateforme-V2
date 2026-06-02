@@ -5,191 +5,373 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>OniMarketer — Suite marketing 360° du bâtiment</title>
 <!--
-  OniMarketer — App autonome ONIQ (chargée en iframe par index.html)
-  ───────────────────────────────────────────────────────────────────
-  • Vanilla JS, zéro dépendance de build (pas de Babel/React runtime)
-  • Design system aligné sur ONIQ (palette or/ivoire/encre, Playfair + DM Sans)
-  • v0.1 — Shell complet (4 piliers) + 2 modules fonctionnels :
-        · Tableau de bord (KPIs + sources + activité)
-        · Leads (pipeline de capture & qualification)
-  • Persistance : en mémoire de session (v0.1). La sync Supabase via postMessage
-    au parent ONIQ est le prochain branchement (voir window.parent.postMessage).
+  OniMarketer — App autonome ONIQ (iframe).
+  v0.2 — Sidebar harmonisée avec OniPilote :
+    · Wordmark ONIQ + séparateur doré
+    · Sections "ACQUISITION / CONVERSION / ACTIVATION / PILOTAGE"
+      en label doré uppercase + ligne décorative
+    · Icônes SVG monoline (plus d'emojis)
+    · Items actifs : fond doré transparent + bordure dorée + glow
+    · Footer Sync / Aide / Export (3 boutons verticaux)
+    · Carte user en bas (avatar carré doré + nom + rôle)
+  + Onglets : "Oni" retiré du libellé (réservé au nom du LOGICIEL).
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet"/>
 <style>
   :root{
-    --ink:#0A0A08; --deep:#060504; --paper:#F5F2EC; --dim:#EFEBE3;
-    --linen:#E8E2D8; --ivory:#FAF8F4; --stone:#8C8070; --sand:#B5A898;
-    --gold:#B89A5A; --gold-l:#D4B87A; --gold-dim:rgba(184,154,90,.13);
+    --ink:#0A0A08; --ink-2:#1F1A14; --ink-3:#2A2218; --deep:#060504;
+    --paper:#F5F2EC; --dim:#EFEBE3; --linen:#E8E2D8; --ivory:#FAF8F4;
+    --stone:#8C8070; --sand:#B5A898;
+    --gold:#B89A5A; --gold-d:#A06D2E; --gold-l:#D4B87A; --gold-xl:#E8C474;
+    --gold-dim:rgba(184,154,90,.13);
     --green:#4A7C59; --amber:#C47B2B; --red:#A63C3C; --blue:#3E5C76;
-    --ff-serif:'Playfair Display', Georgia, serif;
-    --ff-sans:'DM Sans','Helvetica Neue',sans-serif;
-    --sb-w:248px;
+    --SF:'Playfair Display', Georgia, serif;
+    --SS:'DM Sans','Helvetica Neue',sans-serif;
+    --SC:'Cormorant Garamond', Georgia, serif;
+    --sb-w:230px;
+    --ease:cubic-bezier(.2,.8,.2,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    font-family:var(--ff-sans); color:var(--ink);
-    background:var(--dim); font-size:14px; line-height:1.5;
-    -webkit-font-smoothing:antialiased;
+    font-family:var(--SS); color:var(--ink); background:var(--dim);
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
   }
   ::-webkit-scrollbar{width:10px;height:10px}
-  ::-webkit-scrollbar-thumb{background:var(--sand);border-radius:8px;border:2px solid var(--dim)}
+  ::-webkit-scrollbar-thumb{background:rgba(184,154,90,.35);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
   ::-webkit-scrollbar-track{background:transparent}
-  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,select,textarea{font-family:inherit;font-size:13px}
   .app{display:flex;height:100vh;overflow:hidden}
 
-  /* ───── Sidebar ───── */
-  .sb{
-    width:var(--sb-w); flex:0 0 var(--sb-w); background:var(--ink);
-    color:var(--paper); display:flex; flex-direction:column;
-    border-right:1px solid #00000022;
+  /* ════════════════════════════════════════════════════════════
+     SIDEBAR — fond sombre + accents dorés (harmonisé ONIQ)
+     ════════════════════════════════════════════════════════════ */
+  .side{
+    width:var(--sb-w); flex:0 0 var(--sb-w);
+    background:linear-gradient(180deg,#1A140E 0%,#241B12 50%,#1F1810 100%);
+    color:#E8DFD0;
+    display:flex; flex-direction:column;
+    position:relative; z-index:5;
+    box-shadow:inset -1px 0 0 rgba(232,196,116,.10);
   }
-  .sb-head{padding:22px 20px 18px;border-bottom:1px solid #ffffff12}
-  .sb-logo{font-family:var(--ff-serif);font-style:italic;font-weight:700;font-size:23px;letter-spacing:-.5px;color:var(--ivory)}
-  .sb-logo b{color:var(--gold-l);font-style:italic}
-  .sb-sub{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--sand);margin-top:4px;font-weight:600}
-  .sb-nav{flex:1;overflow-y:auto;padding:10px 10px 18px}
-  .sb-group{margin-top:14px}
-  .sb-group-t{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;padding:6px 10px 4px}
-  .nav-i{
-    display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;
-    color:#D8D2C6;font-size:13px;font-weight:500;position:relative;transition:.13s;
+  .side::before{
+    content:''; position:absolute; top:0; right:0; bottom:0; width:1px;
+    background:linear-gradient(180deg,transparent 0%,rgba(184,154,90,.42) 30%,rgba(184,154,90,.42) 70%,transparent 100%);
+    pointer-events:none;
   }
-  .nav-i:hover{background:#ffffff0f;color:var(--ivory)}
-  .nav-i.on{background:var(--gold);color:var(--ink);font-weight:600}
-  .nav-i.on .ni-ic{opacity:1}
-  .ni-ic{width:17px;text-align:center;opacity:.75;font-size:14px}
-  .nav-i .soon{margin-left:auto;font-size:9px;letter-spacing:.06em;text-transform:uppercase;background:#ffffff14;color:var(--sand);padding:2px 6px;border-radius:20px;font-weight:600}
-  .nav-i.on .soon{background:#00000018;color:#5a4f1f}
-  .sb-foot{padding:13px 18px;border-top:1px solid #ffffff12;font-size:11px;color:var(--sand)}
-  .sb-foot b{color:var(--gold-l);font-weight:600}
-  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;vertical-align:middle}
 
-  /* ───── Main ───── */
-  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--dim)}
-  .topbar{
-    display:flex;align-items:center;justify-content:space-between;gap:16px;
-    padding:18px 30px;background:var(--ivory);border-bottom:1px solid var(--linen);flex-wrap:wrap;
+  /* Header : wordmark ONIQ */
+  .side-head{
+    padding:24px 22px 18px; text-align:center;
+    border-bottom:1px solid rgba(212,162,76,.18);
+    position:relative;
   }
-  .tb-eyebrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:3px}
-  .tb-title{font-family:var(--ff-serif);font-style:italic;font-weight:700;font-size:27px;color:var(--ink);letter-spacing:-.4px;line-height:1.1}
-  .content{flex:1;overflow-y:auto;padding:28px 30px 60px}
-  .wrap{max-width:1180px;margin:0 auto}
+  .side-head::after{
+    content:''; position:absolute; left:18px; right:18px; bottom:-1px; height:1px;
+    background:linear-gradient(90deg,transparent 0%,rgba(232,196,116,.55) 50%,transparent 100%);
+  }
+  .wordmark{
+    font-family:var(--SF); font-weight:700;
+    font-size:24px; letter-spacing:-.01em; color:#F4E9D5;
+    text-shadow:0 0 22px rgba(232,196,116,.40);
+  }
+  .wordmark i{font-style:italic; color:var(--gold-xl); font-weight:600}
+  .wordmark-sub{
+    margin-top:7px;
+    font-family:var(--SS); font-size:9px; font-weight:700;
+    letter-spacing:.22em; text-transform:uppercase; color:var(--gold-xl);
+  }
+
+  /* Nav */
+  .side-nav{
+    flex:1; padding:14px 12px 10px;
+    display:flex; flex-direction:column; gap:1px; overflow-y:auto;
+  }
+  .nav-section{
+    font-family:var(--SS); font-size:9.5px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--gold-xl); font-weight:700;
+    padding:14px 10px 6px; display:flex; align-items:center; gap:8px;
+    text-shadow:0 0 10px rgba(212,162,76,.25);
+  }
+  .nav-section::after{
+    content:''; flex:1; height:1px;
+    background:linear-gradient(90deg,rgba(232,196,116,.30),transparent);
+  }
+  .nav-section:first-child{padding-top:6px}
+
+  .nav-item{
+    display:flex; align-items:center; gap:11px;
+    padding:9px 12px; border-radius:8px;
+    color:#D8CDB8; font-family:var(--SS); font-size:13px; font-weight:500;
+    border:1px solid transparent; background:transparent;
+    cursor:pointer; text-align:left; width:100%;
+    letter-spacing:.005em; position:relative;
+    transition:background .18s var(--ease), color .18s var(--ease),
+               border-color .18s var(--ease), box-shadow .22s var(--ease),
+               transform .18s var(--ease);
+  }
+  .nav-item:hover{
+    background:rgba(184,154,90,.10);
+    color:#F4E9D5;
+    border-color:rgba(184,154,90,.20);
+  }
+  .nav-item.active{
+    color:#FFFAEC; font-weight:700;
+    background:linear-gradient(135deg,rgba(212,162,76,.26) 0%,rgba(199,121,58,.16) 50%,rgba(212,162,76,.10) 100%);
+    border-color:rgba(232,196,116,.42);
+    box-shadow:inset 4px 0 0 var(--gold-xl), inset 0 1px 0 rgba(255,255,255,.10),
+               0 4px 18px rgba(10,8,5,.5), 0 0 28px rgba(212,162,76,.18);
+  }
+  .nav-item .ico{
+    width:18px; height:18px; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    color:currentColor; opacity:.88;
+  }
+  .nav-item.active .ico{color:var(--gold-xl); opacity:1}
+  .nav-item.active .ico svg{filter:drop-shadow(0 0 6px rgba(232,196,116,.55))}
+  .nav-item .lbl{flex:1; min-width:0}
+  .nav-item .soon{
+    font-size:8.5px; letter-spacing:.08em; text-transform:uppercase;
+    font-weight:700; padding:2px 6px; border-radius:20px;
+    background:rgba(232,196,116,.10); color:var(--gold-xl);
+    border:1px solid rgba(232,196,116,.22);
+  }
+  .nav-item.active .soon{background:rgba(255,234,176,.18); color:#FFE9A8; border-color:rgba(255,234,176,.36)}
+
+  /* Footer actions : SYNC / AIDE / EXPORT */
+  .side-actions{
+    display:flex; align-items:stretch; gap:1px;
+    padding:8px 10px 6px;
+    border-top:1px solid rgba(232,196,116,.18);
+    background:rgba(10,8,5,.30);
+  }
+  .side-action{
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:5px; padding:9px 4px; border-radius:8px;
+    background:transparent; border:1px solid transparent;
+    color:#C2B59A;
+    font-family:var(--SS); font-size:9.5px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+    transition:background .18s var(--ease), color .18s var(--ease),
+               border-color .18s var(--ease), transform .18s var(--ease);
+  }
+  .side-action svg{opacity:.85; transition:transform .25s var(--ease), color .18s}
+  .side-action:hover{
+    background:rgba(184,154,90,.10); color:#F4E9D5;
+    border-color:rgba(184,154,90,.28); transform:translateY(-1px);
+  }
+  .side-action:hover svg{opacity:1; color:var(--gold-xl); transform:scale(1.06)}
+
+  /* User card en bas */
+  .side-foot{
+    padding:10px 12px 14px;
+    border-top:1px solid rgba(232,196,116,.18);
+    background:linear-gradient(180deg,transparent 0%,rgba(10,8,5,.45) 100%);
+  }
+  .user-card{
+    display:flex; align-items:center; gap:11px;
+    padding:10px 12px;
+    background:linear-gradient(135deg,rgba(244,233,213,.05) 0%,rgba(212,162,76,.12) 100%);
+    border:1px solid rgba(232,196,116,.32); border-radius:10px;
+    box-shadow:0 4px 14px rgba(10,8,5,.40), inset 0 1px 0 rgba(255,255,255,.05);
+    position:relative; overflow:hidden;
+  }
+  .user-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(232,196,116,.7),transparent);
+  }
+  .avatar{
+    width:32px; height:32px; border-radius:7px;
+    background:linear-gradient(135deg,var(--gold-xl) 0%,var(--gold) 45%,#8B5E2A 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--SF); font-weight:800; font-size:12px; color:#1F1A14;
+    flex-shrink:0;
+    box-shadow:0 3px 10px rgba(184,154,90,.35), inset 0 1px 0 rgba(255,255,255,.30);
+    letter-spacing:.02em;
+  }
+  .user-info{flex:1; min-width:0; overflow:hidden}
+  .user-name{
+    font-family:var(--SS); font-size:12.5px; font-weight:700; color:#F4E9D5;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .user-role{
+    font-family:var(--SS); font-size:9px; letter-spacing:.16em;
+    color:var(--gold-xl); text-transform:uppercase; font-weight:700;
+    margin-top:2px;
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     MAIN
+     ════════════════════════════════════════════════════════════ */
+  .main{flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--dim)}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:18px 30px; background:var(--ivory);
+    border-bottom:1px solid var(--linen); flex-wrap:wrap;
+  }
+  .tb-eyebrow{
+    font-family:var(--SS); font-size:10.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:3px;
+  }
+  .tb-title{
+    font-family:var(--SF); font-style:italic; font-weight:700;
+    font-size:27px; color:var(--ink); letter-spacing:-.4px; line-height:1.1;
+  }
+  .content{flex:1; overflow-y:auto; padding:28px 30px 60px}
+  .wrap{max-width:1180px; margin:0 auto}
 
   .btn{
-    display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;
-    font-size:13px;font-weight:600;transition:.13s;white-space:nowrap;
+    display:inline-flex; align-items:center; gap:7px; padding:9px 16px;
+    border-radius:8px; font-size:13px; font-weight:600;
+    transition:.13s; white-space:nowrap;
   }
-  .btn-gold{background:var(--ink);color:var(--gold-l)}
-  .btn-gold:hover{background:#000;transform:translateY(-1px)}
-  .btn-ghost{background:transparent;border:1px solid var(--linen);color:var(--ink)}
-  .btn-ghost:hover{border-color:var(--gold);background:var(--gold-dim)}
-  .btn-sm{padding:5px 10px;font-size:11.5px;border-radius:6px}
+  .btn-gold{background:var(--ink); color:var(--gold-l)}
+  .btn-gold:hover{background:#000; transform:translateY(-1px)}
+  .btn-ghost{background:transparent; border:1px solid var(--linen); color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--gold); background:var(--gold-dim)}
 
   /* KPI cards */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-  .kpi{background:var(--ivory);border:1px solid var(--linen);border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px #0a0a0809}
-  .kpi-l{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--stone);font-weight:600;margin-bottom:9px}
-  .kpi-v{font-family:var(--ff-serif);font-weight:700;font-size:30px;color:var(--ink);line-height:1}
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px}
+  .kpi{background:var(--ivory); border:1px solid var(--linen); border-radius:12px; padding:18px 20px; box-shadow:0 1px 2px #0a0a0809}
+  .kpi-l{font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--stone); font-weight:600; margin-bottom:9px}
+  .kpi-v{font-family:var(--SF); font-weight:700; font-size:30px; color:var(--ink); line-height:1}
   .kpi-v.gold{color:var(--gold)}
-  .kpi-t{font-size:11.5px;margin-top:8px;font-weight:600}
+  .kpi-t{font-size:11.5px; margin-top:8px; font-weight:600}
   .up{color:var(--green)} .down{color:var(--red)}
 
-  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
-  .card{background:var(--ivory);border:1px solid var(--linen);border-radius:12px;padding:20px 22px;box-shadow:0 1px 2px #0a0a0809}
-  .card-t{font-family:var(--ff-serif);font-weight:600;font-size:17px;color:var(--ink);margin-bottom:3px}
-  .card-sub{font-size:12px;color:var(--stone);margin-bottom:16px}
+  .grid2{display:grid; grid-template-columns:1.5fr 1fr; gap:18px}
+  .card{background:var(--ivory); border:1px solid var(--linen); border-radius:12px; padding:20px 22px; box-shadow:0 1px 2px #0a0a0809}
+  .card-t{font-family:var(--SF); font-weight:600; font-size:17px; color:var(--ink); margin-bottom:3px}
+  .card-sub{font-size:12px; color:var(--stone); margin-bottom:16px}
 
   /* bar chart */
-  .bars{display:flex;flex-direction:column;gap:11px}
-  .bar-row{display:grid;grid-template-columns:118px 1fr 42px;align-items:center;gap:11px}
-  .bar-lab{font-size:12.5px;color:var(--ink);font-weight:500}
-  .bar-track{height:9px;background:var(--dim);border-radius:20px;overflow:hidden}
-  .bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--gold),var(--gold-l))}
-  .bar-val{font-size:12px;color:var(--stone);font-weight:600;text-align:right}
+  .bars{display:flex; flex-direction:column; gap:11px}
+  .bar-row{display:grid; grid-template-columns:138px 1fr 42px; align-items:center; gap:11px}
+  .bar-lab{font-size:12.5px; color:var(--ink); font-weight:500}
+  .bar-track{height:9px; background:var(--dim); border-radius:20px; overflow:hidden}
+  .bar-fill{height:100%; border-radius:20px; background:linear-gradient(90deg,var(--gold),var(--gold-l))}
+  .bar-val{font-size:12px; color:var(--stone); font-weight:600; text-align:right}
 
-  .feed{display:flex;flex-direction:column;gap:2px}
-  .feed-i{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--linen)}
+  .feed{display:flex; flex-direction:column; gap:2px}
+  .feed-i{display:flex; gap:11px; padding:9px 0; border-bottom:1px solid var(--linen)}
   .feed-i:last-child{border-bottom:none}
-  .feed-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:0 0 8px}
-  .feed-tx{font-size:12.5px;color:var(--ink)}
+  .feed-dot{width:8px; height:8px; border-radius:50%; margin-top:5px; flex:0 0 8px}
+  .feed-tx{font-size:12.5px; color:var(--ink)}
   .feed-tx b{font-weight:600}
-  .feed-ti{font-size:11px;color:var(--stone);margin-top:1px}
+  .feed-ti{font-size:11px; color:var(--stone); margin-top:1px}
 
   /* Pipeline */
-  .pipe-stats{display:flex;gap:22px;margin-bottom:20px;flex-wrap:wrap}
-  .pstat b{font-family:var(--ff-serif);font-size:22px;color:var(--ink);font-weight:700}
-  .pstat span{font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.05em;font-weight:600;display:block;margin-top:2px}
-  .board{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;align-items:flex-start}
-  .col{flex:0 0 248px;background:var(--paper);border:1px solid var(--linen);border-radius:11px;padding:10px;min-height:120px}
-  .col-h{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 10px}
-  .col-h .nm{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:7px}
-  .col-h .ct{font-size:11px;color:var(--stone);font-weight:600;background:var(--dim);padding:2px 8px;border-radius:20px}
-  .col-stripe{width:7px;height:7px;border-radius:50%}
+  .pipe-stats{display:flex; gap:22px; margin-bottom:20px; flex-wrap:wrap}
+  .pstat b{font-family:var(--SF); font-size:22px; color:var(--ink); font-weight:700}
+  .pstat span{font-size:11px; color:var(--stone); text-transform:uppercase; letter-spacing:.05em; font-weight:600; display:block; margin-top:2px}
+  .board{display:flex; gap:14px; overflow-x:auto; padding-bottom:14px; align-items:flex-start}
+  .col{flex:0 0 248px; background:var(--paper); border:1px solid var(--linen); border-radius:11px; padding:10px; min-height:120px}
+  .col-h{display:flex; align-items:center; justify-content:space-between; padding:4px 6px 10px}
+  .col-h .nm{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:7px}
+  .col-h .ct{font-size:11px; color:var(--stone); font-weight:600; background:var(--dim); padding:2px 8px; border-radius:20px}
+  .col-stripe{width:7px; height:7px; border-radius:50%}
   .lead{
-    background:var(--ivory);border:1px solid var(--linen);border-radius:9px;padding:11px 12px;margin-bottom:9px;
-    cursor:grab;transition:.12s;box-shadow:0 1px 1px #0a0a0808;
+    background:var(--ivory); border:1px solid var(--linen); border-radius:9px;
+    padding:11px 12px; margin-bottom:9px; cursor:grab; transition:.12s;
+    box-shadow:0 1px 1px #0a0a0808;
   }
-  .lead:hover{border-color:var(--gold);box-shadow:0 3px 10px #0a0a0814}
+  .lead:hover{border-color:var(--gold); box-shadow:0 3px 10px #0a0a0814}
   .lead.dragging{opacity:.4}
-  .lead-nm{font-weight:600;font-size:13.5px;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:6px}
-  .lead-meta{font-size:11.5px;color:var(--stone);margin-top:3px}
-  .lead-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
-  .tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--gold-dim);color:#8a6d2e;text-transform:uppercase;letter-spacing:.03em}
-  .tag.bud{background:#4a7c5918;color:var(--green)}
-  .lead-mv{display:flex;gap:4px;margin-top:9px}
-  .mv{font-size:15px;line-height:1;color:var(--stone);padding:2px 7px;border-radius:5px;background:var(--dim)}
-  .mv:hover{background:var(--gold);color:var(--ink)}
-  .col.drop{outline:2px dashed var(--gold);outline-offset:-3px;background:var(--gold-dim)}
+  .lead-nm{font-weight:600; font-size:13.5px; color:var(--ink); display:flex; align-items:center; justify-content:space-between; gap:6px}
+  .lead-meta{font-size:11.5px; color:var(--stone); margin-top:3px}
+  .lead-tags{display:flex; gap:5px; margin-top:8px; flex-wrap:wrap}
+  .tag{font-size:10px; font-weight:600; padding:2px 7px; border-radius:20px; background:var(--gold-dim); color:#8a6d2e; text-transform:uppercase; letter-spacing:.03em}
+  .tag.bud{background:#4a7c5918; color:var(--green)}
+  .lead-mv{display:flex; gap:4px; margin-top:9px}
+  .mv{font-size:15px; line-height:1; color:var(--stone); padding:2px 7px; border-radius:5px; background:var(--dim); cursor:pointer}
+  .mv:hover{background:var(--gold); color:var(--ink)}
+  .col.drop{outline:2px dashed var(--gold); outline-offset:-3px; background:var(--gold-dim)}
 
   /* "coming soon" module panel */
-  .soon-panel{text-align:center;max-width:620px;margin:30px auto;padding:44px 30px;background:var(--ivory);border:1px solid var(--linen);border-radius:16px}
-  .soon-ic{font-size:46px;margin-bottom:14px}
-  .soon-panel h2{font-family:var(--ff-serif);font-style:italic;font-size:28px;color:var(--ink);margin-bottom:6px}
-  .soon-tag{display:inline-block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:700;background:#c47b2b16;padding:4px 12px;border-radius:20px;margin-bottom:18px}
-  .soon-panel p{font-size:14px;color:var(--stone);line-height:1.65;margin-bottom:20px}
-  .soon-feats{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-top:10px}
-  .soon-feat{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink)}
-  .soon-feat .ck{color:var(--gold);font-weight:700;flex:0 0 auto}
+  .soon-panel{
+    text-align:center; max-width:620px; margin:30px auto; padding:44px 30px;
+    background:var(--ivory); border:1px solid var(--linen); border-radius:16px;
+  }
+  .soon-ic-wrap{
+    width:64px; height:64px; margin:0 auto 14px;
+    background:linear-gradient(135deg,var(--ink),var(--ink-3));
+    border-radius:16px; display:flex; align-items:center; justify-content:center;
+    color:var(--gold-xl);
+    box-shadow:0 6px 22px -4px rgba(10,10,8,.30), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .soon-panel h2{font-family:var(--SF); font-style:italic; font-size:28px; color:var(--ink); margin-bottom:6px}
+  .soon-tag{
+    display:inline-block; font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--amber); font-weight:700;
+    background:#c47b2b16; padding:4px 12px; border-radius:20px; margin-bottom:18px;
+  }
+  .soon-panel p{font-size:14px; color:var(--stone); line-height:1.65; margin-bottom:20px}
+  .soon-feats{display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left; margin-top:10px}
+  .soon-feat{display:flex; gap:9px; align-items:flex-start; font-size:12.5px; color:var(--ink)}
+  .soon-feat .ck{color:var(--gold); font-weight:700; flex:0 0 auto}
 
   /* Modal */
-  .ov{position:fixed;inset:0;background:rgba(10,10,8,.55);backdrop-filter:blur(7px);display:none;align-items:center;justify-content:center;padding:20px;z-index:9999}
+  .ov{position:fixed; inset:0; background:rgba(10,10,8,.55); backdrop-filter:blur(7px); display:none; align-items:center; justify-content:center; padding:20px; z-index:9999}
   .ov.show{display:flex}
-  .modal{background:var(--ivory);border-radius:16px;width:min(480px,96vw);box-shadow:0 30px 80px rgba(10,10,8,.4);overflow:hidden;animation:pop .3s cubic-bezier(.2,.8,.2,1)}
-  @keyframes pop{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
-  .modal-h{padding:20px 24px 14px;border-bottom:1px solid var(--linen)}
-  .modal-h h3{font-family:var(--ff-serif);font-style:italic;font-size:21px;color:var(--ink)}
+  .modal{background:var(--ivory); border-radius:16px; width:min(480px,96vw); box-shadow:0 30px 80px rgba(10,10,8,.4); overflow:hidden; animation:pop .3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes pop{from{opacity:0; transform:translateY(16px) scale(.97)} to{opacity:1; transform:none}}
+  .modal-h{padding:20px 24px 14px; border-bottom:1px solid var(--linen)}
+  .modal-h h3{font-family:var(--SF); font-style:italic; font-size:21px; color:var(--ink)}
   .modal-b{padding:20px 24px}
   .fld{margin-bottom:13px}
-  .fld label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);margin-bottom:5px}
-  .fld input,.fld select{width:100%;padding:9px 11px;border:1px solid var(--linen);border-radius:8px;background:#fff;color:var(--ink)}
-  .fld input:focus,.fld select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
-  .fld-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-  .modal-f{padding:14px 24px 20px;display:flex;gap:10px;justify-content:flex-end}
+  .fld label{display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--stone); margin-bottom:5px}
+  .fld input,.fld select{width:100%; padding:9px 11px; border:1px solid var(--linen); border-radius:8px; background:#fff; color:var(--ink)}
+  .fld input:focus,.fld select:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-dim)}
+  .fld-row{display:grid; grid-template-columns:1fr 1fr; gap:11px}
+  .modal-f{padding:14px 24px 20px; display:flex; gap:10px; justify-content:flex-end}
 
   @media(max-width:880px){
     :root{--sb-w:0px}
-    .sb{display:none}
+    .side{display:none}
     .kpis{grid-template-columns:1fr 1fr}
     .grid2{grid-template-columns:1fr}
     .content{padding:20px 16px 50px}
     .topbar{padding:16px}
+    .bar-row{grid-template-columns:110px 1fr 36px}
   }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sb">
-    <div class="sb-head">
-      <div class="sb-logo">Oni<b>Marketer</b></div>
-      <div class="sb-sub">Suite marketing · Bâtiment</div>
+  <aside class="side">
+    <div class="side-head">
+      <div class="wordmark">Oni<i>Marketer</i></div>
+      <div class="wordmark-sub">Suite marketing · Bâtiment</div>
     </div>
-    <nav class="sb-nav" id="nav"></nav>
-    <div class="sb-foot"><span class="dot"></span>Connecté à <b>OniPilote</b> &amp; <b>OniPromail</b></div>
+    <nav class="side-nav" id="nav"></nav>
+
+    <div class="side-actions" role="toolbar" aria-label="Actions rapides">
+      <button class="side-action" title="Synchronisation entre logiciels ONIQ">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>Sync</span>
+      </button>
+      <button class="side-action" title="Aide / Support">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Aide</span>
+      </button>
+      <button class="side-action" title="Exporter les données">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
+      </button>
+    </div>
+
+    <div class="side-foot">
+      <div class="user-card">
+        <div class="avatar" id="av">MD</div>
+        <div class="user-info">
+          <div class="user-name" id="uname">Mon entreprise</div>
+          <div class="user-role" id="urole">Admin</div>
+        </div>
+      </div>
+    </div>
   </aside>
 
   <div class="main">
@@ -201,6 +383,34 @@
       <div id="tbActions"></div>
     </div>
     <div class="content"><div class="wrap" id="view"></div></div>
+  </div>
+</div>
+
+<!-- Modal : nouvel apporteur -->
+<div class="ov" id="ovApp">
+  <div class="modal">
+    <div class="modal-h"><h3>Nouvel apporteur d'affaires</h3></div>
+    <div class="modal-b">
+      <div class="fld"><label>Nom complet</label><input id="a-nm" placeholder="Jean Marchand"/></div>
+      <div class="fld-row">
+        <div class="fld"><label>Organisation</label><input id="a-org" placeholder="Century 21 Vannes"/></div>
+        <div class="fld"><label>Type</label>
+          <select id="a-type">
+            <option>Agent immo</option><option>Courtier prêt</option><option>Mandataire</option>
+            <option>Notaire</option><option>Client parrain</option><option>Indépendant</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label>Email</label><input id="a-email" placeholder="contact@..."/></div>
+        <div class="fld"><label>Téléphone</label><input id="a-tel" placeholder="06 ..."/></div>
+      </div>
+      <div class="fld"><label>Commission convenue</label><input id="a-com" placeholder='Ex : "1.0 %" ou "500 €/signature"'/></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-ghost" onclick="closeAppModal()">Annuler</button>
+      <button class="btn btn-gold" onclick="saveApporteur()">Ajouter</button>
+    </div>
   </div>
 </div>
 
@@ -224,7 +434,7 @@
         </div>
         <div class="fld"><label>Budget projet</label>
           <select id="f-bud">
-            <option>< 200 k€</option><option>200–300 k€</option><option>300–400 k€</option><option>> 400 k€</option>
+            <option>&lt; 200 k€</option><option>200–300 k€</option><option>300–400 k€</option><option>&gt; 400 k€</option>
           </select>
         </div>
       </div>
@@ -238,17 +448,77 @@
 </div>
 
 <script>
-/* ════════════════════════ DONNÉES & ÉTAT ════════════════════════ */
-const STAGES = [
-  {id:'new',  nm:'Nouveau',   c:'#3E5C76'},
-  {id:'cont', nm:'Contacté',  c:'#C47B2B'},
-  {id:'qual', nm:'Qualifié',  c:'#B89A5A'},
-  {id:'rdv',  nm:'RDV pris',  c:'#7A4FA0'},
-  {id:'sign', nm:'Signé',     c:'#4A7C59'},
-  {id:'lost', nm:'Perdu',     c:'#A63C3C'},
-];
+/* ════════════════════════ ICÔNES SVG MONOLINE ════════════════════════
+   Inspirées des icônes Feather/Lucide, alignées avec celles d'OniPilote. */
+const ICO = {
+  layout:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  flow:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.1 7.5l2.4 2.4M13.5 13.5l2.4 2.4"/></svg>',
+  magnet:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v9a6 6 0 0 0 12 0V4"/><path d="M6 4h4v3H6zM14 4h4v3h-4z"/></svg>',
+  search:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  share:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
+  target:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  radar:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M22 12a10 10 0 0 1-13.07 9.53"/><path d="M2 12a10 10 0 0 0 17 7.07"/><circle cx="12" cy="12" r="3"/></svg>',
+  calc:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>',
+  home:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>',
+  form:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="15" y2="13"/><line x1="8" y1="17" x2="15" y2="17"/><line x1="8" y1="9" x2="11" y2="9"/></svg>',
+  chat:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+  loop:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  send:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+  thermo:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0z"/></svg>',
+  star:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  compass:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+  euro:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11M4 14h11"/><path d="M19 5.5a8 8 0 1 0 0 13"/></svg>',
+  userCheck:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>',
+  percent:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+  gift:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
+};
 
-// Seed démo (en mémoire de session — branchement Supabase = prochaine étape)
+/* ════════════════════════ MENU (sans "Oni" devant) ════════════════════════
+   Le préfixe "Oni" reste réservé au NOM du logiciel (OniMarketer).
+   Les onglets internes ont des libellés métier clairs. */
+const MENU = [
+  {grp:'Acquisition', items:[
+    {id:'seo',     ic:ICO.search, nm:'SEO local',         soon:1, eye:'Acquisition', desc:'SEO programmatique à l’échelle nationale.', tag:'Bientôt', long:'Génère et publie automatiquement des milliers de pages locales optimisées (« Construire à [ville] », « Maison PTZ zone B1 à [commune] ») pour capter du trafic gratuit en continu.', feats:['Pages locales × communes × gammes','Optimisation IA du contenu','Maillage interne automatique','Suivi du positionnement Google']},
+    {id:'social',  ic:ICO.share, nm:'Réseaux sociaux',    soon:1, eye:'Acquisition', desc:'Réseaux sociaux multi-agences automatisés.', tag:'Bientôt', long:'Production et publication automatique sur Instagram, TikTok, Facebook et YouTube, avec déclinaison locale par agence et calendrier éditorial piloté par IA.', feats:['Calendrier éditorial IA','Déclinaison par agence','Publication multi-réseaux','Bibliothèque de visuels chantier']},
+    {id:'ads',     ic:ICO.target, nm:'Publicité',         soon:1, eye:'Acquisition', desc:'Régie pub centralisée Google + Meta.', tag:'Bientôt', long:'Pilotage centralisé de toutes les campagnes Google Ads, Meta et TikTok avec créations dynamiques (DCO) pré-optimisées pour le CCMI.', feats:['Templates pub CCMI','Créations dynamiques (DCO)','Budget centralisé multi-agences','ROAS en temps réel']},
+    {id:'radar',   ic:ICO.radar, nm:'Détection projets', soon:1, eye:'Acquisition', desc:'Détection de projets avant les concurrents.', tag:'R&D', long:'Croise les données open data (permis de construire, DIA, mutations cadastrales, terrains en vente) pour détecter les futurs projets de construction et alerter le commercial avant la première recherche Google du prospect.', feats:['Veille permis & DIA','Scoring signaux faibles','Alertes terrain acheté','Attribution commercial/agence']},
+  ]},
+  {grp:'Conversion', items:[
+    {id:'leads',   ic:ICO.magnet, nm:'Leads',             soon:0, eye:'Conversion', desc:'Pipeline de capture & qualification.'},
+    {id:'simu',    ic:ICO.calc, nm:'Simulateur',         soon:1, eye:'Conversion', desc:'Simulateur PTZ & capacité d’emprunt.', tag:'Bientôt', long:'Landing interactive : le visiteur entre ses revenus, découvre sa capacité d’emprunt, sa mensualité et son PTZ 2025, puis voit les modèles compatibles — et devient un lead qualifié.', feats:['Calcul capacité d’emprunt','PTZ 2025 (zonage à jour)','Mensualité & assurance','Modèles compatibles + capture lead']},
+    {id:'config',  ic:ICO.home, nm:'Configurateur',      soon:1, eye:'Conversion', desc:'Configurateur 3D de maison.', tag:'Bientôt', long:'Le visiteur compose sa future maison (plan, étages, façade, options), voit le prix se mettre à jour en direct, et devient un lead chaud au moment de recevoir son dossier.', feats:['Composition plan & façade','Prix en temps réel','Galerie d’options','Export dossier + lead chaud']},
+    {id:'forms',   ic:ICO.form, nm:'Formulaires',        soon:1, eye:'Conversion', desc:'Formulaires intelligents + scoring.', tag:'Bientôt', long:'Formulaires de capture avec scoring automatique en temps réel et routage du lead vers la bonne agence ou le bon commercial.', feats:['Scoring en temps réel','Routage par zone','A/B test intégré','Anti-spam IA']},
+    {id:'bot',     ic:ICO.chat, nm:'Chatbot IA',         soon:1, eye:'Conversion', desc:'Agent IA conversationnel 24/7.', tag:'Bientôt', long:'Agent IA (chat web, WhatsApp, voix) qui qualifie les prospects 24h/24, prend les RDV dans l’agenda du commercial et livre un dossier qualifié au format CCMI.', feats:['Chat web + WhatsApp','Qualification 8 critères','Prise de RDV automatique','Voix naturelle (option)']},
+  ]},
+  {grp:'Activation', items:[
+    {id:'flow',    ic:ICO.loop, nm:'Automation',         soon:1, eye:'Activation', desc:'Automation cycle long 6–18 mois.', tag:'Bientôt', long:'Scénarios conditionnels par étape du projet CCMI (visite terrain → RDV banque → dépôt PC → signature → livraison). Aucun outil grand public ne modélise ce cycle.', feats:['Déclencheurs par étape projet','Email + SMS + WhatsApp','Relances commerciales auto','Synchro OniPilote']},
+    {id:'sms',     ic:ICO.send, nm:'SMS & WhatsApp',     soon:1, eye:'Activation', desc:'SMS & WhatsApp Business.', tag:'Bientôt', long:'Campagnes et relances SMS / WhatsApp Business avec envoi de documents PDF et qualification automatique.', feats:['SMS transactionnel & marketing','WhatsApp Business','Envoi de PDF (devis, plans)','Modèles dynamiques']},
+    {id:'score',   ic:ICO.thermo, nm:'Lead scoring',     soon:1, eye:'Activation', desc:'Lead scoring prédictif IA.', tag:'Bientôt', long:'Un modèle IA prédit les leads chauds vs froids et alerte le commercial au bon moment pour maximiser le taux de signature.', feats:['Score chaud/froid','Alerte « moment idéal »','Priorisation du pipe','Apprentissage continu']},
+    {id:'repu',    ic:ICO.star, nm:'E-réputation',       soon:1, eye:'Activation', desc:'Avis & e-réputation locale.', tag:'Bientôt', long:'Agrège les avis Google par agence, déclenche automatiquement une demande d’avis après livraison, surveille les nouveaux avis et propose des réponses pré-rédigées.', feats:['Demande d’avis post-livraison','Agrégation multi-agences','Alerte avis négatif','Réponses pré-rédigées']},
+  ]},
+  {grp:'Réseau', items:[
+    {id:'apporteurs',  ic:ICO.userCheck, nm:'Apporteurs',  soon:0, eye:'Réseau', desc:'Réseau d’apporteurs d’affaires.'},
+    {id:'commissions', ic:ICO.percent, nm:'Commissions',   soon:1, eye:'Réseau', desc:'Suivi des commissions à verser.', tag:'Bientôt', long:'Suivi automatique des commissions à verser à chaque apporteur, déclenchement au moment du déblocage des fonds banque (CCMI), génération des factures d’apport, paiement groupé mensuel par virement SEPA.', feats:['Calcul automatique au déblocage','Factures d’apport générées','Paiement SEPA groupé','Reporting par apporteur · par mois']},
+    {id:'parrain',     ic:ICO.gift, nm:'Parrainage',       soon:1, eye:'Réseau', desc:'Programme parrain pour clients existants.', tag:'Bientôt', long:'Vos clients livrés deviennent vos meilleurs apporteurs. Programme de parrainage avec prime (500 € à 1 500 €) versée à la signature du CCMI parrainé, lien d’invitation personnalisé et suivi des conversions.', feats:['Lien d’invitation personnel','Prime à la signature CCMI','Suivi par client parrain','Notif quand le filleul signe']},
+  ]},
+  {grp:'Pilotage', items:[
+    {id:'dash',    ic:ICO.layout, nm:'Tableau de bord',  soon:0, eye:'Pilotage', desc:'Vue d’ensemble de la performance.'},
+    {id:'attrib',  ic:ICO.compass, nm:'Attribution',     soon:1, eye:'Pilotage', desc:'Attribution multi-touch 12–18 mois.', tag:'Bientôt', long:'Identifie quel canal a réellement converti sur l’ensemble du cycle long, au-delà du dernier clic.', feats:['Modèle multi-touch','Cycle 12–18 mois','ROI par canal','Export rapports']},
+    {id:'roi',     ic:ICO.euro, nm:'ROI',                soon:1, eye:'Pilotage', desc:'ROI marketing par € investi.', tag:'Bientôt', long:'ROI marketing par euro investi, par canal, par campagne et par commercial, avec prévision des signatures.', feats:['ROI par campagne','Coût par lead / signature','Prévision IA','Tableaux de bord direction']},
+  ]},
+];
+const FLAT = {}; MENU.forEach(g=>g.items.forEach(i=>FLAT[i.id]=i));
+let current = 'dash';
+
+/* ════════════════════════ DONNÉES LEADS (démo) ════════════════════════ */
+const STAGES = [
+  {id:'new',  nm:'Nouveau',  c:'#3E5C76'},
+  {id:'cont', nm:'Contacté', c:'#C47B2B'},
+  {id:'qual', nm:'Qualifié', c:'#B89A5A'},
+  {id:'rdv',  nm:'RDV pris', c:'#7A4FA0'},
+  {id:'sign', nm:'Signé',    c:'#4A7C59'},
+  {id:'lost', nm:'Perdu',    c:'#A63C3C'},
+];
 let LEADS = [
   {id:1, name:'Jean & Marie Dupont', email:'jm.dupont@email.fr', tel:'06 12 34 56 78', src:'Configurateur', bud:'300–400 k€', zone:'Maison 120 m² — Vannes', stage:'qual'},
   {id:2, name:'Famille Bernard', email:'bernard@email.fr', tel:'06 22 11 33 44', src:'Simulateur PTZ', bud:'200–300 k€', zone:'Plain-pied 90 m² — Auray', stage:'new'},
@@ -260,54 +530,36 @@ let LEADS = [
 ];
 let seq = 100;
 
-/* ════════════════════════ MENU ════════════════════════ */
-const MENU = [
-  {grp:'Acquisition', items:[
-    {id:'oniseo',   ic:'🔎', nm:'OniSEO',   soon:1, eye:'Acquisition', desc:'SEO programmatique à l’échelle nationale.', tag:'Bientôt', long:'Génère et publie automatiquement des milliers de pages locales optimisées (« Construire à [ville] », « Maison PTZ zone B1 à [commune] ») pour capter du trafic gratuit en continu.', feats:['Pages locales × communes × gammes','Optimisation IA du contenu','Maillage interne automatique','Suivi du positionnement Google']},
-    {id:'onisocial',ic:'📱', nm:'OniSocial',soon:1, eye:'Acquisition', desc:'Réseaux sociaux multi-agences automatisés.', tag:'Bientôt', long:'Production et publication automatique sur Instagram, TikTok, Facebook et YouTube, avec déclinaison locale par agence et calendrier éditorial piloté par IA.', feats:['Calendrier éditorial IA','Déclinaison par agence','Publication multi-réseaux','Bibliothèque de visuels chantier']},
-    {id:'oniads',   ic:'🎯', nm:'OniAds',   soon:1, eye:'Acquisition', desc:'Régie pub centralisée Google + Meta.', tag:'Bientôt', long:'Pilotage centralisé de toutes les campagnes Google Ads, Meta et TikTok avec créations dynamiques (DCO) pré-optimisées pour le CCMI.', feats:['Templates pub CCMI','Créations dynamiques (DCO)','Budget centralisé multi-agences','ROAS en temps réel']},
-    {id:'oniradar', ic:'📡', nm:'OniRadar', soon:1, eye:'Acquisition', desc:'Détection de projets avant les concurrents.', tag:'R&D', long:'Croise les données open data (permis de construire, DIA, mutations cadastrales, terrains en vente) pour détecter les futurs projets de construction et alerter le commercial avant la première recherche Google du prospect.', feats:['Veille permis & DIA','Scoring signaux faibles','Alertes terrain acheté','Attribution commercial/agence']},
-  ]},
-  {grp:'Conversion', items:[
-    {id:'leads',    ic:'🧲', nm:'Leads',    soon:0, eye:'Conversion', desc:'Pipeline de capture & qualification.'},
-    {id:'onisimu',  ic:'🧮', nm:'OniSimu',  soon:1, eye:'Conversion', desc:'Simulateur PTZ & capacité d’emprunt.', tag:'Bientôt', long:'Landing interactive : le visiteur entre ses revenus, découvre sa capacité d’emprunt, sa mensualité et son PTZ 2025, puis voit les modèles compatibles — et devient un lead qualifié.', feats:['Calcul capacité d’emprunt','PTZ 2025 (zonage à jour)','Mensualité & assurance','Modèles compatibles + capture lead']},
-    {id:'oniconfig',ic:'🏠', nm:'OniConfig',soon:1, eye:'Conversion', desc:'Configurateur 3D de maison.', tag:'Bientôt', long:'Le visiteur compose sa future maison (plan, étages, façade, options), voit le prix se mettre à jour en direct, et devient un lead chaud au moment de recevoir son dossier.', feats:['Composition plan & façade','Prix en temps réel','Galerie d’options','Export dossier + lead chaud']},
-    {id:'oniforms', ic:'📝', nm:'OniForms', soon:1, eye:'Conversion', desc:'Formulaires intelligents + scoring.', tag:'Bientôt', long:'Formulaires de capture avec scoring automatique en temps réel et routage du lead vers la bonne agence ou le bon commercial.', feats:['Scoring en temps réel','Routage par zone','A/B test intégré','Anti-spam IA']},
-    {id:'onibot',   ic:'💬', nm:'OniBot',   soon:1, eye:'Conversion', desc:'Agent IA conversationnel 24/7.', tag:'Bientôt', long:'Agent IA (chat web, WhatsApp, voix) qui qualifie les prospects 24h/24, prend les RDV dans l’agenda du commercial et livre un dossier qualifié au format CCMI.', feats:['Chat web + WhatsApp','Qualification 8 critères','Prise de RDV automatique','Voix naturelle (option)']},
-  ]},
-  {grp:'Activation', items:[
-    {id:'oniflow',  ic:'🔁', nm:'OniFlow',  soon:1, eye:'Activation', desc:'Automation cycle long 6–18 mois.', tag:'Bientôt', long:'Scénarios conditionnels par étape du projet CCMI (visite terrain → RDV banque → dépôt PC → signature → livraison). Aucun outil grand public ne modélise ce cycle.', feats:['Déclencheurs par étape projet','Email + SMS + WhatsApp','Relances commerciales auto','Synchro OniPilote']},
-    {id:'onisms',   ic:'✉️', nm:'OniSMS',   soon:1, eye:'Activation', desc:'SMS & WhatsApp Business.', tag:'Bientôt', long:'Campagnes et relances SMS / WhatsApp Business avec envoi de documents PDF et qualification automatique.', feats:['SMS transactionnel & marketing','WhatsApp Business','Envoi de PDF (devis, plans)','Modèles dynamiques']},
-    {id:'oniscore', ic:'🌡️', nm:'OniScore', soon:1, eye:'Activation', desc:'Lead scoring prédictif IA.', tag:'Bientôt', long:'Un modèle IA prédit les leads chauds vs froids et alerte le commercial au bon moment pour maximiser le taux de signature.', feats:['Score chaud/froid','Alerte « moment idéal »','Priorisation du pipe','Apprentissage continu']},
-    {id:'onirepu',  ic:'⭐', nm:'OniRépu',  soon:1, eye:'Activation', desc:'Avis & e-réputation locale.', tag:'Bientôt', long:'Agrège les avis Google par agence, déclenche automatiquement une demande d’avis après livraison, surveille les nouveaux avis et propose des réponses pré-rédigées.', feats:['Demande d’avis post-livraison','Agrégation multi-agences','Alerte avis négatif','Réponses pré-rédigées']},
-  ]},
-  {grp:'Pilotage', items:[
-    {id:'dash',     ic:'📊', nm:'Tableau de bord', soon:0, eye:'Pilotage', desc:'Vue d’ensemble de la performance.'},
-    {id:'oniattrib',ic:'🧭', nm:'OniAttrib',soon:1, eye:'Pilotage', desc:'Attribution multi-touch 12–18 mois.', tag:'Bientôt', long:'Identifie quel canal a réellement converti sur l’ensemble du cycle long, au-delà du dernier clic.', feats:['Modèle multi-touch','Cycle 12–18 mois','ROI par canal','Export rapports']},
-    {id:'oniroi',   ic:'💰', nm:'OniROI',   soon:1, eye:'Pilotage', desc:'ROI marketing par € investi.', tag:'Bientôt', long:'ROI marketing par euro investi, par canal, par campagne et par commercial, avec prévision des signatures.', feats:['ROI par campagne','Coût par lead / signature','Prévision IA','Tableaux de bord direction']},
-  ]},
+/* ════════════════════════ DONNÉES APPORTEURS (démo) ════════════════════════
+   Apporteurs typiques du CCMI : agents immo, courtiers prêt, mandataires,
+   clients parrains. Commission = % du prix de vente OU forfait par signature. */
+const APP_TYPES = ['Agent immo','Courtier prêt','Mandataire','Notaire','Client parrain','Indépendant'];
+let APPORTEURS = [
+  {id:1, nm:'Jean Marchand',   org:'Century 21 Vannes',     type:'Agent immo',     tel:'06 11 22 33 44', email:'j.marchand@c21.fr',    com:'1.0 %',  leads:5, signed:2, due:9400,  status:'actif'},
+  {id:2, nm:'Sophie Garrigue', org:'Cogedim Auray',         type:'Courtier prêt',  tel:'06 55 66 77 88', email:'s.garrigue@cogedim.fr',com:'0.5 %',  leads:8, signed:3, due:7800,  status:'actif'},
+  {id:3, nm:'Pierre Dupont',   org:'Indépendant',           type:'Mandataire',     tel:'07 22 33 44 55', email:'p.dupont@pro.fr',       com:'1.5 %', leads:3, signed:1, due:4200,  status:'actif'},
+  {id:4, nm:'Marc Lefèvre',    org:'Ancien client (2024)',  type:'Client parrain', tel:'06 88 99 00 11', email:'m.lefevre@email.fr',    com:'500 €/signature', leads:2, signed:1, due:500, status:'actif'},
+  {id:5, nm:'Étude Lerouge',   org:'Notaire Lorient',       type:'Notaire',        tel:'02 97 33 22 11', email:'contact@notaire-lr.fr', com:'forfait 1 000 €', leads:1, signed:0, due:0, status:'actif'},
+  {id:6, nm:'Anaïs Pelletier', org:'Anciennement Century',  type:'Mandataire',     tel:'06 44 33 22 11', email:'a.pelletier@email.fr',  com:'1.2 %',  leads:4, signed:0, due:0, status:'inactif'},
 ];
-const FLAT = {}; MENU.forEach(g=>g.items.forEach(i=>FLAT[i.id]=i));
-let current = 'dash';
+let appSeq = 200;
 
-/* ════════════════════════ RENDER : NAV ════════════════════════ */
+/* ════════════════════════ NAV ════════════════════════ */
 function renderNav(){
   const nav = document.getElementById('nav');
   nav.innerHTML = MENU.map(g=>`
-    <div class="sb-group">
-      <div class="sb-group-t">${g.grp}</div>
-      ${g.items.map(i=>`
-        <div class="nav-i ${i.id===current?'on':''}" onclick="go('${i.id}')">
-          <span class="ni-ic">${i.ic}</span>
-          <span>${i.nm}</span>
-          ${i.soon?`<span class="soon">${i.tag||'Bientôt'}</span>`:''}
-        </div>`).join('')}
-    </div>`).join('');
+    <div class="nav-section">${g.grp}</div>
+    ${g.items.map(i=>`
+      <button class="nav-item ${i.id===current?'active':''}" data-id="${i.id}" onclick="go('${i.id}')">
+        <span class="ico">${i.ic}</span>
+        <span class="lbl">${i.nm}</span>
+        ${i.soon?`<span class="soon">${i.tag||'Bientôt'}</span>`:''}
+      </button>`).join('')}
+  `).join('');
 }
-
 function go(id){ current = id; renderNav(); renderView(); }
 
-/* ════════════════════════ RENDER : TOPBAR + VUE ════════════════════════ */
+/* ════════════════════════ TOPBAR + VUES ════════════════════════ */
 function renderView(){
   const item = FLAT[current];
   document.getElementById('tbEye').textContent = item.eye;
@@ -321,16 +573,18 @@ function renderView(){
     view.innerHTML = viewLeads();
     bindDnD();
   }
+  else if(current==='apporteurs'){
+    actions.innerHTML = `<button class="btn btn-gold" onclick="openAppModal()">+ Nouvel apporteur</button>`;
+    view.innerHTML = viewApporteurs();
+  }
   else { actions.innerHTML=''; view.innerHTML = viewSoon(item); }
 }
 
-/* ──────── Vue : Tableau de bord ──────── */
 function viewDash(){
   const total = LEADS.length;
   const signed = LEADS.filter(l=>l.stage==='sign').length;
   const active = LEADS.filter(l=>!['sign','lost'].includes(l.stage)).length;
   const conv = total? Math.round(signed/total*100):0;
-  // leads par source
   const bySrc = {};
   LEADS.forEach(l=> bySrc[l.src]=(bySrc[l.src]||0)+1);
   const maxSrc = Math.max(...Object.values(bySrc),1);
@@ -340,7 +594,6 @@ function viewDash(){
       <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxSrc*100)}%"></div></div>
       <div class="bar-val">${v}</div>
     </div>`).join('');
-
   const feed = [
     {c:'#4A7C59', tx:'<b>Léa & Hugo Moreau</b> ont signé leur CCMI', ti:'il y a 2 h · via Apporteur'},
     {c:'#7A4FA0', tx:'RDV agence programmé avec <b>Sophie Lemaire</b>', ti:'il y a 5 h · via Google Ads'},
@@ -348,7 +601,6 @@ function viewDash(){
     {c:'#C47B2B', tx:'<b>Thomas Petit</b> a été contacté par le commercial', ti:'hier · SEO local'},
     {c:'#B89A5A', tx:'<b>Jean & Marie Dupont</b> qualifiés — budget 300–400 k€', ti:'il y a 2 j · Configurateur'},
   ].map(f=>`<div class="feed-i"><div class="feed-dot" style="background:${f.c}"></div><div><div class="feed-tx">${f.tx}</div><div class="feed-ti">${f.ti}</div></div></div>`).join('');
-
   return `
   <div class="kpis">
     <div class="kpi"><div class="kpi-l">Leads ce mois</div><div class="kpi-v">${total}</div><div class="kpi-t up">▲ +18 % vs mois dernier</div></div>
@@ -370,13 +622,11 @@ function viewDash(){
   </div>`;
 }
 
-/* ──────── Vue : Pipeline leads ──────── */
 function viewLeads(){
   const total = LEADS.length;
   const active = LEADS.filter(l=>!['sign','lost'].includes(l.stage)).length;
   const signed = LEADS.filter(l=>l.stage==='sign').length;
   const conv = total? Math.round(signed/total*100):0;
-
   const stats = `
     <div class="pipe-stats">
       <div class="pstat"><b>${total}</b><span>Total leads</span></div>
@@ -384,7 +634,6 @@ function viewLeads(){
       <div class="pstat"><b>${signed}</b><span>Signés</span></div>
       <div class="pstat"><b>${conv}%</b><span>Conversion</span></div>
     </div>`;
-
   const cols = STAGES.map(s=>{
     const list = LEADS.filter(l=>l.stage===s.id);
     const cards = list.map(l=>leadCard(l)).join('') || `<div style="font-size:12px;color:var(--stone);padding:10px 6px;text-align:center">—</div>`;
@@ -397,7 +646,6 @@ function viewLeads(){
         ${cards}
       </div>`;
   }).join('');
-
   return stats + `<div class="board">${cols}</div>`;
 }
 
@@ -413,7 +661,6 @@ function leadCard(l){
     <div class="lead-mv">${prev}${next}</div>
   </div>`;
 }
-
 function move(id, dir){
   const l = LEADS.find(x=>x.id===id); if(!l) return;
   const idx = STAGES.findIndex(s=>s.id===l.stage);
@@ -422,7 +669,6 @@ function move(id, dir){
   renderView();
 }
 
-/* drag & drop */
 let dragId = null;
 function bindDnD(){
   document.querySelectorAll('.lead').forEach(el=>{
@@ -440,12 +686,84 @@ function bindDnD(){
   });
 }
 
-/* ──────── Vue : module à venir ──────── */
+/* ════════════════════════ Vue : Apporteurs ════════════════════════ */
+function viewApporteurs(){
+  const total = APPORTEURS.length;
+  const actifs = APPORTEURS.filter(a=>a.status==='actif').length;
+  const leads  = APPORTEURS.reduce((s,a)=>s+a.leads,0);
+  const signed = APPORTEURS.reduce((s,a)=>s+a.signed,0);
+  const due    = APPORTEURS.reduce((s,a)=>s+a.due,0);
+  const fmt    = n => (n||0).toLocaleString('fr-FR') + ' €';
+
+  const stats = `
+    <div class="pipe-stats" style="margin-bottom:22px">
+      <div class="pstat"><b>${total}</b><span>Apporteurs (${actifs} actifs)</span></div>
+      <div class="pstat"><b>${leads}</b><span>Leads apportés (cumul)</span></div>
+      <div class="pstat"><b>${signed}</b><span>Signatures via réseau</span></div>
+      <div class="pstat" style="color:var(--gold)"><b style="color:var(--gold)">${fmt(due)}</b><span>Commissions cumulées</span></div>
+    </div>`;
+
+  const cards = APPORTEURS.map(a=>{
+    const initials = a.nm.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+    const inactive = a.status==='inactif';
+    return `
+    <div style="background:var(--ivory);border:1px solid ${inactive?'var(--linen)':'var(--linen)'};border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px #0a0a0809;${inactive?'opacity:.65':''}">
+      <div style="display:flex;align-items:center;gap:13px;margin-bottom:13px">
+        <div style="width:42px;height:42px;border-radius:9px;background:linear-gradient(135deg,var(--gold-l),var(--gold) 50%,var(--gold-d));display:flex;align-items:center;justify-content:center;color:#1F1A14;font-family:var(--SF);font-weight:800;font-size:14px;flex-shrink:0;box-shadow:0 2px 6px rgba(184,154,90,.30)">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:var(--SF);font-weight:600;font-size:16px;color:var(--ink);line-height:1.2">${a.nm}</div>
+          <div style="font-size:11.5px;color:var(--stone);margin-top:2px">${a.org}</div>
+        </div>
+        <span class="tag" style="background:${inactive?'#a63c3c14':'#4a7c5918'};color:${inactive?'var(--red)':'var(--green)'};border:none">${a.status}</span>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        <span class="tag">${a.type}</span>
+        <span class="tag" style="background:var(--gold-dim);color:#8a6d2e">Commission ${a.com}</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:11px 0;border-top:1px solid var(--linen);border-bottom:1px solid var(--linen);margin-bottom:11px">
+        <div style="text-align:center"><div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--ink)">${a.leads}</div><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Leads</div></div>
+        <div style="text-align:center;border-left:1px solid var(--linen);border-right:1px solid var(--linen)"><div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--green)">${a.signed}</div><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Signés</div></div>
+        <div style="text-align:center"><div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--gold)">${fmt(a.due)}</div><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Cumul</div></div>
+      </div>
+
+      <div style="display:flex;gap:7px;font-size:11.5px;color:var(--stone)">
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">✉ ${a.email}</span>
+        <span>☎ ${a.tel}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  return stats + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">${cards}</div>`;
+}
+
+/* Modal nouvel apporteur */
+function openAppModal(){
+  const ov = document.getElementById('ovApp');
+  ov.classList.add('show');
+}
+function closeAppModal(){ document.getElementById('ovApp').classList.remove('show'); }
+function saveApporteur(){
+  const v = id => (document.getElementById(id).value || '').trim();
+  const nm = v('a-nm'); if(!nm){ document.getElementById('a-nm').focus(); return; }
+  APPORTEURS.unshift({
+    id:++appSeq, nm,
+    org:v('a-org')||'—', type:v('a-type'),
+    tel:v('a-tel')||'—', email:v('a-email')||'—',
+    com:v('a-com')||'1.0 %',
+    leads:0, signed:0, due:0, status:'actif',
+  });
+  ['a-nm','a-org','a-tel','a-email','a-com'].forEach(i=>document.getElementById(i).value='');
+  closeAppModal();
+  renderView();
+}
+
 function viewSoon(item){
   const feats = (item.feats||[]).map(f=>`<div class="soon-feat"><span class="ck">✦</span><span>${f}</span></div>`).join('');
   return `
   <div class="soon-panel">
-    <div class="soon-ic">${item.ic}</div>
+    <div class="soon-ic-wrap">${item.ic}</div>
     <div class="soon-tag">${item.tag||'Bientôt'}</div>
     <h2>${item.nm}</h2>
     <p>${item.long||item.desc}</p>
@@ -453,7 +771,7 @@ function viewSoon(item){
   </div>`;
 }
 
-/* ──────── Modal nouveau lead ──────── */
+/* ════════════════════════ MODAL ════════════════════════ */
 function openModal(){ document.getElementById('ov').classList.add('show'); }
 function closeModal(){ document.getElementById('ov').classList.remove('show'); }
 function saveLead(){
@@ -469,12 +787,11 @@ function saveLead(){
   if(current!=='leads') go('leads'); else renderView();
 }
 document.getElementById('ov').addEventListener('click',e=>{ if(e.target.id==='ov') closeModal(); });
+document.getElementById('ovApp').addEventListener('click',e=>{ if(e.target.id==='ovApp') closeAppModal(); });
 
-/* ──────── Boot ──────── */
+/* ════════════════════════ BOOT ════════════════════════ */
 renderNav();
 renderView();
-
-/* Annonce au parent ONIQ que l'app est prête (pour future sync Supabase) */
 try{ window.parent && window.parent.postMessage({type:'onimarketer:ready'}, '*'); }catch(e){}
 </script>
 </body>
