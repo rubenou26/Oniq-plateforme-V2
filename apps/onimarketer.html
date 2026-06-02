@@ -566,18 +566,40 @@ function renderView(){
   const actions = document.getElementById('tbActions');
   const view = document.getElementById('view');
 
-  if(current==='dash'){ actions.innerHTML=''; view.innerHTML = viewDash(); }
-  else if(current==='leads'){
-    actions.innerHTML = `<button class="btn btn-gold" onclick="openModal()">+ Nouveau lead</button>`;
-    view.innerHTML = viewLeads();
-    bindDnD();
+  /* Routing : chaque module a sa view dédiée. */
+  const r = ROUTES[current];
+  if (r){
+    actions.innerHTML = r.actions || '';
+    view.innerHTML = r.render();
+    if (r.bind) r.bind();
+  } else {
+    actions.innerHTML = '';
+    view.innerHTML = viewSoon(item);
   }
-  else if(current==='apporteurs'){
-    actions.innerHTML = `<button class="btn btn-gold" onclick="openAppModal()">+ Nouvel apporteur</button>`;
-    view.innerHTML = viewApporteurs();
-  }
-  else { actions.innerHTML=''; view.innerHTML = viewSoon(item); }
 }
+
+/* ════════════════════════ ROUTES — 1 entrée par module ════════════════════════ */
+const ROUTES = {
+  dash:       { render:()=>viewDash() },
+  leads:      { actions:`<button class="btn btn-gold" onclick="openModal()">+ Nouveau lead</button>`, render:()=>viewLeads(), bind:bindDnD },
+  apporteurs: { actions:`<button class="btn btn-gold" onclick="openAppModal()">+ Nouvel apporteur</button>`, render:()=>viewApporteurs() },
+  seo:        { actions:`<button class="btn btn-gold" onclick="seoGenerate()">+ Générer pages</button>`, render:()=>viewSeo() },
+  social:     { actions:`<button class="btn btn-gold" onclick="alert('Composer un post — fonctionnalité IA arrive')">+ Nouveau post</button>`, render:()=>viewSocial() },
+  ads:        { actions:`<button class="btn btn-gold" onclick="alert('Lancer une campagne — connexion Google/Meta à venir')">+ Nouvelle campagne</button>`, render:()=>viewAds() },
+  radar:      { actions:`<button class="btn btn-ghost" onclick="alert('Filtres — zones, surface min, prix')">⌕ Filtres</button>`, render:()=>viewRadar() },
+  simu:       { render:()=>viewSimu(), bind:bindSimu },
+  config:     { render:()=>viewConfig(), bind:bindConfig },
+  forms:      { actions:`<button class="btn btn-gold" onclick="alert('Éditeur drag-and-drop arrive')">+ Nouveau formulaire</button>`, render:()=>viewForms() },
+  bot:        { render:()=>viewBot() },
+  flow:       { actions:`<button class="btn btn-gold" onclick="alert('Créer un scénario depuis un template')">+ Nouveau scénario</button>`, render:()=>viewFlow() },
+  sms:        { actions:`<button class="btn btn-gold" onclick="alert('Composer une campagne SMS')">+ Nouvelle campagne</button>`, render:()=>viewSms() },
+  score:      { render:()=>viewScore() },
+  repu:       { actions:`<button class="btn btn-gold" onclick="alert('Demande d\\'avis envoyée à tous les livrés récents')">⤴ Solliciter</button>`, render:()=>viewRepu() },
+  commissions:{ actions:`<button class="btn btn-gold" onclick="commPay()">💶 Marquer tout payé</button>`, render:()=>viewCommissions() },
+  parrain:    { actions:`<button class="btn btn-gold" onclick="alert('Générer un lien parrain')">+ Lien parrain</button>`, render:()=>viewParrain() },
+  attrib:     { render:()=>viewAttrib() },
+  roi:        { render:()=>viewRoi() },
+};
 
 function viewDash(){
   const total = LEADS.length;
@@ -756,6 +778,838 @@ function saveApporteur(){
   ['a-nm','a-org','a-tel','a-email','a-com'].forEach(i=>document.getElementById(i).value='');
   closeAppModal();
   renderView();
+}
+
+/* ════════════════════════ HELPERS RÉUTILISABLES ════════════════════════ */
+const fmtEur = n => (n||0).toLocaleString('fr-FR') + ' €';
+const fmtNum = n => (n||0).toLocaleString('fr-FR');
+
+function kpiRow(items){
+  return `<div class="kpis">` + items.map(k=>`
+    <div class="kpi">
+      <div class="kpi-l">${k.l}</div>
+      <div class="kpi-v ${k.gold?'gold':''}">${k.v}</div>
+      ${k.t?`<div class="kpi-t ${k.tCls||'up'}">${k.t}</div>`:''}
+    </div>`).join('') + `</div>`;
+}
+
+function chip(label, color){
+  const colors = {
+    green:'#4a7c5918;color:var(--green)',
+    red:'#a63c3c18;color:var(--red)',
+    gold:'var(--gold-dim);color:#8a6d2e',
+    blue:'#3e5c7618;color:var(--blue)',
+    amber:'#c47b2b18;color:var(--amber)',
+    stone:'#8c807018;color:var(--stone)',
+  };
+  return `<span class="tag" style="background:${colors[color]||colors.gold}">${label}</span>`;
+}
+
+function sectionTitle(title, sub){
+  return `<div style="margin:24px 0 14px"><div style="font-family:var(--SF);font-weight:600;font-size:18px;color:var(--ink);line-height:1.2">${title}</div>${sub?`<div style="font-size:12.5px;color:var(--stone);margin-top:3px">${sub}</div>`:''}</div>`;
+}
+
+/* ════════════════════════ ACQUISITION ════════════════════════ */
+
+/* — SEO local : pages locales générées ————————————————————— */
+let SEO_PAGES = [
+  {ville:'Vannes', mc:'construire maison Vannes',          pos:3,  vues:2148, leads:11, status:'indexée'},
+  {ville:'Auray',  mc:'maison PTZ Auray zone B1',          pos:5,  vues:1654, leads:8,  status:'indexée'},
+  {ville:'Theix',  mc:'constructeur maison Theix',         pos:8,  vues:982,  leads:4,  status:'indexée'},
+  {ville:'Arradon',mc:'villa contemporaine Arradon',       pos:2,  vues:1207, leads:7,  status:'indexée'},
+  {ville:'Séné',   mc:'maison plain-pied Séné',            pos:11, vues:540,  leads:2,  status:'indexée'},
+  {ville:'Pluneret',mc:'CCMI Pluneret prix',               pos:14, vues:312,  leads:1,  status:'indexée'},
+  {ville:'Sarzeau',mc:'constructeur Sarzeau presqu’île',   pos:18, vues:188,  leads:0,  status:'en attente'},
+  {ville:'Elven',  mc:'maison neuve Elven',                pos:7,  vues:721,  leads:3,  status:'indexée'},
+  {ville:'Questembert',mc:'construire à Questembert',      pos:9,  vues:475,  leads:2,  status:'indexée'},
+];
+function viewSeo(){
+  const total = SEO_PAGES.length;
+  const indexed = SEO_PAGES.filter(p=>p.status==='indexée').length;
+  const trafic = SEO_PAGES.reduce((s,p)=>s+p.vues,0);
+  const leads = SEO_PAGES.reduce((s,p)=>s+p.leads,0);
+  const top10 = SEO_PAGES.filter(p=>p.pos<=10).length;
+  const kpis = kpiRow([
+    {l:'Pages publiées', v:total, t:`▲ ${indexed} indexées`},
+    {l:'Top 10 Google', v:top10, gold:true, t:`▲ +3 ce mois`},
+    {l:'Trafic SEO (30j)', v:fmtNum(trafic), t:'▲ +24 %'},
+    {l:'Leads SEO', v:leads, t:'▲ +6 vs M-1'},
+  ]);
+  const rows = SEO_PAGES.map(p=>`
+    <tr>
+      <td style="font-weight:600">${p.ville}</td>
+      <td style="color:var(--stone)">${p.mc}</td>
+      <td style="text-align:center">${chip('#'+p.pos, p.pos<=3?'green':p.pos<=10?'gold':'stone')}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${fmtNum(p.vues)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--gold)">${p.leads}</td>
+      <td style="text-align:center">${chip(p.status, p.status==='indexée'?'green':'amber')}</td>
+    </tr>`).join('');
+  return kpis + `
+  <div class="card" style="overflow-x:auto">
+    <div class="card-t">Pages locales publiées</div>
+    <div class="card-sub">Une URL par commune × type de prestation — indexée par Google Search Console</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="text-align:left;border-bottom:1px solid var(--linen)">
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Commune</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Mot-clé cible</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:center">Position</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Vues 30j</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Leads</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:center">État</th>
+      </tr></thead>
+      <tbody>${rows.replace(/<td/g,'<td style="padding:11px 8px;border-bottom:1px solid var(--linen)"').replace(/style="padding:11px 8px;border-bottom:1px solid var\(--linen\)" style="/g,'style="padding:11px 8px;border-bottom:1px solid var(--linen);')}</tbody>
+    </table>
+  </div>`;
+}
+function seoGenerate(){
+  const villes = ['Quéven','Riantec','Ploemeur','Hennebont','Lanester'];
+  const v = villes[Math.floor(Math.random()*villes.length)];
+  SEO_PAGES.unshift({ville:v, mc:'construire maison '+v, pos:0, vues:0, leads:0, status:'en attente'});
+  renderView();
+}
+
+/* — Réseaux sociaux : calendrier éditorial ——————————————— */
+const SOCIAL_POSTS = [
+  {date:'Aujourd’hui · 18h',  net:'Instagram',  type:'Reel',     titre:'Visite chantier en cours — Auray',           statut:'programmé', port:'—'},
+  {date:'Demain · 12h',        net:'Facebook',   type:'Carrousel',titre:'5 erreurs à éviter quand on construit',      statut:'programmé', port:'—'},
+  {date:'Demain · 19h',        net:'TikTok',     type:'Vidéo',    titre:'Time-lapse pose charpente Vannes',          statut:'programmé', port:'—'},
+  {date:'Hier · 18h',          net:'Instagram',  type:'Reel',     titre:'Avant/après terrassement Arradon',          statut:'publié',    port:'8,2k'},
+  {date:'Hier · 11h',          net:'TikTok',     type:'Vidéo',    titre:'Q&A avec Mathieu, conducteur de travaux',    statut:'publié',    port:'14,3k'},
+  {date:'Il y a 2 j',          net:'Facebook',   type:'Photo',    titre:'Remise des clés — famille Lemaire',         statut:'publié',    port:'3,1k'},
+];
+function viewSocial(){
+  const programmes = SOCIAL_POSTS.filter(p=>p.statut==='programmé').length;
+  const kpis = kpiRow([
+    {l:'Posts programmés', v:programmes, t:'▲ 6 cette semaine'},
+    {l:'Portée 30j', v:'82,4k', gold:true, t:'▲ +31 %'},
+    {l:'Engagement', v:'5,8 %', t:'▲ +0,6 pt'},
+    {l:'Abonnés Insta', v:'4 217', t:'▲ +148 ce mois'},
+  ]);
+  const netColor = n => ({'Instagram':'#C13584','TikTok':'#000','Facebook':'#1877F2','YouTube':'#FF0000'}[n] || '#888');
+  const cards = SOCIAL_POSTS.map(p=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:14px 16px;display:flex;gap:14px;align-items:center;margin-bottom:10px">
+      <div style="width:8px;align-self:stretch;background:${netColor(p.net)};border-radius:4px;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><span style="font-weight:600;color:${netColor(p.net)};font-size:12px">${p.net}</span><span style="font-size:11px;color:var(--stone)">· ${p.type}</span><span style="font-size:11px;color:var(--stone)">· ${p.date}</span></div>
+        <div style="font-size:14px;color:var(--ink);font-weight:500">${p.titre}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${chip(p.statut, p.statut==='publié'?'green':'amber')}
+        ${p.port!=='—'?`<div style="font-size:11px;color:var(--stone);margin-top:6px">Portée <b style="color:var(--ink)">${p.port}</b></div>`:''}
+      </div>
+    </div>`).join('');
+  return kpis + sectionTitle('Calendrier éditorial', 'Génération + publication automatique multi-réseaux, déclinaison locale par agence') + cards;
+}
+
+/* — Publicité : campagnes Google/Meta —————————————————— */
+const ADS_CAMPS = [
+  {net:'Google', nm:'Construire à Vannes — search', budget:850, impr:124800, clics:2814, cpc:0.30, leads:42, roas:3.8, etat:'active'},
+  {net:'Google', nm:'PTZ 2025 zone B1 — search',     budget:600, impr:86200,  clics:1925, cpc:0.31, leads:31, roas:4.2, etat:'active'},
+  {net:'Meta',   nm:'Reels visite maison témoins',   budget:450, impr:215600, clics:3812, cpc:0.12, leads:28, roas:5.1, etat:'active'},
+  {net:'Meta',   nm:'Lookalike clients livrés',      budget:380, impr:142300, clics:2241, cpc:0.17, leads:19, roas:2.9, etat:'active'},
+  {net:'TikTok', nm:'Time-lapse chantier',           budget:200, impr:418200, clics:5128, cpc:0.04, leads:14, roas:2.1, etat:'test'},
+  {net:'Google', nm:'Constructeur Arradon',          budget:0,   impr:0,      clics:0,    cpc:0,    leads:0,  roas:0,   etat:'pause'},
+];
+function viewAds(){
+  const t = ADS_CAMPS.reduce((a,c)=>({budget:a.budget+c.budget,leads:a.leads+c.leads,clics:a.clics+c.clics}),{budget:0,leads:0,clics:0});
+  const cpl = t.leads ? Math.round(t.budget/t.leads) : 0;
+  const kpis = kpiRow([
+    {l:'Budget actif (j)', v:fmtEur(t.budget), t:'▼ −5 % vs sem.'},
+    {l:'Leads ads 30j', v:t.leads*30, gold:true, t:'▲ +12 %'},
+    {l:'CPL moyen', v:fmtEur(cpl), tCls:'down', t:'▼ −18 % (optimisé)'},
+    {l:'ROAS portefeuille', v:'3,4×', t:'▲ +0,4'},
+  ]);
+  const netColor = n => ({'Google':'#4285F4','Meta':'#1877F2','TikTok':'#000','LinkedIn':'#0A66C2'}[n] || '#888');
+  const rows = ADS_CAMPS.map(c=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:16px 18px;margin-bottom:10px;display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:14px;align-items:center;${c.etat==='pause'?'opacity:.55':''}">
+      <div style="width:36px;height:36px;border-radius:8px;background:${netColor(c.net)};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">${c.net.slice(0,2).toUpperCase()}</div>
+      <div><div style="font-weight:600;font-size:14px;color:var(--ink)">${c.nm}</div><div style="font-size:11px;color:var(--stone);margin-top:2px">${c.net} · ${fmtNum(c.impr)} impressions · ${fmtNum(c.clics)} clics</div></div>
+      <div style="text-align:right"><div style="font-size:10px;text-transform:uppercase;color:var(--stone);font-weight:600;letter-spacing:.04em">Budget/j</div><div style="font-weight:700">${c.budget}€</div></div>
+      <div style="text-align:right"><div style="font-size:10px;text-transform:uppercase;color:var(--stone);font-weight:600;letter-spacing:.04em">CPC</div><div style="font-weight:700">${c.cpc}€</div></div>
+      <div style="text-align:right"><div style="font-size:10px;text-transform:uppercase;color:var(--stone);font-weight:600;letter-spacing:.04em">Leads</div><div style="font-weight:700;color:var(--gold)">${c.leads}</div></div>
+      <div style="text-align:right"><div style="font-size:10px;text-transform:uppercase;color:var(--stone);font-weight:600;letter-spacing:.04em">ROAS</div><div style="font-weight:700;color:${c.roas>=3?'var(--green)':c.roas>0?'var(--amber)':'var(--stone)'}">${c.roas}×</div></div>
+      <div>${chip(c.etat, c.etat==='active'?'green':c.etat==='test'?'amber':'stone')}</div>
+    </div>`).join('');
+  return kpis + sectionTitle('Campagnes en cours', 'Google Ads + Meta + TikTok, pilotage centralisé multi-agences') + rows;
+}
+
+/* — Détection projets : signaux open data ——————————————— */
+const RADAR_SIG = [
+  {type:'Permis déposé',  zone:'Vannes — quartier Conleau',    sig:'PC en cours d’instruction', terrain:'487 m²', date:'il y a 3 j',  score:92, st:'chaud'},
+  {type:'DIA',            zone:'Arradon — bord de mer',         sig:'Mutation cadastrale signalée', terrain:'612 m²', date:'il y a 5 j',  score:88, st:'chaud'},
+  {type:'Terrain vendu',  zone:'Theix — lotissement Le Verger', sig:'Acte authentique signé',     terrain:'520 m²', date:'il y a 6 j',  score:85, st:'chaud'},
+  {type:'Permis déposé',  zone:'Séné — proche RN165',           sig:'PC en cours d’instruction', terrain:'410 m²', date:'il y a 1 sem.', score:74, st:'tiède'},
+  {type:'DIA',            zone:'Pluneret — proche centre',      sig:'Mutation cadastrale signalée', terrain:'380 m²', date:'il y a 2 sem.', score:68, st:'tiède'},
+  {type:'Terrain vendu',  zone:'Sarzeau — proche golfe',        sig:'Acte authentique signé',     terrain:'780 m²', date:'il y a 3 sem.', score:55, st:'froid'},
+];
+function viewRadar(){
+  const chauds = RADAR_SIG.filter(s=>s.st==='chaud').length;
+  const tiedes = RADAR_SIG.filter(s=>s.st==='tiède').length;
+  const kpis = kpiRow([
+    {l:'Signaux 30j', v:RADAR_SIG.length, t:'▲ +4 vs M-1'},
+    {l:'Chauds (>80)', v:chauds, gold:true, t:'▲ priorité commerciale'},
+    {l:'Tièdes (50-80)', v:tiedes, t:'À surveiller'},
+    {l:'Avance vs Google', v:'~12 sem.', t:'Moyenne par projet'},
+  ]);
+  const cards = RADAR_SIG.map(s=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:15px 18px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;color:var(--ink);font-size:14px">${s.zone}</div>
+          <div style="font-size:12px;color:var(--stone);margin-top:3px">${s.sig} · terrain ${s.terrain}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${chip(s.type,'blue')}
+          ${chip(s.date,'stone')}
+          <span class="tag" style="background:${s.st==='chaud'?'#a63c3c22;color:var(--red)':s.st==='tiède'?'#c47b2b22;color:var(--amber)':'#8c807022;color:var(--stone)'};font-weight:700">Score ${s.score}</span>
+        </div>
+      </div>
+      <div style="margin-top:11px;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="alert('Lead créé dans la pipeline')" style="font-size:11px;padding:5px 10px">+ Convertir en lead</button>
+        <button class="btn btn-ghost btn-sm" onclick="alert('Apporteur tagué')" style="font-size:11px;padding:5px 10px">⊕ Tag apporteur</button>
+        <button class="btn btn-ghost btn-sm" onclick="alert('Ignoré')" style="font-size:11px;padding:5px 10px">✕ Ignorer</button>
+      </div>
+    </div>`).join('');
+  return kpis + sectionTitle('Signaux marché détectés', 'Permis de construire, DIA, mutations cadastrales — croisés avec votre zone d’activité') + cards;
+}
+
+/* ════════════════════════ CONVERSION ════════════════════════ */
+
+/* — Simulateur PTZ + capacité d’emprunt ——————————————— */
+let SIMU = { revenus:3800, apport:25000, duree:25, taux:3.5, zone:'B1' };
+function viewSimu(){
+  /* Capacité d’emprunt simplifiée : taux d’endettement max 33 % → mensualité max
+     → capital empruntable via formule de calcul. */
+  const mensMax = SIMU.revenus * 0.33;
+  const r = SIMU.taux / 100 / 12;
+  const n = SIMU.duree * 12;
+  const capital = mensMax * (1 - Math.pow(1+r, -n)) / r;
+  /* PTZ 2025 simplifié : montant = 30 % du coût du projet en zones B1/B2/C
+     pour primo-accédant, plafonné selon revenus. Ici approximation lisible. */
+  const projet = capital + SIMU.apport;
+  const ptzPct = ({A:0.50,B1:0.40,B2:0.40,C:0.20})[SIMU.zone] || 0.30;
+  const ptz = Math.min(projet * ptzPct, 100000);
+  const kpis = kpiRow([
+    {l:'Capacité d’emprunt', v:fmtEur(Math.round(capital/1000)*1000), gold:true},
+    {l:'Projet total max', v:fmtEur(Math.round(projet/1000)*1000), t:'apport inclus'},
+    {l:'Mensualité', v:fmtEur(Math.round(mensMax))+' /mois', t:'taux d’endettement 33 %'},
+    {l:'PTZ 2025 estimé', v:fmtEur(Math.round(ptz/1000)*1000), t:`zone ${SIMU.zone}`},
+  ]);
+  return kpis + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Paramètres de la simulation</div>
+      <div class="card-sub">Les visiteurs entrent ces valeurs sur votre site, vous récupérez un lead qualifié à la fin.</div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Revenus nets mensuels (foyer)</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input id="simu-rev" type="range" min="1500" max="10000" step="100" value="${SIMU.revenus}" style="flex:1"/>
+            <div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--ink);min-width:90px;text-align:right">${fmtEur(SIMU.revenus)}</div>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Apport personnel</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input id="simu-app" type="range" min="0" max="150000" step="1000" value="${SIMU.apport}" style="flex:1"/>
+            <div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--ink);min-width:90px;text-align:right">${fmtEur(SIMU.apport)}</div>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Durée du prêt (années)</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input id="simu-dur" type="range" min="10" max="30" step="1" value="${SIMU.duree}" style="flex:1"/>
+            <div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--ink);min-width:90px;text-align:right">${SIMU.duree} ans</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Taux estimé</label>
+            <input id="simu-tx" type="number" step="0.1" value="${SIMU.taux}" style="width:100%;padding:9px 11px;border:1px solid var(--linen);border-radius:8px"/>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Zone PTZ 2025</label>
+            <select id="simu-zn" style="width:100%;padding:9px 11px;border:1px solid var(--linen);border-radius:8px">
+              <option value="A" ${SIMU.zone==='A'?'selected':''}>A — métropoles tendues</option>
+              <option value="B1" ${SIMU.zone==='B1'?'selected':''}>B1 — Vannes/Lorient</option>
+              <option value="B2" ${SIMU.zone==='B2'?'selected':''}>B2 — communes périurbaines</option>
+              <option value="C" ${SIMU.zone==='C'?'selected':''}>C — rural</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div class="card-t">Modèles compatibles</div>
+        <div class="card-sub">Sélection automatique selon votre capacité</div>
+        ${[
+          {nm:'Plain-pied T4 100 m²', prix:215000, lab:'Modèle "Roselin"'},
+          {nm:'Plain-pied T5 115 m²', prix:248000, lab:'Modèle "Mésange"'},
+          {nm:'Étage T5 130 m²', prix:289000, lab:'Modèle "Hirondelle"'},
+        ].filter(m=>m.prix<=projet).map(m=>`
+          <div style="padding:11px 0;border-bottom:1px solid var(--linen);display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-weight:600">${m.nm}</div><div style="font-size:11px;color:var(--stone)">${m.lab}</div></div>
+            <div style="font-family:var(--SF);font-weight:700;color:var(--gold)">${fmtEur(m.prix)}</div>
+          </div>`).join('') || `<div style="padding:14px 0;color:var(--stone);font-size:12.5px">Aucun modèle compatible — augmentez l’apport ou la durée.</div>`}
+      </div>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:14px" onclick="alert('Lead enregistré dans la pipeline avec dossier de simulation')">📋 Recevoir mon dossier complet</button>
+    </div>
+  </div>`;
+}
+function bindSimu(){
+  const upd = ()=>{
+    SIMU.revenus = +document.getElementById('simu-rev').value;
+    SIMU.apport  = +document.getElementById('simu-app').value;
+    SIMU.duree   = +document.getElementById('simu-dur').value;
+    SIMU.taux    = +document.getElementById('simu-tx').value || 3.5;
+    SIMU.zone    = document.getElementById('simu-zn').value;
+    renderView();
+  };
+  ['simu-rev','simu-app','simu-dur','simu-tx','simu-zn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.addEventListener('change',upd);
+  });
+}
+
+/* — Configurateur 3D (simplifié 2D) ——————————————————— */
+let CONFIG = { surface:110, chambres:3, etage:false, garage:true, terrasse:true, pompe:true, finition:'standard' };
+function viewConfig(){
+  /* Pricing simple : base + surface + options. */
+  const base = 145000;
+  const prixM2 = 1450;
+  const opt = (CONFIG.etage?15000:0) + (CONFIG.garage?12000:0) + (CONFIG.terrasse?6000:0) + (CONFIG.pompe?9500:0);
+  const fin = ({standard:0,confort:18000,premium:34000})[CONFIG.finition];
+  const prix = base + CONFIG.surface*prixM2 + opt + fin;
+  const kpis = kpiRow([
+    {l:'Surface', v:CONFIG.surface+' m²'},
+    {l:'Chambres', v:CONFIG.chambres},
+    {l:'Prix estimé', v:fmtEur(prix), gold:true},
+    {l:'Mensualité 25 ans', v:fmtEur(Math.round(prix*0.005))+' /mois', t:'(taux 3,5 %)'},
+  ]);
+  const opts = [
+    {k:'etage', lab:'Étage R+1', sub:'+15 000 €', val:CONFIG.etage},
+    {k:'garage', lab:'Garage attenant', sub:'+12 000 €', val:CONFIG.garage},
+    {k:'terrasse', lab:'Terrasse couverte', sub:'+6 000 €', val:CONFIG.terrasse},
+    {k:'pompe', lab:'Pompe à chaleur air/eau', sub:'+9 500 €', val:CONFIG.pompe},
+  ];
+  return kpis + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Composez votre maison</div>
+      <div class="card-sub">Le visiteur ajuste, le prix se met à jour en temps réel</div>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:8px">
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Surface habitable</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input id="cfg-surf" type="range" min="70" max="180" step="5" value="${CONFIG.surface}" style="flex:1"/>
+            <div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--ink);min-width:75px;text-align:right">${CONFIG.surface} m²</div>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Chambres</label>
+          <div style="display:flex;gap:8px">
+            ${[2,3,4,5].map(n=>`<button class="btn ${CONFIG.chambres===n?'btn-gold':'btn-ghost'}" style="flex:1;justify-content:center" onclick="CONFIG.chambres=${n};renderView()">${n}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Options</label>
+          ${opts.map(o=>`
+            <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${o.val?'var(--gold-dim)':'transparent'};border:1px solid ${o.val?'var(--gold)':'var(--linen)'};border-radius:8px;cursor:pointer;margin-bottom:6px">
+              <input type="checkbox" ${o.val?'checked':''} onchange="CONFIG.${o.k}=this.checked;renderView()" style="margin:0"/>
+              <div style="flex:1"><div style="font-weight:500">${o.lab}</div></div>
+              <div style="font-weight:600;color:var(--gold);font-size:12.5px">${o.sub}</div>
+            </label>`).join('')}
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--stone);display:block;margin-bottom:5px">Niveau de finition</label>
+          <div style="display:flex;gap:8px">
+            ${[{k:'standard',l:'Standard'},{k:'confort',l:'Confort (+18 k€)'},{k:'premium',l:'Premium (+34 k€)'}].map(f=>`<button class="btn ${CONFIG.finition===f.k?'btn-gold':'btn-ghost'}" style="flex:1;justify-content:center;font-size:11.5px" onclick="CONFIG.finition='${f.k}';renderView()">${f.l}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="background:linear-gradient(135deg,var(--ink),var(--ink-3));color:#F4E9D5;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div style="font-family:var(--SF);font-style:italic;font-weight:600;font-size:22px;color:var(--gold-xl)">Votre projet</div>
+        <div style="font-size:12px;color:#C2B59A;margin:6px 0 22px">Aperçu détaillé · économies CCMI incluses</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span>Construction (base + surface)</span><b>${fmtEur(base+CONFIG.surface*prixM2)}</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span>Options</span><b>${fmtEur(opt)}</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span>Finition ${CONFIG.finition}</span><b>${fmtEur(fin)}</b></div>
+          <div style="height:1px;background:rgba(232,196,116,.30);margin:8px 0"/>
+          <div style="display:flex;justify-content:space-between;font-size:18px"><span style="font-family:var(--SF);font-style:italic">Total estimé</span><b style="color:var(--gold-xl);font-family:var(--SF);font-weight:700">${fmtEur(prix)}</b></div>
+        </div>
+      </div>
+      <button class="btn" style="background:var(--gold-xl);color:#1F1A14;width:100%;justify-content:center;margin-top:20px;font-weight:700" onclick="alert('Dossier envoyé par email — lead créé dans la pipeline')">📩 Recevoir mon dossier maison</button>
+    </div>
+  </div>`;
+}
+function bindConfig(){
+  const surf = document.getElementById('cfg-surf');
+  if (surf) surf.addEventListener('change', ()=>{ CONFIG.surface=+surf.value; renderView(); });
+}
+
+/* — Formulaires : liste de formulaires de capture ———————— */
+const FORMS_LIST = [
+  {nm:'Capture landing PTZ',   placement:'/simulateur-ptz',         vues:4218, soumis:286, conv:6.8, statut:'actif'},
+  {nm:'Formulaire configurateur', placement:'/configurer-ma-maison', vues:2541, soumis:189, conv:7.4, statut:'actif'},
+  {nm:'Inscription JPO Vannes', placement:'/jpo-vannes-mars',        vues:982,  soumis:74,  conv:7.5, statut:'actif'},
+  {nm:'Demande de brochure',    placement:'/brochure',               vues:1654, soumis:118, conv:7.1, statut:'actif'},
+  {nm:'Contact agence Auray',   placement:'/agences/auray',          vues:621,  soumis:42,  conv:6.8, statut:'actif'},
+  {nm:'Newsletter conseils CCMI', placement:'/blog (sidebar)',        vues:8214, soumis:412, conv:5.0, statut:'actif'},
+];
+function viewForms(){
+  const total = FORMS_LIST.length;
+  const subs = FORMS_LIST.reduce((s,f)=>s+f.soumis,0);
+  const vues = FORMS_LIST.reduce((s,f)=>s+f.vues,0);
+  const avgConv = subs/vues*100;
+  const kpis = kpiRow([
+    {l:'Formulaires actifs', v:total},
+    {l:'Soumissions 30j', v:fmtNum(subs), gold:true, t:'▲ +12 %'},
+    {l:'Taux conv. moyen', v:avgConv.toFixed(1)+' %', t:'▲ +0,6 pt'},
+    {l:'Anti-spam IA', v:'42', t:'tentatives bloquées'},
+  ]);
+  const cards = FORMS_LIST.map(f=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:600;font-size:14px;color:var(--ink)">${f.nm}</div>
+        <div style="font-size:11.5px;color:var(--stone);margin-top:3px;font-family:monospace">${f.placement}</div>
+      </div>
+      <div style="display:flex;gap:18px">
+        <div style="text-align:center"><div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--ink)">${fmtNum(f.vues)}</div><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Vues</div></div>
+        <div style="text-align:center"><div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--gold)">${f.soumis}</div><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Soumis</div></div>
+        <div style="text-align:center"><div style="font-family:var(--SF);font-weight:700;font-size:18px;color:var(--green)">${f.conv}%</div><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Conv.</div></div>
+      </div>
+      ${chip(f.statut,'green')}
+    </div>`).join('');
+  return kpis + sectionTitle('Formulaires de capture', 'Scoring en temps réel + routage par zone géographique + A/B testing intégré') + cards;
+}
+
+/* — Chatbot IA : conversations en cours ——————————————— */
+const BOT_CONVS = [
+  {nm:'Visiteur · Vannes',   last:'Quel est le délai pour une maison T4 ?',                  msg:8,  intent:'Délais',     score:'chaud', heure:'il y a 3 min'},
+  {nm:'Visiteur · Auray',    last:'Avez-vous des modèles à étage en zone PTZ B1 ?',          msg:14, intent:'Modèles',    score:'chaud', heure:'il y a 11 min'},
+  {nm:'Mme Lemaire',         last:'Merci, j’ai bien reçu le RDV agence vendredi 14h',       msg:22, intent:'Confirmation', score:'tiède', heure:'il y a 1 h'},
+  {nm:'Visiteur · Arradon',  last:'Bonjour, j’aimerais en savoir plus sur le PTZ',          msg:3,  intent:'Découverte', score:'froid', heure:'il y a 2 h'},
+  {nm:'M. Petit',            last:'Pouvez-vous me rappeler demain matin ?',                  msg:16, intent:'Rappel',     score:'chaud', heure:'il y a 4 h'},
+];
+function viewBot(){
+  const kpis = kpiRow([
+    {l:'Conversations 30j', v:'382', t:'▲ +47 % vs M-1'},
+    {l:'RDV pris auto', v:'58', gold:true, t:'▲ taux qualif. 64 %'},
+    {l:'Temps moyen', v:'4,2 min', t:'fin de conversation'},
+    {l:'Coût/lead', v:'2,30 €', tCls:'down', t:'▼ vs 38 € canal payant'},
+  ]);
+  const cards = BOT_CONVS.map(c=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:14px 16px;margin-bottom:9px;display:flex;align-items:center;gap:14px">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7A4FA0,#5A3A78);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🤖</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-weight:600;font-size:13.5px">${c.nm}</span>${chip(c.intent,'blue')}</div>
+        <div style="font-size:12.5px;color:var(--stone);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.last}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <span class="tag" style="background:${c.score==='chaud'?'#a63c3c22;color:var(--red)':c.score==='tiède'?'#c47b2b22;color:var(--amber)':'#8c807022;color:var(--stone)'}">${c.score}</span>
+        <div style="font-size:11px;color:var(--stone);margin-top:5px">${c.msg} msg · ${c.heure}</div>
+      </div>
+    </div>`).join('');
+  return kpis + sectionTitle('Conversations en cours', 'Agent IA Mistral · qualification 8 critères CCMI · prise de RDV automatique dans l’agenda commercial') + cards + `
+  <div class="card" style="margin-top:18px">
+    <div class="card-t">Canaux connectés</div>
+    <div class="card-sub">Le même agent répond partout, avec contexte unifié</div>
+    <div style="display:flex;gap:11px;flex-wrap:wrap;margin-top:10px">
+      ${[{nm:'Chat web',etat:'actif'},{nm:'WhatsApp Business',etat:'actif'},{nm:'Messenger',etat:'actif'},{nm:'SMS',etat:'inactif'},{nm:'Téléphone (voix IA)',etat:'pilote'}].map(c=>`
+        <div style="border:1px solid var(--linen);border-radius:10px;padding:10px 14px;background:${c.etat==='actif'?'var(--ivory)':'transparent'}"><div style="font-weight:600;font-size:13px">${c.nm}</div><div style="margin-top:5px">${chip(c.etat,c.etat==='actif'?'green':c.etat==='pilote'?'amber':'stone')}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════ ACTIVATION ════════════════════════ */
+
+/* — Automation : scénarios cycle long CCMI ——————————————— */
+const FLOWS = [
+  {nm:'Welcome — nouveau lead',           etape:'Pré-RDV',         dec:'Lead créé',                actifs:142, signes:24, taux:17, etat:'actif'},
+  {nm:'Relance après RDV agence',         etape:'Post-RDV',        dec:'RDV terminé · décision attendue', actifs:38, signes:11, taux:29, etat:'actif'},
+  {nm:'Visite terrain → dossier banque',  etape:'Pré-signature',   dec:'Terrain visité',           actifs:24, signes:9, taux:38, etat:'actif'},
+  {nm:'Relance bancaire (J+15)',          etape:'Pré-signature',   dec:'Dossier banque envoyé',    actifs:18, signes:7, taux:39, etat:'actif'},
+  {nm:'Pré-CCMI — pièces manquantes',     etape:'Signature',       dec:'CCMI prêt à signer',       actifs:6,  signes:5, taux:83, etat:'actif'},
+  {nm:'Post-livraison — demande d’avis',  etape:'Post-livraison',  dec:'Livraison J+30',           actifs:11, signes:0, taux:0,  etat:'actif'},
+  {nm:'Anniversaire signature (1 an)',    etape:'Fidélisation',    dec:'1 an après signature',     actifs:23, signes:0, taux:0,  etat:'pause'},
+];
+function viewFlow(){
+  const actifsT = FLOWS.filter(f=>f.etat==='actif').length;
+  const leadsT = FLOWS.reduce((s,f)=>s+f.actifs,0);
+  const signesT = FLOWS.reduce((s,f)=>s+f.signes,0);
+  const kpis = kpiRow([
+    {l:'Scénarios actifs', v:actifsT+' / '+FLOWS.length},
+    {l:'Leads dans flows', v:fmtNum(leadsT), gold:true},
+    {l:'Signatures attribuées', v:signesT, t:'30 derniers jours'},
+    {l:'Gain CA estimé', v:fmtEur(signesT*235000), t:'panier moyen 235 k€'},
+  ]);
+  const etapeColor = e => ({'Pré-RDV':'#3E5C76','Post-RDV':'#C47B2B','Pré-signature':'#B89A5A','Signature':'#4A7C59','Post-livraison':'#7A4FA0','Fidélisation':'#A06D2E'})[e] || '#8C8070';
+  const cards = FLOWS.map(f=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:14px 16px;margin-bottom:9px;display:grid;grid-template-columns:8px 1fr auto auto auto auto;gap:14px;align-items:center;${f.etat==='pause'?'opacity:.55':''}">
+      <div style="align-self:stretch;background:${etapeColor(f.etape)};border-radius:4px"></div>
+      <div>
+        <div style="font-weight:600;font-size:13.5px">${f.nm}</div>
+        <div style="font-size:11.5px;color:var(--stone);margin-top:3px">Déclencheur : ${f.dec}</div>
+      </div>
+      <div>${chip(f.etape,'gold')}</div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Actifs</div><div style="font-weight:700">${f.actifs}</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Signés</div><div style="font-weight:700;color:var(--gold)">${f.signes}</div></div>
+      <div>${chip(f.etat, f.etat==='actif'?'green':'stone')}</div>
+    </div>`).join('');
+  return kpis + sectionTitle('Scénarios automatisés', 'Email + SMS + WhatsApp, déclenchés par étape projet · synchro OniPilote') + cards;
+}
+
+/* — SMS & WhatsApp : campagnes ————————————————————— */
+const SMS_CAMPS = [
+  {nm:'JPO Vannes 22 mars', canal:'SMS',      dest:842,  envoyes:842, ouv:96, repondu:34, etat:'envoyé'},
+  {nm:'Relance dossier PTZ', canal:'WhatsApp',dest:118,  envoyes:118, ouv:91, repondu:42, etat:'envoyé'},
+  {nm:'Visite chantier témoin', canal:'SMS',  dest:286,  envoyes:286, ouv:88, repondu:18, etat:'envoyé'},
+  {nm:'Programme parrainage', canal:'SMS',    dest:412,  envoyes:412, ouv:84, repondu:11, etat:'envoyé'},
+  {nm:'JPO Auray 12 avril',  canal:'SMS',     dest:621,  envoyes:0,   ouv:0,  repondu:0,  etat:'programmé'},
+];
+function viewSms(){
+  const t = SMS_CAMPS.reduce((a,c)=>({d:a.d+c.dest, e:a.e+c.envoyes, r:a.r+c.repondu}),{d:0,e:0,r:0});
+  const tauxRep = t.e ? (t.r/t.e*100).toFixed(1) : 0;
+  const kpis = kpiRow([
+    {l:'Envois 30j', v:fmtNum(t.e)},
+    {l:'Taux ouverture moyen', v:'89 %', gold:true, t:'SMS 96 % · WhatsApp 91 %'},
+    {l:'Taux de réponse', v:tauxRep+' %', t:'▲ +2,1 pts'},
+    {l:'Coût moyen / msg', v:'0,055 €', t:'opérateur pro'},
+  ]);
+  const canalIc = c => c==='WhatsApp'?'💬':'✉';
+  const canalColor = c => c==='WhatsApp'?'#25D366':'#3E5C76';
+  const rows = SMS_CAMPS.map(c=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:14px 16px;margin-bottom:9px;display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:14px;align-items:center">
+      <div style="width:36px;height:36px;border-radius:8px;background:${canalColor(c.canal)};color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px">${canalIc(c.canal)}</div>
+      <div><div style="font-weight:600">${c.nm}</div><div style="font-size:11px;color:var(--stone);margin-top:2px">${c.canal} · ${c.dest} destinataires</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Envoyés</div><div style="font-weight:700">${c.envoyes}</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Ouv.</div><div style="font-weight:700">${c.ouv}%</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Réponses</div><div style="font-weight:700;color:var(--gold)">${c.repondu}</div></div>
+      <div>${chip(c.etat, c.etat==='envoyé'?'green':'amber')}</div>
+    </div>`).join('');
+  return kpis + sectionTitle('Campagnes SMS & WhatsApp', 'Envoi de PDF (devis, plans) intégré · qualification automatique des réponses') + rows;
+}
+
+/* — Lead scoring : score prédictif ———————————————————— */
+function viewScore(){
+  /* Scoring simulé sur les LEADS existants : on génère un score basé sur stage + source. */
+  const scoreOf = l => {
+    let s = 30;
+    if (l.stage==='qual') s += 35;
+    if (l.stage==='rdv')  s += 50;
+    if (l.stage==='sign') s += 70;
+    if (l.stage==='cont') s += 15;
+    if (l.bud==='> 400 k€') s += 12;
+    if (l.bud==='300–400 k€') s += 8;
+    if (l.src==='Configurateur' || l.src==='Simulateur PTZ') s += 7;
+    return Math.min(s, 99);
+  };
+  const scored = LEADS.map(l => ({...l, score:scoreOf(l)})).filter(l=>!['sign','lost'].includes(l.stage)).sort((a,b)=>b.score-a.score);
+  const chauds = scored.filter(l=>l.score>=70).length;
+  const tiedes = scored.filter(l=>l.score>=40 && l.score<70).length;
+  const froids = scored.filter(l=>l.score<40).length;
+  const kpis = kpiRow([
+    {l:'Leads scorés', v:scored.length},
+    {l:'Chauds (≥70)', v:chauds, gold:true, t:'à appeler aujourd’hui'},
+    {l:'Tièdes (40-69)', v:tiedes, t:'à nourrir'},
+    {l:'Froids (<40)', v:froids, t:'à requalifier'},
+  ]);
+  const rows = scored.map(l=>{
+    const c = l.score>=70?'red':l.score>=40?'amber':'stone';
+    return `
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:12px 16px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:center">
+      <div><div style="font-weight:600;font-size:13.5px">${l.name}</div><div style="font-size:11.5px;color:var(--stone)">${l.zone}</div></div>
+      <div style="display:flex;gap:6px">${chip(l.src,'gold')}${chip(l.bud,'green')}</div>
+      <div style="text-align:right"><div style="font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Score</div>
+        <div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;background:var(--dim);border-radius:20px;overflow:hidden"><div style="width:${l.score}%;height:100%;background:${c==='red'?'var(--red)':c==='amber'?'var(--amber)':'var(--stone)'}"></div></div><b style="font-family:var(--SF);font-size:16px;color:${c==='red'?'var(--red)':c==='amber'?'var(--amber)':'var(--stone)'}">${l.score}</b></div>
+      </div>
+      ${chip(l.score>=70?'CHAUD — RAPPELER MAINTENANT':l.score>=40?'tiède':'froid', c)}
+    </div>`;
+  }).join('');
+  return kpis + sectionTitle('Top des leads à activer', 'Modèle IA entraîné sur vos signatures précédentes — alerte « moment idéal »') + rows;
+}
+
+/* — E-réputation : avis Google par agence ——————————————— */
+const REPU_AGENCES = [
+  {nm:'Agence Vannes',  avis:184, note:4.8, recents:[{aut:'Marie L.', txt:'Équipe ultra réactive, livraison à la date promise', sup:5, date:'il y a 3 j'}, {aut:'Karim B.', txt:'Suivi de chantier exemplaire, je recommande', sup:5, date:'il y a 5 j'}]},
+  {nm:'Agence Auray',   avis:127, note:4.7, recents:[{aut:'Sophie L.', txt:'Bonne expérience malgré 2 mois de retard sur la livraison', sup:4, date:'il y a 1 sem.'}]},
+  {nm:'Agence Lorient', avis:98,  note:4.9, recents:[{aut:'Thomas P.', txt:'Maison conforme au devis, aucun supplément non prévu, parfait', sup:5, date:'il y a 2 sem.'}]},
+];
+const REPU_DEMANDES = [
+  {nm:'Léa & Hugo Moreau', livraison:'il y a 18 j', etat:'envoyée'},
+  {nm:'M. Bernard',         livraison:'il y a 24 j', etat:'cliquée'},
+  {nm:'Famille Dupont',     livraison:'il y a 31 j', etat:'avis posté ★★★★★'},
+  {nm:'M. & Mme Lemaire',   livraison:'il y a 9 j',  etat:'à envoyer'},
+];
+function viewRepu(){
+  const totalAvis = REPU_AGENCES.reduce((s,a)=>s+a.avis,0);
+  const noteAvg = (REPU_AGENCES.reduce((s,a)=>s+a.note*a.avis,0)/totalAvis).toFixed(2);
+  const kpis = kpiRow([
+    {l:'Avis Google total', v:fmtNum(totalAvis)},
+    {l:'Note moyenne', v:'★ '+noteAvg, gold:true, t:'▲ +0,2 sur 6 mois'},
+    {l:'Avis ce mois', v:'14', t:'▲ +5'},
+    {l:'Demandes en attente', v:'1', t:'à envoyer'},
+  ]);
+  const agences = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:18px">${REPU_AGENCES.map(a=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:12px;padding:16px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px">
+        <div>
+          <div style="font-family:var(--SF);font-weight:600;font-size:16px">${a.nm}</div>
+          <div style="font-size:11.5px;color:var(--stone);margin-top:2px">${a.avis} avis Google</div>
+        </div>
+        <div style="text-align:right"><div style="font-family:var(--SF);font-weight:700;font-size:24px;color:var(--gold)">${a.note}</div><div style="font-size:14px;color:var(--gold)">★★★★★</div></div>
+      </div>
+      ${a.recents.map(r=>`
+        <div style="padding:9px 0;border-top:1px solid var(--linen)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><b style="font-size:12px">${r.aut}</b><span style="font-size:14px;color:var(--gold)">${'★'.repeat(r.sup)}</span></div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.4">"${r.txt}"</div>
+          <div style="font-size:10.5px;color:var(--stone);margin-top:3px">${r.date}</div>
+        </div>`).join('')}
+    </div>`).join('')}</div>`;
+  const demandes = REPU_DEMANDES.map(d=>{
+    const c = d.etat.startsWith('avis posté')?'green':d.etat==='cliquée'?'amber':d.etat==='envoyée'?'blue':'stone';
+    return `
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:14px">
+      <div><div style="font-weight:600">${d.nm}</div><div style="font-size:11.5px;color:var(--stone)">Livraison ${d.livraison}</div></div>
+      ${chip(d.etat, c)}
+    </div>`;
+  }).join('');
+  return kpis + sectionTitle('Réputation par agence', 'Demande d’avis automatique post-livraison · alerte avis négatif · réponses pré-rédigées IA') + agences + sectionTitle('Demandes d’avis récentes') + demandes;
+}
+
+/* ════════════════════════ RÉSEAU ════════════════════════ */
+
+/* — Commissions : à verser aux apporteurs ——————————————— */
+let COMMISSIONS = [
+  {appNm:'Jean Marchand',  client:'Famille Bernard',        ccmi:248000, com:2480, dec:'2026-02-08', etat:'à verser'},
+  {appNm:'Jean Marchand',  client:'M. & Mme Petit',         ccmi:215000, com:2150, dec:'2026-02-15', etat:'à verser'},
+  {appNm:'Sophie Garrigue',client:'Léa & Hugo Moreau',      ccmi:289000, com:1445, dec:'2026-01-22', etat:'à verser'},
+  {appNm:'Sophie Garrigue',client:'Karim Benali',            ccmi:198000, com:990,  dec:'2026-01-15', etat:'à verser'},
+  {appNm:'Sophie Garrigue',client:'Claire Rousseau',         ccmi:254000, com:1270, dec:'2026-01-08', etat:'payée', payDate:'2026-01-10'},
+  {appNm:'Pierre Dupont',  client:'Famille Lemaire',         ccmi:280000, com:4200, dec:'2026-02-20', etat:'à verser'},
+  {appNm:'Marc Lefèvre',   client:'M. & Mme Dubois (parrainé)', ccmi:225000, com:500, dec:'2026-01-30', etat:'payée', payDate:'2026-02-05'},
+  {appNm:'Étude Lerouge',  client:'M. Renault',              ccmi:340000, com:1000, dec:'2025-12-18', etat:'payée', payDate:'2025-12-22'},
+];
+function viewCommissions(){
+  const total = COMMISSIONS.length;
+  const aVerser = COMMISSIONS.filter(c=>c.etat==='à verser');
+  const totalDue = aVerser.reduce((s,c)=>s+c.com,0);
+  const payees = COMMISSIONS.filter(c=>c.etat==='payée');
+  const totalPayees = payees.reduce((s,c)=>s+c.com,0);
+  const kpis = kpiRow([
+    {l:'Commissions ouvertes', v:total},
+    {l:'Montant à verser', v:fmtEur(totalDue), gold:true, t:`${aVerser.length} ligne(s)`},
+    {l:'Versé en 2026', v:fmtEur(totalPayees)},
+    {l:'CCMI cumulé via réseau', v:fmtEur(COMMISSIONS.reduce((s,c)=>s+c.ccmi,0)/1000)+' k€'},
+  ]);
+  const rows = COMMISSIONS.map(c=>`
+    <tr style="border-bottom:1px solid var(--linen)">
+      <td style="padding:11px 8px"><div style="font-weight:600">${c.appNm}</div></td>
+      <td style="padding:11px 8px">${c.client}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums">${fmtEur(c.ccmi)}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold)">${fmtEur(c.com)}</td>
+      <td style="padding:11px 8px;font-size:12px;color:var(--stone)">déblocage ${c.dec}${c.payDate?' · payé '+c.payDate:''}</td>
+      <td style="padding:11px 8px;text-align:right">${chip(c.etat, c.etat==='payée'?'green':'amber')}</td>
+    </tr>`).join('');
+  return kpis + `
+  <div class="card" style="overflow-x:auto">
+    <div class="card-t">Commissions à verser au réseau</div>
+    <div class="card-sub">Déclenchement au déblocage des fonds banque · factures d’apport générées · paiement SEPA groupé</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+      <thead><tr style="text-align:left;border-bottom:1px solid var(--linen)">
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Apporteur</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Client signé</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Montant CCMI</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Commission</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Dates</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Statut</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+function commPay(){
+  const aVerser = COMMISSIONS.filter(c=>c.etat==='à verser');
+  if(!aVerser.length){ alert('Aucune commission en attente'); return; }
+  const total = aVerser.reduce((s,c)=>s+c.com,0);
+  if(!confirm('Confirmer le paiement SEPA groupé de '+aVerser.length+' commissions ('+fmtEur(total)+') ?')) return;
+  const today = new Date().toISOString().slice(0,10);
+  aVerser.forEach(c=>{ c.etat='payée'; c.payDate=today; });
+  renderView();
+}
+
+/* — Parrainage : programme parrain ———————————————————— */
+const PARRAINS = [
+  {nm:'Marc Lefèvre',     livre:'mai 2024',     filleuls:[
+    {nm:'M. & Mme Dubois', etat:'signé', prime:500, date:'janv. 2026'},
+    {nm:'Aurélie M.',      etat:'visite agence', prime:0, date:'fév. 2026'},
+  ]},
+  {nm:'Famille Dupont',   livre:'janv. 2025',   filleuls:[
+    {nm:'M. Petit (collègue)', etat:'lien cliqué', prime:0, date:'fév. 2026'},
+  ]},
+  {nm:'Famille Bernard',  livre:'mars 2025',    filleuls:[
+    {nm:'Sophie G. (soeur)', etat:'signé', prime:500, date:'déc. 2025'},
+    {nm:'Mehdi T.',          etat:'signé', prime:500, date:'oct. 2025'},
+    {nm:'Hugo R.',           etat:'lien envoyé', prime:0, date:'fév. 2026'},
+  ]},
+  {nm:'M. Garcia',        livre:'sept. 2024',   filleuls:[
+    {nm:'Cousin Karim',      etat:'signé', prime:1000, date:'sept. 2025'},
+  ]},
+];
+function viewParrain(){
+  const totalFilleuls = PARRAINS.reduce((s,p)=>s+p.filleuls.length,0);
+  const signes = PARRAINS.reduce((s,p)=>s+p.filleuls.filter(f=>f.etat==='signé').length, 0);
+  const primesVersees = PARRAINS.reduce((s,p)=>s+p.filleuls.reduce((ss,f)=>ss+f.prime,0), 0);
+  const taux = totalFilleuls? Math.round(signes/totalFilleuls*100):0;
+  const kpis = kpiRow([
+    {l:'Parrains actifs', v:PARRAINS.length},
+    {l:'Filleuls en cours', v:totalFilleuls, gold:true, t:`${signes} signés`},
+    {l:'Taux signature', v:taux+' %', t:'▲ 3× le taux moyen'},
+    {l:'Primes versées', v:fmtEur(primesVersees), t:'cumul 12 mois'},
+  ]);
+  const etatColor = e => ({'signé':'green','visite agence':'amber','lien cliqué':'blue','lien envoyé':'stone'})[e] || 'stone';
+  const cards = PARRAINS.map(p=>{
+    const filleulsHtml = p.filleuls.map(f=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--linen)">
+        <div><div style="font-weight:500;font-size:13px">${f.nm}</div><div style="font-size:11px;color:var(--stone)">${f.date}</div></div>
+        <div style="display:flex;gap:7px;align-items:center">${chip(f.etat, etatColor(f.etat))}${f.prime?`<span style="font-weight:700;color:var(--gold);font-size:13px">+${fmtEur(f.prime)}</span>`:''}</div>
+      </div>`).join('');
+    return `
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:12px;padding:16px 18px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
+        <div>
+          <div style="font-family:var(--SF);font-weight:600;font-size:16px">${p.nm}</div>
+          <div style="font-size:11.5px;color:var(--stone);margin-top:2px">Livré ${p.livre} · ${p.filleuls.length} filleul(s)</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:11.5px;padding:6px 12px" onclick="alert('Lien parrain copié — partagez-le par email/SMS')">⤴ Lien parrain</button>
+      </div>
+      ${filleulsHtml}
+    </div>`;
+  }).join('');
+  return kpis + sectionTitle('Vos meilleurs parrains', 'Vos clients livrés deviennent vos meilleurs apporteurs — prime à la signature du CCMI parrainé') + cards;
+}
+
+/* ════════════════════════ PILOTAGE ════════════════════════ */
+
+/* — Attribution multi-touch ——————————————————————— */
+const ATTRIB_CONV = [
+  {nm:'Famille Bernard',  sign:'2026-01-22', valeur:248000, parcours:[{c:'SEO local',j:'-184j'},{c:'Configurateur',j:'-167j'},{c:'Email nurturing',j:'-141j'},{c:'JPO Vannes',j:'-89j'},{c:'RDV agence',j:'-32j'}], canalPrim:'SEO local'},
+  {nm:'M. & Mme Petit',   sign:'2026-01-15', valeur:215000, parcours:[{c:'Google Ads',j:'-220j'},{c:'Simulateur PTZ',j:'-198j'},{c:'Email nurturing',j:'-156j'},{c:'Apporteur (Jean M.)',j:'-78j'},{c:'RDV agence',j:'-24j'}], canalPrim:'Google Ads'},
+  {nm:'Léa & Hugo Moreau',sign:'2025-12-18', valeur:289000, parcours:[{c:'Parrainage',j:'-156j'},{c:'Configurateur',j:'-134j'},{c:'WhatsApp',j:'-91j'},{c:'Visite chantier',j:'-31j'}], canalPrim:'Parrainage'},
+  {nm:'Karim Benali',     sign:'2025-12-05', valeur:198000, parcours:[{c:'Meta/Insta',j:'-187j'},{c:'Reel terrain',j:'-176j'},{c:'Chatbot IA',j:'-145j'},{c:'JPO Auray',j:'-67j'}], canalPrim:'Meta/Insta'},
+];
+function viewAttrib(){
+  const total = ATTRIB_CONV.length;
+  const ca = ATTRIB_CONV.reduce((s,c)=>s+c.valeur,0);
+  const touchAvg = (ATTRIB_CONV.reduce((s,c)=>s+c.parcours.length,0)/total).toFixed(1);
+  const cycleAvg = Math.round(ATTRIB_CONV.reduce((s,c)=>{
+    const first = parseInt(c.parcours[0].j); return s + Math.abs(first);
+  },0)/total);
+  const byCanal = {};
+  ATTRIB_CONV.forEach(c=>c.parcours.forEach(p=>{byCanal[p.c]=(byCanal[p.c]||0)+c.valeur/c.parcours.length;}));
+  const sorted = Object.entries(byCanal).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxC = sorted[0][1];
+  const kpis = kpiRow([
+    {l:'Signatures attribuées', v:total},
+    {l:'CA attribué', v:fmtEur(ca/1000)+' k€', gold:true},
+    {l:'Touchpoints moyens', v:touchAvg, t:'avant signature'},
+    {l:'Cycle moyen', v:cycleAvg+' j', t:'≈ '+(cycleAvg/30).toFixed(0)+' mois'},
+  ]);
+  const bars = sorted.map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-lab">${k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxC*100)}%"></div></div>
+      <div class="bar-val">${fmtEur(Math.round(v/1000))}k€</div>
+    </div>`).join('');
+  const journeys = ATTRIB_CONV.map(c=>`
+    <div style="background:var(--ivory);border:1px solid var(--linen);border-radius:11px;padding:14px 18px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
+        <div><b>${c.nm}</b> <span style="font-size:11.5px;color:var(--stone);margin-left:8px">signé ${c.sign}</span></div>
+        <div style="display:flex;gap:8px;align-items:center">${chip(c.canalPrim,'gold')}<b style="color:var(--gold);font-family:var(--SF)">${fmtEur(c.valeur)}</b></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${c.parcours.map((p,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:var(--dim);padding:4px 9px;border-radius:20px;font-size:11.5px"><b style="color:var(--ink)">${p.c}</b><span style="color:var(--stone);font-size:10px">${p.j}</span></span>${i<c.parcours.length-1?'<span style="color:var(--stone);font-size:14px">→</span>':''}`).join('')}</div>
+    </div>`).join('');
+  return kpis + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">CA attribué par canal</div>
+      <div class="card-sub">Modèle multi-touch — chaque canal du parcours reçoit sa part du CA signé</div>
+      <div class="bars" style="margin-top:14px">${bars}</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Méthodologie</div>
+      <div class="card-sub">Le cycle CCMI dure 6 à 18 mois — l’attribution au « dernier clic » classique est aveugle. Ici, on garde la trace de TOUTES les interactions pour donner sa juste valeur à chaque canal.</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px;font-size:12.5px">
+        <div><b style="color:var(--ink)">Premier touch</b> · ${ATTRIB_CONV[0].parcours[0].c}</div>
+        <div><b style="color:var(--ink)">Dernier touch</b> · ${ATTRIB_CONV[0].parcours[ATTRIB_CONV[0].parcours.length-1].c}</div>
+        <div><b style="color:var(--ink)">Modèle utilisé</b> · linéaire (uniforme entre touchpoints)</div>
+        <div><b style="color:var(--ink)">Cycle moyen</b> · ${cycleAvg} jours</div>
+      </div>
+    </div>
+  </div>
+  ${sectionTitle('Parcours détaillés des signataires')}
+  ${journeys}`;
+}
+
+/* — ROI marketing par canal ——————————————————————— */
+const ROI_CANAUX = [
+  {canal:'SEO local',     invest:1200,  leads:48, signes:6, ca:1488000, panMoy:248000},
+  {canal:'Google Ads',    invest:14500, leads:73, signes:8, ca:1720000, panMoy:215000},
+  {canal:'Meta / Insta',  invest:8400,  leads:47, signes:4, ca:856000,  panMoy:214000},
+  {canal:'TikTok',        invest:2200,  leads:14, signes:1, ca:198000,  panMoy:198000},
+  {canal:'Apporteurs',    invest:11200, leads:21, signes:6, ca:1430000, panMoy:238000},
+  {canal:'Parrainage',    invest:2000,  leads:9,  signes:3, ca:740000,  panMoy:247000},
+  {canal:'Salons / JPO',  invest:6500,  leads:38, signes:5, ca:1180000, panMoy:236000},
+  {canal:'Chatbot IA',    invest:880,   leads:62, signes:4, ca:920000,  panMoy:230000},
+];
+function viewRoi(){
+  const t = ROI_CANAUX.reduce((a,r)=>({inv:a.inv+r.invest, l:a.l+r.leads, s:a.s+r.signes, ca:a.ca+r.ca}),{inv:0,l:0,s:0,ca:0});
+  const cpl = t.l? Math.round(t.inv/t.l):0;
+  const cpa = t.s? Math.round(t.inv/t.s):0;
+  const roas = (t.ca/t.inv).toFixed(0);
+  const kpis = kpiRow([
+    {l:'Investissement marketing', v:fmtEur(t.inv)},
+    {l:'CA généré', v:fmtEur(t.ca/1000)+' k€', gold:true},
+    {l:'ROAS portefeuille', v:roas+'×', t:'▲ +5× vs M-3'},
+    {l:'Coût par signature', v:fmtEur(cpa), t:'CPL : '+fmtEur(cpl)},
+  ]);
+  const enriched = ROI_CANAUX.map(r=>({
+    ...r,
+    cpl: r.leads? Math.round(r.invest/r.leads) : 0,
+    cps: r.signes? Math.round(r.invest/r.signes) : 0,
+    roas: r.invest? (r.ca/r.invest).toFixed(0) : 0,
+  })).sort((a,b)=>b.roas-a.roas);
+  const rows = enriched.map(r=>`
+    <tr style="border-bottom:1px solid var(--linen)">
+      <td style="padding:11px 8px;font-weight:600">${r.canal}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums">${fmtEur(r.invest)}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums">${r.leads}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums">${fmtEur(r.cpl)}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--gold)">${r.signes}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums">${fmtEur(r.cps)}</td>
+      <td style="padding:11px 8px;text-align:right;font-variant-numeric:tabular-nums">${fmtEur(r.ca/1000)}k€</td>
+      <td style="padding:11px 8px;text-align:right;font-weight:700;color:${r.roas>=50?'var(--green)':r.roas>=20?'var(--gold)':'var(--amber)'}">${r.roas}×</td>
+    </tr>`).join('');
+  return kpis + `
+  <div class="card" style="overflow-x:auto">
+    <div class="card-t">ROI par canal d’acquisition</div>
+    <div class="card-sub">Triés par ROAS décroissant — sur la base des 30 derniers jours d’investissement et des signatures attribuées sur 12-18 mois.</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+      <thead><tr style="text-align:left;border-bottom:1px solid var(--linen)">
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em">Canal</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Invest.</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Leads</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">CPL</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">Signés</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">CPS</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">CA</th>
+        <th style="padding:9px 8px;font-size:11px;color:var(--stone);text-transform:uppercase;letter-spacing:.04em;text-align:right">ROAS</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function viewSoon(item){
