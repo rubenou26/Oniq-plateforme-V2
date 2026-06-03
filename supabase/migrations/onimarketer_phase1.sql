@@ -20,6 +20,30 @@
 -- 1. LEADS — pipeline de capture, alimenté par tous les canaux
 --    (Configurateur, Simulateur, Formulaires, Apporteurs, Chatbot, etc.)
 -- ────────────────────────────────────────────────────────────────────
+-- ────────────────────────────────────────────────────────────────────
+-- 1. APPORTEURS — réseau d'apport (agents immo, courtiers, parrains…)
+--    Créé EN PREMIER car om_leads et om_commissions le référencent.
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS om_apporteurs (
+  id          BIGSERIAL PRIMARY KEY,
+  owner_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  nm          TEXT NOT NULL,
+  org         TEXT,                       -- organisation (ex: 'Century 21 Vannes')
+  type        TEXT NOT NULL,              -- 'Agent immo', 'Courtier prêt', 'Mandataire', 'Notaire', 'Client parrain', 'Indépendant'
+  tel         TEXT,
+  email       TEXT,
+  com         TEXT,                       -- accord commission ex: '1.0 %', '500 €/signature'
+  status      TEXT NOT NULL DEFAULT 'actif', -- 'actif', 'inactif'
+  notes       TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_om_apporteurs_owner ON om_apporteurs(owner_id);
+
+-- ────────────────────────────────────────────────────────────────────
+-- 2. LEADS — pipeline de capture, alimenté par tous les canaux
+--    (Configurateur, Simulateur, Formulaires, Apporteurs, Chatbot, etc.)
+-- ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS om_leads (
   id            BIGSERIAL PRIMARY KEY,
   owner_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -38,25 +62,6 @@ CREATE TABLE IF NOT EXISTS om_leads (
 );
 CREATE INDEX IF NOT EXISTS idx_om_leads_owner ON om_leads(owner_id);
 CREATE INDEX IF NOT EXISTS idx_om_leads_stage ON om_leads(owner_id, stage);
-
--- ────────────────────────────────────────────────────────────────────
--- 2. APPORTEURS — réseau d'apport (agents immo, courtiers, parrains…)
--- ────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS om_apporteurs (
-  id          BIGSERIAL PRIMARY KEY,
-  owner_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  nm          TEXT NOT NULL,
-  org         TEXT,                       -- organisation (ex: 'Century 21 Vannes')
-  type        TEXT NOT NULL,              -- 'Agent immo', 'Courtier prêt', 'Mandataire', 'Notaire', 'Client parrain', 'Indépendant'
-  tel         TEXT,
-  email       TEXT,
-  com         TEXT,                       -- accord commission ex: '1.0 %', '500 €/signature'
-  status      TEXT NOT NULL DEFAULT 'actif', -- 'actif', 'inactif'
-  notes       TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_om_apporteurs_owner ON om_apporteurs(owner_id);
 
 -- ────────────────────────────────────────────────────────────────────
 -- 3. COMMISSIONS — dues au réseau d'apporteurs
