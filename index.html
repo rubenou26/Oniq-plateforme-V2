@@ -102,13 +102,16 @@
     {
       "@type": "Organization",
       "name": "ONIQ",
-      "alternateName": ["Oniq", "ONIQ Platform", "Oniq.online", "ONIQ Marketplace", "ONIQ.online"],
+      "legalName": "Oniq Software",
+      "alternateName": ["Oniq", "Oniq Software", "ONIQ Platform", "Oniq.online", "ONIQ Marketplace", "ONIQ.online"],
       "url": "https://www.oniq.online",
       "logo": "https://www.oniq.online/favicon-192.png",
       "image": "https://www.oniq.online/og-image.png",
       "slogan": "La marketplace française de logiciels IA pour entreprises",
       "description": "ONIQ est la marketplace française de logiciels SaaS B2B avec IA pour PME : BatiManager (gestion chantier IA), OniMetri (métré et DPGF automatiques), OniCompta (comptabilité conforme facture électronique 2026), OniPilote (CRM hub), OniPromail (email professionnel IA). Spécialiste bâtiment et construction, ouvert à tous secteurs. Données hébergées en France, conformité RGPD by design, IA Mistral française intégrée nativement.",
-      "foundingDate": "2025",
+      "foundingDate": "2026-06-03",
+      "vatID": "FR59103508263",
+      "taxID": "10350826300011",
       "areaServed": [{"@type": "Country", "name": "France"}, {"@type": "Place", "name": "Europe"}],
       "knowsLanguage": ["fr", "en"],
       "knowsAbout": [
@@ -133,6 +136,9 @@
       ],
       "address": {
         "@type": "PostalAddress",
+        "streetAddress": "18 rue des Coteaux",
+        "postalCode": "26740",
+        "addressLocality": "Marsanne",
         "addressCountry": "FR",
         "addressRegion": "Auvergne-Rhône-Alpes"
       },
@@ -3830,7 +3836,7 @@ const LandingPage=({onEnter,onAuth})=>{
             </div>
           </div>
           <div style={{paddingTop:24,borderTop:'1px solid rgba(244,233,213,0.08)',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:14,fontFamily:SANS,fontSize:11,color:'rgba(244,233,213,0.4)',letterSpacing:'.04em'}}>
-            <span>© 2026 ONIQ SAS · 84 avenue Foch, 75116 Paris · SIRET 928 471 305 00012 · RCS Paris</span>
+            <span>© 2026 Oniq Software · SAS au capital de 500 € · 18 rue des Coteaux, 26740 Marsanne · SIRET 103 508 263 00011 · RCS Romans · TVA FR59 103508263</span>
             <span>Hébergement France · OVH · ISO 27001</span>
           </div>
         </div>
@@ -4141,7 +4147,7 @@ const AuthModal=({onLogin,initMode,onClose})=>{
 
         {/* Footer légal */}
         <div style={{borderTop:`1px solid rgba(212,184,122,0.12)`,padding:"16px 0 0",marginTop:18,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,marginLeft:0}}>
-          <span style={{fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.40)",letterSpacing:"0.04em"}}>© {new Date().getFullYear()} ONIQ SAS</span>
+          <span style={{fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.40)",letterSpacing:"0.04em"}}>© {new Date().getFullYear()} Oniq Software</span>
           <div style={{display:"flex",gap:14}}>
             <button onClick={()=>{setPrevView(view);setView("pub-mentions");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.40)",cursor:"pointer",textDecoration:"underline",padding:0}}>Mentions légales</button>
             <button onClick={()=>{setPrevView(view);setView("pub-cgv");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.40)",cursor:"pointer",textDecoration:"underline",padding:0}}>CGV</button>
@@ -4252,7 +4258,7 @@ const PasswordResetPage=({onDone})=>{
 
         {/* Footer légal */}
         <div style={{borderTop:`1px solid ${C.linen}`,padding:"16px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,background:C.bg,marginLeft:0}}>
-          <span style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:"0.04em"}}>© {new Date().getFullYear()} ONIQ SAS · Tous droits réservés</span>
+          <span style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:"0.04em"}}>© {new Date().getFullYear()} Oniq Software · Tous droits réservés</span>
           <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
             <button onClick={()=>{setPrevView(view);setView("pub-mentions");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Mentions légales</button>
             <button onClick={()=>{setPrevView(view);setView("pub-cgv");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>CGV</button>
@@ -8517,8 +8523,8 @@ const DevisTemplate=({data,onEdit,onClose,onSend})=>{
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24,marginBottom:28}}>
             <div>
               <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',color:'#8a7f74',marginBottom:8}}>Émetteur</div>
-              <div style={{fontFamily:SS,fontSize:13,fontWeight:700,color:'#0A0A08'}}>ONIQ SAS</div>
-              <div style={{fontFamily:SS,fontSize:11,color:'#6b5f52',lineHeight:1.7}}>contact@oniq.online<br/>www.oniq.online</div>
+              <div style={{fontFamily:SS,fontSize:13,fontWeight:700,color:'#0A0A08'}}>Oniq Software · SAS</div>
+              <div style={{fontFamily:SS,fontSize:11,color:'#6b5f52',lineHeight:1.7}}>18 rue des Coteaux, 26740 Marsanne<br/>SIRET 103 508 263 00011 · RCS Romans<br/>TVA FR59 103508263 · Capital 500 €<br/>contact@oniq.online · www.oniq.online</div>
             </div>
             <div>
               <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',color:'#8a7f74',marginBottom:8}}>Destinataire</div>
@@ -8701,8 +8707,8 @@ const AdminFactures=({users,software})=>{
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24}}>
               <div>
                 <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#8a7f74',marginBottom:6}}>Émetteur</div>
-                <div style={{fontFamily:SS,fontSize:12,fontWeight:700,color:'#0A0A08'}}>ONIQ SAS</div>
-                <div style={{fontFamily:SS,fontSize:11,color:'#6b5f52',lineHeight:1.7}}>contact@oniq.online</div>
+                <div style={{fontFamily:SS,fontSize:12,fontWeight:700,color:'#0A0A08'}}>Oniq Software · SAS</div>
+                <div style={{fontFamily:SS,fontSize:11,color:'#6b5f52',lineHeight:1.7}}>18 rue des Coteaux, 26740 Marsanne<br/>SIRET 103 508 263 00011 · RCS Romans · TVA FR59 103508263<br/>contact@oniq.online</div>
               </div>
               <div>
                 <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:'0.14em',textTransform:'uppercase',color:'#8a7f74',marginBottom:6}}>Facturé à</div>
@@ -9057,7 +9063,7 @@ const PolitiqueRGPD=({onBack})=>{
     <div style={{maxWidth:860,margin:"0 auto",padding:isMob()?"24px 18px":"48px 36px"}}>
       <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.06em",marginBottom:36}}>← Retour</button>
       <h1 style={{fontFamily:SF,fontSize:isMob()?24:30,fontWeight:700,color:C.ink,marginBottom:8}}>Politique de protection des données (RGPD)</h1>
-      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : avril 2026</p>
+      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : juin 2026</p>
       {sec("1. Données collectées",`Nous collectons : nom, prénom, adresse email, entreprise, fonction, données métier saisies dans la plateforme (devis, factures, plans, métrés), métadonnées techniques (IP, navigateur).`)}
       {sec("2. Finalités du traitement",`- Fourniture du service ONIQ (marketplace, modules SaaS)
 - Authentification et sécurisation des comptes
@@ -9069,7 +9075,7 @@ const PolitiqueRGPD=({onBack})=>{
 Données comptables : 10 ans (obligation légale).
 Données de prospect : 3 ans après dernier contact.
 Données de log : 12 mois.`)}
-      {sec("5. Destinataires",`Les données sont traitées par ONIQ SAS et ses sous-traitants :
+      {sec("5. Destinataires",`Le responsable du traitement est Oniq Software (SAS — RCS Romans 103 508 263 — 18 rue des Coteaux, 26740 Marsanne). Vos données sont traitées par Oniq Software et ses sous-traitants :
 - Stripe Payments Europe Ltd. (paiements)
 - Supabase Inc. (hébergement base de données et authentification)
 - Mistral AI SAS (traitement IA, sans entraînement sur vos données)
@@ -9118,15 +9124,17 @@ const MentionsLegales=({onBack})=>{
     <div style={{maxWidth:860,margin:"0 auto",padding:isMob()?"24px 18px":"48px 36px"}}>
       <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.06em",marginBottom:36}}>← Retour</button>
       <h1 style={{fontFamily:SF,fontSize:isMob()?24:30,fontWeight:700,color:C.ink,marginBottom:8}}>Mentions Légales</h1>
-      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : janvier 2026</p>
+      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : juin 2026</p>
 
       {[
-        {title:"1. Éditeur de la plateforme",content:`ONIQ SAS, Société par Actions Simplifiée
-SIRET : 928 471 305 00012
-RCS Paris : 928 471 305
-Capital social : consultable sur Infogreffe
-Siège social : 84 avenue Foch, 75116 Paris, France
-Directeur de la publication : le représentant légal en exercice d'ONIQ SAS
+        {title:"1. Éditeur de la plateforme",content:`La plateforme ONIQ est éditée par :
+Oniq Software, Société par Actions Simplifiée (SAS) au capital de 500 €
+Siège social : 18 rue des Coteaux, 26740 Marsanne, France
+RCS Romans : 103 508 263 — N° de gestion 2026B01093
+SIRET (siège) : 103 508 263 00011
+N° de TVA intracommunautaire : FR59 103 508 263
+Identifiant européen (EUID) : FR2602.103508263
+Directeur de la publication : Ruben Hammarlebiod, Président
 Email : contact@oniq.online
 Contact légal : legal@oniq.online
 Délégué à la Protection des Données (DPO) : dpo@oniq.online`},
@@ -9137,10 +9145,10 @@ La base de données, l'authentification et le stockage applicatif sont opérés 
 Supabase Inc. — 970 Toa Payoh North #07-04, Singapore 318992 — https://supabase.com — région UE (Frankfurt, Allemagne) pour les données personnelles ONIQ
 
 Les transferts de données vers les États-Unis sont encadrés par les Clauses Contractuelles Types (CCT) de la Commission européenne et le Data Privacy Framework UE-USA (décision d'adéquation du 10 juillet 2023).`},
-        {title:"3. Propriété intellectuelle",content:`L'ensemble du contenu de la plateforme ONIQ (textes, graphismes, logiciels, images, sons, vidéos, bases de données, etc.) est la propriété exclusive d'ONIQ SAS ou de ses partenaires, et est protégé par les lois françaises et internationales relatives à la propriété intellectuelle.
+        {title:"3. Propriété intellectuelle",content:`L'ensemble du contenu de la plateforme ONIQ (textes, graphismes, logiciels, images, sons, vidéos, bases de données, etc.) est la propriété exclusive d'Oniq Software ou de ses partenaires, et est protégé par les lois françaises et internationales relatives à la propriété intellectuelle.
 
-Toute reproduction, représentation, modification, publication ou adaptation de tout ou partie des éléments du site, quel que soit le moyen ou le procédé utilisé, est interdite sans l'autorisation écrite préalable d'ONIQ SAS.`},
-        {title:"4. Données personnelles",content:`ONIQ SAS traite vos données personnelles dans le cadre de la fourniture de ses services SaaS conformément au Règlement Général sur la Protection des Données (RGPD).
+Toute reproduction, représentation, modification, publication ou adaptation de tout ou partie des éléments du site, quel que soit le moyen ou le procédé utilisé, est interdite sans l'autorisation écrite préalable d'Oniq Software.`},
+        {title:"4. Données personnelles",content:`Oniq Software traite vos données personnelles dans le cadre de la fourniture de ses services SaaS conformément au Règlement Général sur la Protection des Données (RGPD).
 
 Données collectées : nom, prénom, email professionnel, données de facturation, données d'utilisation des logiciels métier.
 
@@ -9150,7 +9158,7 @@ Durée de conservation : données de compte conservées pendant la durée de l'a
 
 Droits : vous disposez d’un droit d’accès, de rectification, d'effacement, de portabilité et d’opposition. Pour exercer ces droits : privacy@oniq.online`},
         {title:"5. Cookies",content:`La plateforme ONIQ utilise uniquement des cookies strictement nécessaires au fonctionnement du service (authentification, session). Aucun cookie publicitaire ou de tracking tiers n’est utilisé.`},
-        {title:"6. Responsabilité",content:`ONIQ SAS s'efforce d’assurer la disponibilité et la sécurité de sa plateforme. En cas d'interruption de service due à une maintenance, une panne technique ou un événement imprévisible, la responsabilité d'ONIQ SAS ne pourrait être engagée au-delà des dispositions prévues aux CGV.`},
+        {title:"6. Responsabilité",content:`Oniq Software s'efforce d’assurer la disponibilité et la sécurité de sa plateforme. En cas d'interruption de service due à une maintenance, une panne technique ou un événement imprévisible, la responsabilité d'Oniq Software ne pourrait être engagée au-delà des dispositions prévues aux CGV.`},
         {title:"7. Droit applicable",content:`Les présentes mentions légales sont régies par le droit français. En cas de litige, et après tentative de résolution amiable, les tribunaux français seront seuls compétents.`},
       ].map(({title,content:c})=>(
         <div key={title} style={{marginBottom:32}}>
@@ -9169,7 +9177,7 @@ const _LegalPage=({title,onBack,sections,updated})=>{
     <div style={{maxWidth:860,margin:"0 auto",padding:isMob()?"24px 18px":"48px 36px"}}>
       <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.06em",marginBottom:36}}>← Retour</button>
       <h1 style={{fontFamily:SF,fontSize:isMob()?24:30,fontWeight:700,color:C.ink,marginBottom:8}}>{title}</h1>
-      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : {updated||'janvier 2026'}</p>
+      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : {updated||'juin 2026'}</p>
       {sections.map(({title:t,content:c})=>(
         <div key={t} style={{marginBottom:32}}>
           <h2 style={{fontFamily:SF,fontSize:16,fontWeight:700,color:C.ink,marginBottom:12,paddingBottom:8,borderBottom:`1px solid ${C.linen}`}}>{t}</h2>
@@ -9182,7 +9190,7 @@ const _LegalPage=({title,onBack,sections,updated})=>{
 
 // ── CGU ─────────────────────────────────────────────────────────────────────
 const CGU=({onBack})=>_LegalPage({title:"Conditions Générales d'Utilisation",onBack,sections:[
-  {title:"1. Objet",content:`Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme ONIQ (oniq.online et applications associées), éditée par ONIQ SAS. Elles complètent les Conditions Générales de Vente (CGV) qui encadrent la souscription aux abonnements payants.
+  {title:"1. Objet",content:`Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme ONIQ (oniq.online et applications associées), éditée par Oniq Software. Elles complètent les Conditions Générales de Vente (CGV) qui encadrent la souscription aux abonnements payants.
 
 L'utilisation de la plateforme, même en mode gratuit ou en période d'essai, vaut acceptation sans réserve des présentes CGU.`},
   {title:"2. Accès à la plateforme",content:`L'accès à la plateforme est ouvert :
@@ -9209,7 +9217,7 @@ Toute violation peut entraîner la suspension immédiate du compte sans préavis
   {title:"5. Disponibilité du service",content:`ONIQ s'engage à mettre en œuvre les moyens raisonnables pour assurer la disponibilité du service 24h/24, 7j/7, avec un objectif de disponibilité (SLO) de 99,5 % en moyenne mensuelle, hors maintenances planifiées notifiées au moins 48 h à l'avance.
 
 Les interruptions exceptionnelles (panne, attaque, force majeure) seront communiquées dans les meilleurs délais. Aucun engagement de continuité absolue n'est consenti pour les comptes gratuits ou en essai.`},
-  {title:"6. Propriété intellectuelle",content:`Tous les éléments composant la plateforme (textes, interfaces, code, logos, marques, bases de données, modèles d'IA propriétaires) restent la propriété exclusive d'ONIQ SAS ou de ses concédants.
+  {title:"6. Propriété intellectuelle",content:`Tous les éléments composant la plateforme (textes, interfaces, code, logos, marques, bases de données, modèles d'IA propriétaires) restent la propriété exclusive d'Oniq Software ou de ses concédants.
 
 L'Utilisateur conserve l'entière propriété des données qu'il importe ou produit via la plateforme (devis, factures, fichiers clients, métrés, etc.). ONIQ ne dispose sur ces données que d'une licence strictement nécessaire à l'exécution du service.
 
@@ -9256,7 +9264,7 @@ DPO : dpo@oniq.online`}
 
 // ── Déclaration d'accessibilité (RGAA 4.1) ──────────────────────────────────
 const PolitiqueAccessibilite=({onBack})=>_LegalPage({title:"Déclaration d'accessibilité",onBack,sections:[
-  {title:"1. Engagement",content:`ONIQ SAS s'engage à rendre sa plateforme accessible conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005. La présente déclaration s'applique au site oniq.online et aux applications métier associées.`},
+  {title:"1. Engagement",content:`Oniq Software s'engage à rendre sa plateforme accessible conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005. La présente déclaration s'applique au site oniq.online et aux applications métier associées.`},
   {title:"2. État de conformité",content:`La plateforme ONIQ est en conformité partielle avec le Référentiel Général d'Amélioration de l'Accessibilité (RGAA) version 4.1.
 
 Un audit complet par un prestataire indépendant est planifié pour le second trimestre 2026. À ce jour, certaines fonctionnalités n'ont pas été auditées exhaustivement et peuvent présenter des non-conformités.`},
@@ -9281,9 +9289,9 @@ Si la réponse est insatisfaisante, vous pouvez saisir le Défenseur des droits 
 
 // ── Contact DPO ─────────────────────────────────────────────────────────────
 const ContactDPO=({onBack})=>_LegalPage({title:"Contact DPO et exercice de vos droits RGPD",onBack,sections:[
-  {title:"1. Qui est le DPO d'ONIQ ?",content:`Le Délégué à la Protection des Données (DPO) d'ONIQ SAS est joignable :
+  {title:"1. Qui est le DPO d'ONIQ ?",content:`Le Délégué à la Protection des Données (DPO) d'Oniq Software est joignable :
 — par email : dpo@oniq.online
-— par courrier : ONIQ SAS — DPO, 84 avenue Foch, 75116 Paris, France
+— par courrier : Oniq Software — DPO, 18 rue des Coteaux, 26740 Marsanne, France
 
 Il est l'interlocuteur de premier niveau pour toute question relative au traitement de vos données personnelles.`},
   {title:"2. Vos droits",content:`Le Règlement Général sur la Protection des Données (UE 2016/679) vous reconnaît les droits suivants sur les données vous concernant :
@@ -9319,10 +9327,10 @@ const CGV=({onBack})=>{
     <div style={{maxWidth:860,margin:"0 auto",padding:isMob()?"24px 18px":"48px 36px"}}>
       <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.linen}`,borderRadius:6,padding:"8px 16px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:"pointer",letterSpacing:"0.06em",marginBottom:36}}>← Retour</button>
       <h1 style={{fontFamily:SF,fontSize:isMob()?24:30,fontWeight:700,color:C.ink,marginBottom:8}}>Conditions Générales de Vente</h1>
-      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : janvier 2026</p>
+      <p style={{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:40}}>Dernière mise à jour : juin 2026</p>
 
       {[
-        {title:"1. Objet",content:`Les présentes Conditions Générales de Vente (CGV) régissent les relations contractuelles entre ONIQ SAS (ci-après "ONIQ") et tout professionnel du bâtiment, bureau d'études ou entreprise du secteur BTP (ci-après "le Client") souhaitant souscrire à un ou plusieurs logiciels de la plateforme ONIQ.
+        {title:"1. Objet",content:`Les présentes Conditions Générales de Vente (CGV) régissent les relations contractuelles entre Oniq Software (ci-après "ONIQ") et tout professionnel du bâtiment, bureau d'études ou entreprise du secteur BTP (ci-après "le Client") souhaitant souscrire à un ou plusieurs logiciels de la plateforme ONIQ.
 
 ONIQ édite et commercialise des logiciels SaaS (Software as a Service) destinés aux professionnels de la construction, accessibles via la plateforme en ligne oniq.online.`},
         {title:"2. Accès et abonnement",content:`L'accès aux logiciels ONIQ se fait exclusivement par abonnement mensuel, sans engagement de durée minimale.
@@ -9330,6 +9338,8 @@ ONIQ édite et commercialise des logiciels SaaS (Software as a Service) destiné
 Les tarifs en vigueur sont :
 - BatiManager : 199 € HT/mois (base : 1 patron + 1 salarié inclus) — comptes supplémentaires : +49 €/utilisateur du 1er au 3e, +29 €/utilisateur à partir du 4e
 - OniMetri : 239 € HT/mois (base : 1 patron + 1 salarié inclus) — comptes supplémentaires : +49 €/utilisateur du 1er au 3e, +29 €/utilisateur à partir du 4e
+
+Tous les prix sont indiqués hors taxes (HT). Oniq Software étant assujettie à la TVA, la TVA française au taux en vigueur (20 %) s'ajoute lors de la facturation et figure sur chaque facture.
 
 Ces tarifs sont susceptibles d'évoluer. Le Client sera informé de toute modification tarifaire avec un préavis minimum de 30 jours par email.
 
@@ -9355,7 +9365,7 @@ En cas de résiliation, le Client peut demander l’export de ses données dans 
         {title:"7. Disponibilité du service",content:`ONIQ s'engage à maintenir une disponibilité du service de 99,5% par mois (hors maintenance planifiée annoncée 48h à l'avance).
 
 En cas d'indisponibilité dépassant 24h consécutives imputable à ONIQ, un avoir équivalent à la durée d'indisponibilité sera appliqué sur la prochaine facture.`},
-        {title:"8. Propriété intellectuelle",content:`Les logiciels ONIQ (BatiManager, OniMetri et futurs produits) sont la propriété exclusive d'ONIQ SAS. L'abonnement confère au Client un droit d'usage personnel, non exclusif et non cessible.
+        {title:"8. Propriété intellectuelle",content:`Les logiciels ONIQ (BatiManager, OniMetri et futurs produits) sont la propriété exclusive d'Oniq Software. L'abonnement confère au Client un droit d'usage personnel, non exclusif et non cessible.
 
 Toute reproduction, revente, reverse engineering ou tentative d'extraction du code source est strictement interdite et fera l'objet de poursuites.`},
         {title:"9. Responsabilité limitée",content:`ONIQ est soumise à une obligation de moyens et non de résultat. Sa responsabilité est limitée au montant des sommes effectivement perçues au cours des 12 derniers mois précédant le sinistre.
@@ -9363,7 +9373,7 @@ Toute reproduction, revente, reverse engineering ou tentative d'extraction du co
 ONIQ ne saurait être tenue responsable de la perte de données résultant d’une mauvaise utilisation du service ou d’un événement hors de son contrôle.`},
         {title:"10. Droit applicable et litiges",content:`Les présentes CGV sont soumises au droit français.
 
-En cas de litige, les parties s'engagent à rechercher une solution amiable dans un délai de 30 jours. À défaut d'accord, le litige sera porté devant le Tribunal de commerce de Paris, nonobstant pluralité de défendeurs ou appel en garantie.
+En cas de litige, les parties s'engagent à rechercher une solution amiable dans un délai de 30 jours. À défaut d'accord, le litige sera porté devant le Tribunal de commerce de Romans, dont dépend le siège social d'Oniq Software, nonobstant pluralité de défendeurs ou appel en garantie.
 
 Médiation des entreprises (litiges B2B) : les CGV ONIQ s'adressant à des professionnels, le Client peut saisir le Médiateur des entreprises (Bercy) — https://www.economie.gouv.fr/mediateur-des-entreprises — service gratuit, confidentiel et rapide.
 
@@ -9379,7 +9389,7 @@ Si le Client est un consommateur (rare en SaaS B2B mais possible pour un auto-en
       <div style={{marginTop:48,padding:"20px 24px",background:C.dim,borderRadius:10,border:`1px solid ${C.linen}`}}>
         <p style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.7}}>
           Pour toute question relative aux présentes CGV : <strong>legal@oniq.online</strong><br/>
-          ONIQ SAS — [adresse] — SIRET : [numéro]
+          Oniq Software, SAS au capital de 500 € — 18 rue des Coteaux, 26740 Marsanne — SIRET 103 508 263 00011 — RCS Romans 103 508 263 — TVA FR59 103508263
         </p>
       </div>
     </div>
@@ -12215,7 +12225,7 @@ function App() {
 
         {/* Footer légal — toujours collé en bas */}
         <div style={{borderTop:`1px solid ${C.linen}`,padding:"16px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,background:C.bg,flexShrink:0}}>
-          <span style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:"0.04em"}}>© {new Date().getFullYear()} ONIQ SAS · Tous droits réservés</span>
+          <span style={{fontFamily:SS,fontSize:10,color:C.stone,letterSpacing:"0.04em"}}>© {new Date().getFullYear()} Oniq Software · Tous droits réservés</span>
           <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
             <button onClick={()=>{setPrevView(view);setView("pub-mentions");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>Mentions légales</button>
             <button onClick={()=>{setPrevView(view);setView("pub-cgv");}} style={{background:"none",border:"none",fontFamily:SS,fontSize:10,color:C.stone,cursor:"pointer",textDecoration:"underline",padding:0}}>CGV</button>
@@ -13434,7 +13444,7 @@ DEPLOYMENT GUIDE (free stack):
 6. Set up Cloudflare Email Routing for {contact,support,receipt}@oniq.online
 7. Configure Stripe webhook -> Supabase Edge Function
 8. Verify Supabase RLS policies for all tables
-9. Replace placeholders in legal pages (MentionsLegales, CGV) with real ONIQ SAS info
+9. Replace placeholders in legal pages (MentionsLegales, CGV) with real Oniq Software info
 10. Generate /og-image.png (1200x630), /favicon-192.png, /favicon-512.png
 
 See DEPLOYMENT.md for the full guide.
