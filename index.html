@@ -33,10 +33,10 @@
   - Configure Cloudflare Email Routing : contact@oniq.online
   - Activate Cloudflare Web Analytics
 -->
-<html lang="fr" data-oniq-version="v56">
+<html lang="fr" data-oniq-version="v58">
 <head>
 <meta charset="UTF-8"/>
-<meta name="oniq-version" content="v56"/>
+<meta name="oniq-version" content="v58"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; img-src 'self' https: data: blob:; media-src 'self' https: data: blob:; connect-src 'self' https: wss: data: blob:; frame-src 'self' https: data: blob:;"/>
 <meta http-equiv="X-Content-Type-Options" content="nosniff"/>
@@ -312,10 +312,10 @@
    ══════════════════════════════════════════════════════════════════════════ */
 :root{
   /* Couleurs ONIQ — palette unique, doré utilisé comme accent uniquement */
-  --c-ink:#0A0A08;--c-deep:#060504;--c-paper:#F5F2EC;--c-dim:#EFEBE3;--c-linen:#E8E2D8;
-  --c-ivory:#FAF8F4;--c-stone:#8C8070;--c-sand:#B5A898;
-  --c-gold:#B89A5A;--c-gold-l:#D4B87A;--c-gold-dim:rgba(184,154,90,.13);--c-gold-b:rgba(184,154,90,.35);
-  --c-green:#4A7C59;--c-amber:#C47B2B;--c-red:#A63C3C;
+  --c-ink:#1A1715;--c-deep:#0E0B09;--c-paper:#FFFFFF;--c-dim:#F6F4F0;--c-linen:#ECE9E3;
+  --c-ivory:#FBFAF8;--c-stone:#6B655D;--c-sand:#9A938A;
+  --c-gold:#A9863F;--c-gold-l:#C6A765;--c-gold-dim:rgba(169,134,63,.12);--c-gold-b:rgba(169,134,63,.35);
+  --c-green:#3F7A52;--c-amber:#B07B33;--c-red:#A8514A;
   /* Spacing — grille 4 px stricte */
   --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-7:32px;--s-8:40px;--s-9:48px;--s-10:56px;--s-11:64px;--s-12:80px;
   /* Typo */
@@ -1507,13 +1507,28 @@ body.oniq-detail-open .oniq-main {
 </style>
 
 <!-- ONIQ-V33-SIDEBAR-DARK-V7-END -->
+<style id="oniq-topbar-css">
+body{background:#F6F4F0}
+.oniq-more{position:relative}
+.oniq-more-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:244px;background:#fff;border:1px solid #ECE9E3;border-radius:16px;box-shadow:0 24px 60px -20px rgba(26,23,21,.28);padding:8px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:all .18s cubic-bezier(.2,.7,.3,1);z-index:60}
+.oniq-more:hover .oniq-more-menu,.oniq-more:focus-within .oniq-more-menu{opacity:1;visibility:visible;transform:none}
+.oniq-topbar nav::-webkit-scrollbar{height:0}
+/* ── Pack Bâtiment : effets ── */
+.oniq-pack-hero-fx{transition:transform .4s cubic-bezier(.2,.7,.3,1),box-shadow .4s}
+.oniq-pack-hero-fx:hover{transform:translateY(-5px);box-shadow:0 2px 8px rgba(26,23,21,.10),0 44px 90px -28px rgba(26,23,21,.62)}
+.oniq-pack-hero-fx::after{content:'';position:absolute;inset:0;border-radius:inherit;z-index:1;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(255,228,170,.16) 47%,rgba(255,255,255,.30) 50%,rgba(255,228,170,.16) 53%,transparent 68%);background-size:250% 100%;background-position:160% 0;animation:packShine 6.5s ease-in-out infinite}
+@keyframes packShine{0%{background-position:160% 0}58%,100%{background-position:-60% 0}}
+.oniq-pack-save{animation:packSavePulse 2.6s ease-in-out infinite}
+@keyframes packSavePulse{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 0 rgba(198,167,101,0)}50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 24px rgba(198,167,101,.6)}}
+@media (prefers-reduced-motion:reduce){.oniq-pack-hero-fx::after,.oniq-pack-save{animation:none}}
+</style>
 </head>
 <body>
 <!-- ═══ INTRO ANIMATION : sablier marron → cream ═══ -->
 <style>
 #oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.4s cubic-bezier(.5,0,.3,1) forwards;animation-delay:5.0s;pointer-events:none;overflow:hidden}
 #oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade 1.4s ease-out forwards 5.0s}
-#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(96px,16vw,260px);letter-spacing:-.045em;line-height:1;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 4.4s cubic-bezier(.45,.1,.3,1) forwards .4s,oniqIntroPop 1.0s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.4s cubic-bezier(.5,0,.3,1) forwards 5.0s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
+#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(120px,21vw,340px);letter-spacing:-.045em;line-height:1.3;position:relative;top:-.05em;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 4.4s cubic-bezier(.45,.1,.3,1) forwards .4s,oniqIntroPop 1.0s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.4s cubic-bezier(.5,0,.3,1) forwards 5.0s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
 @keyframes oniqIntroPop{0%{transform:translateY(20px) scale(.94);opacity:0}55%{opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes oniqIntroSweep{0%{background-position:100% 50%;filter:drop-shadow(0 0 0 transparent)}45%{filter:drop-shadow(0 0 36px rgba(255,180,100,.65))}80%{filter:drop-shadow(0 0 22px rgba(180,90,30,.5))}100%{background-position:0% 50%;filter:drop-shadow(0 0 12px rgba(120,60,20,.3))}}
 @keyframes oniqIntroDissolve{0%{transform:scale(1);filter:drop-shadow(0 0 12px rgba(120,60,20,.3)) blur(0)}45%{transform:scale(1.08);filter:drop-shadow(0 0 30px rgba(255,200,120,.5)) blur(0)}100%{transform:scale(1.4);filter:drop-shadow(0 0 60px rgba(255,200,120,0)) blur(14px);opacity:0}}
@@ -1824,13 +1839,15 @@ async function loginWithRole(authUser, existingUser, onLogin, isNew){
   onLogin(mapped,isNew);
 }
 
+/* ░░ Palette globale — refonte Qonto × Apple (neutre clair + accent or).
+   Clés conservées → tous les blocs qui lisent C adoptent le nouveau style. ░░ */
 const C = {
-  ink:"#0A0A08",deep:"#060504",paper:"#F5F2EC",dim:"#EFEBE3",linen:"#E8E2D8",
-  gold:"#B89A5A",goldL:"#D4B87A",goldDim:"rgba(184,154,90,0.13)",goldB:"rgba(184,154,90,0.35)",
-  ivory:"#FAF8F4",stone:"#8C8070",sand:"#B5A898",
-  green:"#4A7C59",greenDim:"rgba(74,124,89,0.13)",
-  amber:"#C47B2B",amberDim:"rgba(196,123,43,0.13)",
-  red:"#A63C3C",redDim:"rgba(166,60,60,0.13)",
+  ink:"#1A1715",deep:"#0E0B09",paper:"#FFFFFF",dim:"#F6F4F0",linen:"#ECE9E3",
+  gold:"#A9863F",goldL:"#C6A765",goldDim:"rgba(169,134,63,0.12)",goldB:"rgba(169,134,63,0.35)",
+  ivory:"#FBFAF8",stone:"#6B655D",sand:"#9A938A",
+  green:"#3F7A52",greenDim:"rgba(63,122,82,0.12)",
+  amber:"#B07B33",amberDim:"rgba(176,123,51,0.12)",
+  red:"#A8514A",redDim:"rgba(168,81,74,0.12)",
 };
 const SF="'Playfair Display',Georgia,serif";
 const SS="'DM Sans','Helvetica Neue',sans-serif";
@@ -1857,13 +1874,13 @@ const DS = {
   ls:{tight:'-0.01em',normal:'0',wide:'0.04em',eyebrow:'0.16em'},
   // Line-height
   lh:{tight:1.2,snug:1.35,normal:1.55,relaxed:1.7},
-  // Rayons : 3 niveaux uniquement (chip 6 / card 10 / modal 14)
-  r:{sm:6,md:10,lg:14,full:999},
-  // Ombres : 3 niveaux discrets, jamais d'ombre dorée colorée
+  // Rayons — refonte : plus arrondis (Apple/Qonto) — chip 10 / card 16 / modal 22
+  r:{sm:10,md:16,lg:22,full:999},
+  // Ombres — refonte : douces et diffuses (chaud très léger)
   sh:{
-    sm:'0 1px 2px rgba(10,10,8,0.04)',
-    md:'0 1px 3px rgba(10,10,8,0.04),0 4px 12px -4px rgba(10,10,8,0.06)',
-    lg:'0 4px 8px -2px rgba(10,10,8,0.06),0 16px 32px -8px rgba(10,10,8,0.10)',
+    sm:'0 1px 2px rgba(26,23,21,0.04)',
+    md:'0 1px 3px rgba(26,23,21,0.05),0 12px 28px -16px rgba(26,23,21,0.12)',
+    lg:'0 2px 6px rgba(26,23,21,0.05),0 28px 60px -22px rgba(26,23,21,0.18)',
   },
   // Transitions : une valeur, ease-out, 160 ms — règle unique
   t:'all .16s cubic-bezier(.2,.7,.3,1)',
@@ -2334,7 +2351,7 @@ const SW_DB=[
     id:101,
     slug:"batimanager",
     name:"BatiManager",
-    price:199,
+    price:220,
     cat:"Bâtiment",
     sector:"Bâtiment,Construction,Maîtrise d'œuvre",
     icon:"🏗",
@@ -2354,7 +2371,7 @@ const SW_DB=[
     id:102,
     slug:"metrimanager",
     name:"OniMetri",
-    price:239,
+    price:265,
     cat:"Bâtiment",
     sector:"Bâtiment,Construction,Maîtrise d'œuvre,Économie de la construction",
     icon:"📐",
@@ -2373,7 +2390,7 @@ const SW_DB=[
     id:103,
     slug:"onicompta",
     name:"OniCompta",
-    price:49,
+    price:55,
     cat:"Comptabilité",
     sector:"Tous secteurs,Bâtiment,Construction,Commerce,Services",
     icon:"📒",
@@ -2386,14 +2403,14 @@ const SW_DB=[
     longDesc:"Au 1er septembre 2026, la facture électronique devient obligatoire pour toutes les entreprises françaises. OniCompta s'en occupe pour vous — sans changer vos habitudes.\n\nVous facturez comme avant. OniCompta génère le format Factur-X (PDF/A-3 + XML CII) automatiquement, le transmet via le PPF de la DGFiP, et trace toute la chaîne légale. Côté achats, l'IA OCR analyse chaque facture fournisseur (PDF, photo, scan), extrait lignes, TVA, fournisseur, et propose l'écriture comptable au PCG. Vous validez d'un clic. Le lettrage des paiements bancaires est automatique grâce à la connexion open banking PSD2 (BNP, Crédit Agricole, Société Générale, BPCE).\n\nTVA prête à télédéclarer, FEC conforme à l'article A47 A-1 du LPF, bilan généré en 1 clic. Votre expert-comptable accède directement à votre espace en lecture/écriture. Vous gagnez 80 % du temps de saisie comptable et vous êtes en règle avec la réforme. Pas besoin de changer d'outil quand l'État change les règles.",
     videoId:"dQw4w9WgXcQ",
     screenshots:["Tableau de bord financier","Édition de facture Factur-X","OCR factures fournisseurs","Banque & lettrage","TVA & FEC","Bilan / Compte de résultat"],
-    highlights:["Facturation électronique conforme 2026/2027","Format Factur-X (PDF/A-3 + XML CII)","Connexion native au PPF (DGFiP)","OCR factures fournisseurs par IA","Sync open banking (Bridge)","Pont temps réel avec BatiManager","FEC & PCG complets","Tarif : 49 €/mois pour 2 utilisateurs"],
+    highlights:["Facturation électronique conforme 2026/2027","Format Factur-X (PDF/A-3 + XML CII)","Connexion native au PPF (DGFiP)","OCR factures fournisseurs par IA","Sync open banking (Bridge)","Pont temps réel avec BatiManager","FEC & PCG complets","Tarif : 55 €/mois (1 utilisateur inclus)"],
     userReviews:[]
   },
   {
     id:104,
     slug:"onipilote",
     name:"OniPilote",
-    price:79,
+    price:85,
     cat:"Pilotage",
     sector:"Tous secteurs,Bâtiment,Construction,Maîtrise d'œuvre,Services",
     icon:"⚡",
@@ -2434,18 +2451,18 @@ const SW_DB=[
     id:107,
     slug:"pack-batiment",
     name:"Pack Bâtiment",
-    price:479,
+    price:499,
     cat:"Pack",
     sector:"Bâtiment,Construction,Maîtrise d'œuvre",
     icon:"🏛",
-    desc:"L'écosystème BTP complet à -15 %. BatiManager + OniMetri + OniPilote + OniCompta + OniPromail offert. Tout pour piloter votre entreprise de A à Z.",
-    features:["BatiManager — Gestion de chantier IA","OniMetri — Métré & DPGF IA","OniPilote — CRM hub multi-rôles","OniCompta — Comptabilité Factur-X","OniPromail — Email pro OFFERT","Sync native entre tous les modules","Économie : 87 €/mois vs séparé"],
+    desc:"L'écosystème BTP complet à -43 %. BatiManager + OniMetri + OniPilote + OniCompta + OniBoost + OniPromail offert. Tout pour piloter votre entreprise de A à Z.",
+    features:["BatiManager — Gestion de chantier IA","OniMetri — Métré & DPGF IA","OniPilote — CRM hub multi-rôles","OniCompta — Comptabilité Factur-X","OniBoost — Copilote IA tout-en-un","OniPromail — Email pro OFFERT","Sync native entre tous les modules","Économie : 375 €/mois vs séparé"],
     popular:true,
     isPack:true,
-    includes:[101,102,104,103],
+    includes:[101,102,104,103,106],
     bundleIncludesFree:[105],
-    individualPrice:566,
-    savingsMonth:87,
+    individualPrice:874,
+    savingsMonth:375,
     rating:0,
     reviews:0,
     longDesc:"Le Pack Bâtiment, c'est notre offre la plus complète pour les entreprises du BTP : tous les logiciels métier ONIQ regroupés en un seul abonnement, avec 87 €/mois d'économie par rapport aux licences séparées.\n\n**Ce que vous obtenez (valeur 566 €/mois → 479 €/mois) :**\n\n• **BatiManager (199 €)** — Pilotage chantier avec OCR factures fournisseurs, balance budgétaire prévisionnelle, alertes dépassement automatiques, nomenclature MILOG.\n\n• **OniMetri (239 €)** — Métré IA sur plans PDF, génération DPGF en 30 secondes, 16 lots techniques pré-configurés, export Excel professionnel.\n\n• **OniPilote (79 €)** — CRM hub 6 phases (Accueil → SAV), pipeline visuel, rôles dédiés (commercial, conducteur, SAV), passations formelles.\n\n• **OniCompta (49 €)** — Comptabilité Factur-X conforme 2026, OCR factures, sync open banking, FEC + PCG complet.\n\n• **OniPromail (5 €) — OFFERT** dans le pack : email pro sur votre domaine, tri IA des entrants, intégration native CRM/comptabilité.\n\n**Sync native entre tous les modules.** Une facture fournisseur scannée dans BatiManager remonte dans OniCompta. Un devis OniMetri devient un dossier dans OniPilote. Un email entrant via OniPromail alimente la fiche client OniPilote. Zéro double saisie.\n\nIdéal pour : constructeurs de maisons individuelles, entreprises BTP générales, maîtres d'œuvre, économistes de la construction. Engagement annuel ou mensuel sans engagement.",
@@ -2458,41 +2475,21 @@ const SW_DB=[
   {
     id:106,
     slug:"oniassist",
-    name:"OniAssist",
-    price:200,
-    cat:"Assistant IA",
-    sector:"Tous secteurs",
-    icon:"👔",
-    desc:"Votre secrétaire IA total. Génère DOE/CCTP/contrats/notices, vérifie vos factures, répond à vos emails, cherche dans vos documents. Le client n'a (presque) plus rien à faire.",
-    features:["Génération documents (DOE, CCTP, contrats, notices)","Vérification automatique des factures d'achat","Coffre documentaire + recherche IA","Brouillons de réponses email IA","Assistant général administratif & métier","Bientôt : WhatsApp Business"],
+    name:"OniBoost",
+    price:249,
+    cat:"Copilote IA",
+    sector:"Tous secteurs,Bâtiment,Construction,Maîtrise d'œuvre",
+    icon:"🚀",
+    desc:"Le copilote IA tout-en-un : il ramène des clients ET fait votre administratif. Pipeline leads, détection de chantiers, génération de documents, vérification de factures, réponses email — une seule appli.",
+    features:["Pipeline leads multi-sources + OniRadar (détection chantiers)","Simulateur PTZ, configurateur & automation cycle long CCMI","Génération documents (DOE, CCTP, contrats, notices)","Vérification automatique des factures d'achat","Coffre documentaire + recherche IA","Réponses email IA & assistant métier 24/7","Sync native OniPilote + OniPromail"],
     popular:true,
     inDev:false,
     rating:0,
     reviews:0,
-    longDesc:"OniAssist, c'est le secrétaire administratif que toute entreprise du BTP rêve d'avoir — sans le salaire. Une IA qui prend en charge la paperasse que vous détestez.\n\n**Génération de documents** : DOE, CCTP, contrats de sous-traitance, notices techniques, courriers, attestations. Vous saisissez quelques infos, l'IA rédige un document complet et professionnel, conforme aux usages BTP français (DTU, mentions légales, clauses).\n\n**Vérification de factures** : déposez une facture d'achat, l'IA contrôle les montants, la TVA, la cohérence arithmétique, les mentions légales obligatoires, détecte les doublons et anomalies, et vous dit si vous pouvez payer en toute sécurité.\n\n**Coffre documentaire intelligent** : stockez toutes vos notices, fiches produits, contrats fournisseurs. Posez une question en langage naturel (« quelle garantie sur le produit X ? ») et l'IA trouve la réponse instantanément dans vos documents.\n\n**Réponses email** : collez un email reçu, choisissez le ton et l'intention, l'IA rédige une réponse professionnelle prête à envoyer.\n\n**Assistant général** : un chat où vous posez n'importe quelle question administrative ou métier (TVA, droit du travail, démarches, normes).\n\nTout est pensé pour être utilisable par n'importe qui, sans formation. Données hébergées en France, IA française Mistral.",
+    longDesc:"OniBoost réunit le meilleur de deux mondes : un moteur d'acquisition qui vous trouve des affaires, et un assistant administratif qui fait la paperasse à votre place. Une seule appli, une seule fiche prospect, zéro jonglage entre outils.\n\nCôté business (acquisition & conversion) : pipeline de leads multi-sources, OniRadar qui détecte les projets de construction avant vos concurrents (permis, DIA, mutations cadastrales), simulateur PTZ, configurateur 3D, agent IA conversationnel 24/7 et marketing automation orientée cycle long CCMI (6-18 mois).\n\nCôté admin (back-office) : génération de documents BTP (DOE, CCTP, contrats de sous-traitance, notices, courriers), vérification automatique des factures d'achat (OCR + contrôle montants/TVA/anomalies), coffre documentaire intelligent interrogeable en langage naturel, et rédaction de vos réponses email.\n\nLe tout se synchronise nativement avec OniPilote (CRM) et OniPromail (email). IA française Mistral, données hébergées en France. Déploiement progressif, module par module.",
     videoId:"dQw4w9WgXcQ",
-    screenshots:["Accueil avec actions simples","Générateur de documents IA","Vérification de facture","Coffre documentaire + recherche"],
-    highlights:["Génère DOE, CCTP, contrats, notices en quelques secondes","Vérifie vos factures d'achat automatiquement (OCR + contrôle IA)","Coffre documentaire : interrogez tous vos docs en langage naturel","Rédige vos réponses email professionnelles","Assistant administratif & métier 24/7","Interface ultra-simple — utilisable sans formation","IA française Mistral · données hébergées en France"],
-    userReviews:[]
-  },
-  {
-    id:108,
-    slug:"onimarketer",
-    name:"OniMarketer",
-    price:129,
-    cat:"Marketing",
-    sector:"Tous secteurs,Bâtiment,Construction,Maîtrise d'œuvre",
-    icon:"📣",
-    desc:"La suite marketing 360° du bâtiment. Capter, convertir et fidéliser vos prospects construction — pipeline, simulateur PTZ, configurateur, automation cycle long. Le HubSpot du CCMI.",
-    features:["Pipeline leads multi-sources","Tableau de bord performance","Simulateur PTZ & configurateur","Automation cycle long 6–18 mois","Sync OniPilote + OniPromail"],
-    popular:true,
-    inDev:true,
-    rating:0,
-    reviews:0,
-    longDesc:"Vos confrères perdent 60 % de leurs prospects dans le tunnel parce qu'aucun outil marketing ne sait modéliser le cycle long de la construction. OniMarketer est conçu pour ça — nativement bâtiment.\n\nUne seule plateforme orchestre toute votre acquisition, votre conversion et votre fidélisation, structurée en 4 piliers. **Acquisition** : SEO programmatique local, réseaux sociaux multi-agences, régie pub centralisée, et OniRadar qui détecte les projets de construction avant vos concurrents (permis, DIA, mutations cadastrales). **Conversion** : pipeline de leads multi-sources, simulateur PTZ 2025, configurateur 3D de maison, agent IA conversationnel 24/7. **Activation** : marketing automation par étape projet (visite terrain → RDV banque → dépôt PC → signature), SMS & WhatsApp, lead scoring prédictif, gestion des avis. **Pilotage** : attribution multi-touch sur 12-18 mois et ROI par euro investi.\n\nContrairement à HubSpot ou Brevo, chaque module connaît le cycle CCMI (terrain → PC → CCMI → livraison) et se synchronise nativement avec OniPilote (CRM) et OniPromail (email). Vous arrêtez de jongler entre 8 logiciels : tout converge sur une seule fiche prospect.\n\nDéploiement progressif, module par module. Le pipeline de leads et le tableau de bord sont déjà opérationnels.",
-    videoId:"dQw4w9WgXcQ",
-    screenshots:["Tableau de bord performance marketing","Pipeline de leads multi-sources","Simulateur PTZ & capacité d'emprunt","Automation des scénarios cycle long"],
-    highlights:["Pipeline de leads multi-sources (déjà disponible)","Tableau de bord performance en temps réel","4 piliers : Acquisition · Conversion · Activation · Pilotage","Simulateur PTZ 2025 & configurateur 3D","Automation orientée cycle long CCMI (6-18 mois)","OniRadar : détection de projets via open data","Sync native OniPilote (CRM) + OniPromail (email)","Pensé bâtiment — pas un CRM marketing généraliste"],
+    screenshots:["Tableau de bord performance","Pipeline de leads multi-sources","Générateur de documents IA","Vérification de facture + coffre documentaire"],
+    highlights:["2-en-1 : acquisition de clients + administratif automatisé","Pipeline leads multi-sources + OniRadar (open data)","Génère DOE, CCTP, contrats, notices en quelques secondes","Vérifie vos factures d'achat (OCR + contrôle IA)","Coffre documentaire interrogeable en langage naturel","Simulateur PTZ & automation cycle long CCMI","Sync native OniPilote + OniPromail","IA française Mistral · données en France"],
     userReviews:[]
   },
 ];
@@ -4555,74 +4552,43 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   const aiMatches=aiRes?software.filter(s=>aiRes.matches?.some(m=>m.id===s.id)):[];
 
   return (
-    <div style={{padding:isMob()?"16px 12px":"28px 36px",position:"relative"}}>
+    <div style={{padding:isMob()?"20px 14px":"36px 40px",position:"relative",background:"#F6F4F0",minHeight:"100vh"}}>
       <div aria-hidden="true" style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 50% at 30% 0%, rgba(193,139,69,0.08), transparent 60%)",pointerEvents:"none",zIndex:0}}/>
       <div style={{position:"relative",zIndex:1}}>
       {/* Header — éditorial redesign */}
       <div style={{marginBottom:24,position:'relative'}}>
         <div aria-hidden="true" className="oniq-float" style={{position:'absolute',top:'-30%',left:'-3%',width:'520px',height:'320px',borderRadius:'50%',background:'radial-gradient(ellipse,rgba(193,139,69,0.16),transparent 65%)',filter:'blur(60px)',pointerEvents:'none',zIndex:0}}/>
-        <div style={{position:'relative',zIndex:1,display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:24,flexWrap:'wrap'}}>
+        <div style={{position:'relative',zIndex:1,display:'flex',justifyContent:'space-between',alignItems:'center',gap:24,flexWrap:'wrap'}}>
           <div style={{minWidth:0,flex:'1 1 480px'}}>
-            <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
-              <div style={{height:1,width:36,background:'linear-gradient(90deg,'+C.gold+',transparent)'}}/>
-              <div style={{fontFamily:SS,fontSize:10,letterSpacing:'0.32em',textTransform:'uppercase',color:C.gold,fontWeight:700}}>◆ Marketplace ONIQ</div>
-            </div>
-            <h1 style={{margin:0,fontFamily:SF,fontSize:isMob()?44:78,fontWeight:700,color:C.ink,letterSpacing:'-0.018em',lineHeight:1.08,overflow:'visible'}}>
-              <span>Market</span><span className="oniq-shimmer-text" style={{fontStyle:'italic',fontWeight:500,paddingRight:'0.18em',display:'inline-block'}}>place</span>
+            <h1 style={{margin:0,fontFamily:SF,fontSize:isMob()?30:46,fontWeight:700,color:C.ink,letterSpacing:'-0.01em',lineHeight:1.16,overflow:'visible',maxWidth:820,textWrap:'balance'}}>
+              Les logiciels qui font tourner votre entreprise, <span className="oniq-shimmer-text" style={{fontStyle:'italic',fontWeight:600}}>augmentés par l'IA.</span>
             </h1>
-            
-          </div>
-          <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',flexShrink:0}}>
-            <button onClick={()=>{if(!user){onAuth("register");return;}setShowAi(p=>!p);}} className={!showAi?"oniq-ai-pulse":""} style={{display:'inline-flex',alignItems:'center',gap:7,background:showAi?C.goldDim:'transparent',border:`1px solid ${showAi?C.gold+"66":C.linen}`,borderRadius:8,padding:isMob()?'8px 12px':'10px 16px',fontFamily:SS,fontSize:isMob()?10:11,fontWeight:600,color:showAi?C.gold:C.stone,cursor:'pointer',letterSpacing:'0.04em'}}>
-              <span style={{fontSize:13}}>✦</span> Recherche IA
-              {!user&&<span style={{fontSize:9,background:C.gold,color:C.ink,borderRadius:3,padding:'2px 6px',fontWeight:800,marginLeft:4,letterSpacing:'.08em'}}>PRO</span>}
-            </button>
-            {user&&cart.length>0&&<button onClick={()=>setShowCart(true)} style={{background:C.gold,border:'none',borderRadius:8,padding:isMob()?'8px 14px':'10px 18px',fontFamily:SS,fontSize:isMob()?10:11,fontWeight:700,color:C.ink,cursor:'pointer',letterSpacing:'0.04em',boxShadow:'0 4px 14px rgba(193,139,69,0.3)'}}>🛒 {cart.length} · {cartTotal} €/mois</button>}
-            
-          </div>
-        </div>
-      </div>
-
-      {/* Marquee LIVE strip */}
-      <div style={{position:'relative',padding:'10px 0',background:C.ink,borderTop:`1px solid ${C.gold}33`,borderBottom:`1px solid ${C.gold}33`,overflow:'hidden',whiteSpace:'nowrap',display:'flex',alignItems:'center',marginBottom:18,borderRadius:6,maxHeight:38}}>
-        <div style={{position:'absolute',left:0,top:0,bottom:0,padding:'0 16px',display:'flex',alignItems:'center',gap:8,background:`linear-gradient(90deg,${C.ink} 78%,transparent)`,zIndex:3}}>
-          <span style={{width:7,height:7,borderRadius:'50%',background:'#FF8C42',boxShadow:'0 0 10px #FF8C42',animation:'oniqLivePulse 1.4s ease-in-out infinite'}}/>
-          <span style={{fontFamily:SS,fontSize:10,fontWeight:700,letterSpacing:'.22em',color:C.gold}}>LIVE</span>
-        </div>
-        <div style={{position:'absolute',right:0,top:0,bottom:0,width:50,background:`linear-gradient(270deg,${C.ink},transparent)`,zIndex:2,pointerEvents:'none'}}/>
-        <div style={{display:'inline-flex',animation:'oniqMarquee 60s linear infinite',gap:0,paddingLeft:100}}>
-          {Array.from({length:3}).map((_,k)=>(
-            <div key={k} style={{display:'inline-flex',gap:36,paddingRight:36,flexShrink:0}}>
-              {[
-                "Nouveau logiciel : OniMetri publié",
-                "+12 entreprises ont rejoint cette semaine",
-                "BatiManager : version 2.4.1 disponible",
-                "OniCompta : conformité Factur-X validée",
-                "Codes d'essai : 47 disponibles aujourd'hui"
-              ].map((ev,i)=>(
-                <span key={i} style={{whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:8,fontFamily:SS,fontSize:12}}>
-                  <span style={{color:C.gold,fontWeight:700}}>✦</span>
-                  <span style={{color:'rgba(244,233,213,0.82)'}}>{ev}</span>
-                </span>
-              ))}
+            <div style={{fontFamily:SS,fontSize:isMob()?14:17,color:C.stone,marginTop:14,maxWidth:560,lineHeight:1.5}}>Métré, chantier, compta, CRM, prospection — automatisez vos tâches et gagnez des heures chaque semaine.</div>
+            <div style={{display:'flex',gap:10,marginTop:24,alignItems:'center',flexWrap:'wrap'}}>
+              <button onClick={()=>user?setView('c-espace'):onAuth("register")} style={{background:'#1A1715',color:'#fff',border:'none',borderRadius:13,padding:'14px 26px',fontFamily:SS,fontSize:15,fontWeight:600,cursor:'pointer',boxShadow:'0 10px 24px -10px rgba(26,23,21,.55)',transition:'transform .18s'}} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>{user?'Accéder à mon espace →':'Démarrer gratuitement →'}</button>
+              {user&&cart.length>0&&<button onClick={()=>setShowCart(true)} style={{background:C.gold,border:'none',borderRadius:13,padding:'14px 22px',fontFamily:SS,fontSize:14,fontWeight:700,color:'#fff',cursor:'pointer',boxShadow:'0 8px 20px -8px rgba(169,134,63,0.55)'}}>🛒 {cart.length} · {cartTotal} €/mois</button>}
             </div>
-          ))}
+          </div>
+          <div style={{flexShrink:0,display:isMob()?'none':'grid',gridTemplateColumns:'repeat(2,176px)',gap:12,position:'relative'}}>
+            {[['batimanager','BatiManager','Chantier IA'],['metrimanager','OniMetri','Métré & DPGF'],['oniassist','OniBoost','Copilote IA'],['onicompta','OniCompta','Compta 2026'],['onipilote','OniPilote','CRM hub']].map(([s,n,tag],i)=>(
+              <div key={s} className="oniq-float" style={{animationDelay:(i*0.5)+'s',width:188,background:'#fff',border:'1px solid #ECE9E3',borderRadius:14,padding:'12px 14px',display:'flex',alignItems:'center',gap:11,boxShadow:'0 1px 3px rgba(26,23,21,.05),0 14px 30px -18px rgba(26,23,21,.2)',transform:i%2?'translateY(10px)':'none',gridColumn:i===4?'1 / -1':'auto',justifySelf:'center'}}>
+                <div style={{width:38,height:38,borderRadius:11,background:'#F4EFE4',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><SwLogo slug={s} size={23}/></div>
+                <div style={{display:'flex',flexDirection:'column',gap:1,minWidth:0}}>
+                  <div style={{fontFamily:SS,fontSize:13.5,fontWeight:600,color:C.ink,lineHeight:1.1}}>{n}</div>
+                  <div style={{fontFamily:SS,fontSize:11,fontWeight:500,color:C.gold,lineHeight:1.1}}>{tag}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Bannière visiteur */}
-      {!user&&(
-        <div style={{background:C.goldDim,border:`1px solid ${C.gold}44`,borderRadius:8,padding:isMob()?"14px":"12px 18px",marginBottom:18,display:"flex",alignItems:"center",justifyContent:"space-between",gap:isMob()?10:16,flexDirection:isMob()?"column":"row"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <SwLogo slug='oniq' size={36}/>
-            <span style={{fontFamily:SS,fontSize:isMob()?11:12,color:C.ink}}>Créez un compte gratuit pour activer les <strong>codes d'essai</strong> et accéder aux <strong>logiciels en exclusivité</strong>.</span>
-          </div>
-          <div style={{display:"flex",gap:8,flexShrink:0,width:isMob()?"100%":"auto"}}>
-            <button onClick={()=>onAuth("login")} style={{background:"transparent",border:`1px solid ${C.linen}`,borderRadius:4,padding:"6px 14px",fontFamily:SS,fontSize:11,fontWeight:600,color:C.stone,cursor:"pointer",flex:isMob()?1:undefined}}>Connexion</button>
-            <button onClick={()=>onAuth("register")} style={{background:C.ink,border:"none",borderRadius:4,padding:"6px 14px",fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:"pointer",letterSpacing:"0.06em",textTransform:"uppercase",flex:isMob()?1:undefined}}>S'inscrire</button>
-          </div>
-        </div>
-      )}
+      {/* Preuve sociale — ligne fixe discrète */}
+      <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:22,fontFamily:SS,fontSize:13,color:C.stone,flexWrap:'wrap'}}>
+        <span style={{width:7,height:7,borderRadius:'50%',background:'#3F7A52',boxShadow:'0 0 8px rgba(63,122,82,0.5)',flexShrink:0}}/>
+        <span><strong style={{color:C.ink,fontWeight:700}}>+12 entreprises</strong> nous ont rejoints cette semaine&nbsp;·&nbsp; <strong style={{color:C.ink,fontWeight:700}}>47 codes d'essai</strong> disponibles aujourd'hui</span>
+      </div>
+
 
       {/* IA */}
       {showAi&&user&&(
@@ -4664,18 +4630,28 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
 
       {/* ─── BANDEAU GÉNÉRIQUE PACKS (teaser, change d'onglet) ─── */}
       {cat!=="Pack" && (()=>{ const hasPacks=software.some(s=>s.isPack); if(!hasPacks) return null; return (
-        <div className="oniq-pack-banner" onClick={()=>setCat("Pack")} role="button" tabIndex={0}
-             onKeyDown={(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setCat("Pack");}}}>
-          <div style={{position:'relative',zIndex:2,display:'flex',alignItems:'center',gap:20,flexWrap:'wrap',justifyContent:'space-between'}}>
-            <div style={{display:'flex',alignItems:'center',gap:18,flex:1,minWidth:260}}>
-              <div style={{width:56,height:56,borderRadius:14,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,flexShrink:0,boxShadow:'0 4px 18px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.2)'}}>◆</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontFamily:SS,fontSize:9,fontWeight:800,letterSpacing:'0.24em',textTransform:'uppercase',color:'#E8C474',marginBottom:6}}>◆ NOUVEAUTÉ</div>
-                <div style={{fontFamily:SF,fontSize:22,fontWeight:700,color:'#FFE9A8',marginBottom:4,letterSpacing:'-0.01em'}}>Découvrez nos <span style={{fontStyle:'italic',fontWeight:600}}>packs</span></div>
-                <div style={{fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>Regroupez plusieurs logiciels et profitez de tarifs préférentiels. Pack Bâtiment disponible — d'autres bientôt.</div>
+        <div className="oniq-pack-hero-fx" data-reveal data-reveal-style="rise" onClick={()=>setCat("Pack")} role="button" tabIndex={0}
+             onKeyDown={(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setCat("Pack");}}}
+             style={{background:'radial-gradient(135% 150% at 80% 15%, #48351F 0%, #2A1F15 42%, #15100B 100%)',borderRadius:24,padding:'36px 40px',marginBottom:24,position:'relative',overflow:'hidden',cursor:'pointer',boxShadow:'0 2px 6px rgba(26,23,21,.06),0 30px 64px -24px rgba(26,23,21,.5)'}}>
+          <div aria-hidden="true" style={{position:'absolute',top:-130,right:-70,width:440,height:440,borderRadius:'50%',background:'radial-gradient(circle,rgba(198,167,101,0.34),transparent 65%)',pointerEvents:'none'}}/>
+          <div style={{position:'relative',zIndex:2,display:'flex',alignItems:'center',justifyContent:'space-between',gap:32,flexWrap:'wrap'}}>
+            <div style={{flex:'1 1 420px',minWidth:280}}>
+              <div style={{fontFamily:SS,fontSize:12,fontWeight:700,letterSpacing:'0.08em',textTransform:'uppercase',color:'#C6A765',marginBottom:12}}>◆ Pack Bâtiment</div>
+              <div style={{fontFamily:SF,fontSize:28,fontWeight:700,color:'#FBFAF8',letterSpacing:'-0.02em',lineHeight:1.12,marginBottom:10,textWrap:'balance'}}>Toute la suite chantier, <span style={{fontStyle:'italic',fontWeight:600}}>à prix réduit.</span></div>
+              <div style={{fontFamily:SS,fontSize:14.5,color:'rgba(251,250,248,0.68)',lineHeight:1.55,maxWidth:540}}>BatiManager + OniMetri + OniPilote + OniCompta + OniBoost réunis. Une facture, un espace, et jusqu'à 43 % d'économie par rapport à la carte.</div>
+              <div style={{display:'flex',alignItems:'center',gap:9,marginTop:18}}>
+                {['batimanager','metrimanager','onipilote','onicompta','oniassist'].map(s=>(
+                  <div key={s} title={s} style={{width:40,height:40,borderRadius:11,background:'#FBFAF8',border:'1px solid rgba(255,255,255,0.5)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 12px -4px rgba(0,0,0,0.5)'}}><SwLogo slug={s} size={24}/></div>
+                ))}
+                <span style={{fontFamily:SS,fontSize:12.5,color:'rgba(251,250,248,0.5)',marginLeft:4}}>+ OniPromail offert</span>
               </div>
+              <button onClick={(e)=>{e.stopPropagation();setCat("Pack");}} style={{marginTop:22,background:'linear-gradient(135deg,#C6A765,#A9863F)',color:'#fff',border:'none',borderRadius:13,padding:'13px 24px',fontFamily:SS,fontSize:14,fontWeight:700,cursor:'pointer',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.3),0 8px 20px -8px rgba(169,134,63,0.6)'}}>Choisir le pack →</button>
             </div>
-            <button onClick={(e)=>{e.stopPropagation();setCat("Pack");}} style={{background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:10,padding:'13px 26px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.12em',boxShadow:'0 6px 22px rgba(212,162,76,0.45),inset 0 1px 0 rgba(255,255,255,0.3)',whiteSpace:'nowrap',flexShrink:0}}>Voir les packs →</button>
+            <div style={{position:'relative',textAlign:'right',flexShrink:0}}>
+              <div style={{fontFamily:SS,fontSize:16,color:'rgba(251,250,248,0.42)',textDecoration:'line-through'}}>874 € à la carte</div>
+              <div style={{fontFamily:SF,fontSize:54,fontWeight:700,color:'#FBFAF8',letterSpacing:'-0.03em',lineHeight:1}}>499 €<span style={{fontFamily:SS,fontSize:17,fontWeight:500,color:'rgba(251,250,248,0.6)'}}> /mois</span></div>
+              <span className="oniq-pack-save" style={{display:'inline-block',marginTop:12,background:'linear-gradient(135deg,#C6A765,#A9863F)',color:'#fff',fontFamily:SS,fontSize:13,fontWeight:700,padding:'7px 14px',borderRadius:999,boxShadow:'inset 0 1px 0 rgba(255,255,255,0.3)'}}>Vous économisez 375 € / mois</span>
+            </div>
           </div>
         </div>
       ); })()}
@@ -4792,11 +4768,11 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
       )}
 
       {/* Grille STANDARD (uniquement pour les onglets non-Pack) */}
-      {cat!=="Pack" && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14,marginBottom:22}}>
+      {cat!=="Pack" && <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:20,marginBottom:24}}>
         {list.map((sw,i)=>{
           const sub=isSub(sw.id),trial=isTrial(sw.id),inC=isCart(sw.id);
           return (
-            <div key={sw.id} data-reveal data-reveal-style="rise" data-tilt data-oniq-card data-pack={sw.isPack?"1":undefined} className="oniq-mkt-card" style={{background:C.paper,border:`1px solid ${sub?C.gold+"55":trial?C.green+"55":inC?C.ink+"33":C.linen}`,borderRadius:8,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",transition:"transform 0.18s,box-shadow 0.18s",cursor:"pointer",animationDelay:(i*0.06)+'s'}}
+            <div key={sw.id} data-reveal data-reveal-style="rise" data-tilt data-oniq-card data-pack={sw.isPack?"1":undefined} className="oniq-mkt-card" style={{background:"#FFFFFF",border:`1px solid ${sub?'#cdbb8e':trial?'#9bbf9a':'#ECE9E3'}`,borderRadius:18,overflow:"hidden",display:"flex",flexDirection:"column",position:"relative",transition:"transform .22s cubic-bezier(.2,.7,.3,1),box-shadow .22s",cursor:"pointer",boxShadow:"0 1px 3px rgba(26,23,21,.05),0 12px 28px -16px rgba(26,23,21,.12)",animationDelay:(i*0.06)+'s'}}
               onClick={(e)=>{if(!e.target.closest('button,a,select,input,textarea')) setDetail(sw);}}
               role="button"
               tabIndex={0}
@@ -4806,17 +4782,16 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
             >
               {/* Badge PACK discret en haut-gauche pour distinguer (sans % de réduction) */}
               {sw.isPack&&!sub&&<div style={{position:'absolute',top:10,left:10,zIndex:5,background:'linear-gradient(135deg,#1F1A14 0%,#3A2410 100%)',color:'#FFE9A8',fontSize:9,fontWeight:800,padding:'4px 10px',borderRadius:999,letterSpacing:'0.14em',textTransform:'uppercase',boxShadow:'0 3px 10px rgba(0,0,0,0.25)',border:'1px solid rgba(212,162,76,0.5)'}}>◆ Pack</div>}
-              {sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#C47B2B,#8B5E2A)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(196,123,43,0.3)',display:'flex',alignItems:'center',gap:5,zIndex:3}}><span style={{width:6,height:6,borderRadius:'50%',background:'#FFE5B0',boxShadow:'0 0 0 2px rgba(255,229,176,0.4)',animation:'oniqDevPulse 2s ease-in-out infinite'}}/>En dev</div>}
-              {sw.popular&&!sub&&!trial&&!sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(184,154,90,0.30)',display:'flex',alignItems:'center',gap:5}}><svg width="9" height="9" viewBox="0 0 24 24" fill="#FFF" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Populaire</div>}
-              {sw.bundleFreeThreshold&&!sub&&!trial&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#A06D2E 0%,#6B4519 100%)',color:'#FBF9F3',fontSize:9,fontWeight:700,padding:"4px 10px",borderRadius:999,letterSpacing:"0.04em",boxShadow:'0 2px 6px rgba(160,109,46,0.30), inset 0 1px 0 rgba(255,255,255,0.10)',display:'inline-flex',alignItems:'center',gap:5,whiteSpace:'nowrap',zIndex:3,border:'1px solid rgba(232,196,116,0.32)'}}><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 12V22H4V12M22 7H2v5h20zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Offert dès 50 €</div>}
-              {sub&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#4A7C59 0%,#2D5135 100%)',color:'#FFF',fontSize:9,fontWeight:800,padding:"4px 9px",borderRadius:4,letterSpacing:"0.1em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(74,124,89,0.30)',display:'flex',alignItems:'center',gap:5}}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Abonné</div>}
-              {trial&&!sub&&<div style={{position:"absolute",top:10,right:10,background:'linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)',color:'#FFF',fontSize:9,fontWeight:700,padding:"4px 9px",borderRadius:4,letterSpacing:"0.08em",textTransform:"uppercase",boxShadow:'0 2px 6px rgba(184,154,90,0.30)',display:'flex',alignItems:'center',gap:5}}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Essai · {trialDaysLeft(user.trials[sw.id])}j</div>}
-              <div style={{padding:"16px 16px 0"}}>
-                <div style={{marginBottom:8}}><SwLogo slug={sw.slug} icon={sw.icon} size={44}/></div>
-                <div style={{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,marginBottom:1}}>{sw.name}</div>
-                <div style={{fontFamily:SS,fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:C.stone,marginBottom:5}}>{sw.cat}</div>
-                <Stars r={sw.rating} sm/><div style={{fontFamily:SS,fontSize:10,color:C.stone,marginTop:2,marginBottom:8}}>{sw.reviews} avis</div>
-                <div style={{fontFamily:SS,fontSize:11,color:C.stone,lineHeight:1.5,marginBottom:10}}>{sw.desc}</div>
+              {sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:12,right:12,background:'#FBF1E2',color:'#B07B33',border:'1px solid #F0DEC2',fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:999,display:'flex',alignItems:'center',gap:6,zIndex:3}}><span style={{width:6,height:6,borderRadius:'50%',background:'#C47B2B',animation:'oniqDevPulse 2s ease-in-out infinite'}}/>En dev</div>}
+              {sw.popular&&!sub&&!trial&&!sw.inDev&&!sw.bundleFreeThreshold&&<div style={{position:"absolute",top:12,right:12,background:'#F4EFE4',color:'#9C7A45',border:'1px solid #E8DCC4',fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:999,display:'flex',alignItems:'center',gap:5}}><svg width="10" height="10" viewBox="0 0 24 24" fill="#9C7A45" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Populaire</div>}
+              {sw.bundleFreeThreshold&&!sub&&!trial&&<div style={{position:"absolute",top:12,right:12,background:'#E8F1EB',color:'#3F7A52',border:'1px solid #D3E6D9',fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:999,display:'inline-flex',alignItems:'center',gap:5,whiteSpace:'nowrap',zIndex:3}}><svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 12V22H4V12M22 7H2v5h20zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Offert dès 50 €</div>}
+              {sub&&<div style={{position:"absolute",top:12,right:12,background:'#E8F1EB',color:'#3F7A52',border:'1px solid #D3E6D9',fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:999,display:'flex',alignItems:'center',gap:5}}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3F7A52" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Abonné</div>}
+              {trial&&!sub&&<div style={{position:"absolute",top:12,right:12,background:'#F4EFE4',color:'#9C7A45',border:'1px solid #E8DCC4',fontSize:11,fontWeight:700,padding:"5px 11px",borderRadius:999,display:'flex',alignItems:'center',gap:5}}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9C7A45" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Essai · {trialDaysLeft(user.trials[sw.id])}j</div>}
+              <div style={{padding:"24px 22px 0"}}>
+                <div style={{width:52,height:52,borderRadius:15,background:"#F4EFE4",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16}}><SwLogo slug={sw.slug} icon={sw.icon} size={28}/></div>
+                <div style={{fontFamily:SS,fontSize:19,fontWeight:700,letterSpacing:"-.02em",color:"#1A1715",marginBottom:3}}>{sw.name}</div>
+                <div style={{fontFamily:SS,fontSize:14,fontWeight:600,color:C.gold,marginBottom:10}}>{sw.cat}</div>
+                <div style={{fontFamily:SS,fontSize:14.5,color:"#6B655D",lineHeight:1.55,marginBottom:12}}>{sw.desc}</div>
               </div>
               <div style={{flex:1}}/>
               <div style={{padding:"0 16px 14px"}}>
@@ -4838,8 +4813,8 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                 {!sub&&trial&&<button onClick={()=>inC?setCart(p=>p.filter(x=>x!==sw.id)):openSeatModal(sw)} style={{width:"100%",background:inC?`linear-gradient(135deg,#1F1A14,#2A2218)`:`linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)`,border:"none",borderRadius:7,padding:"10px",fontFamily:SS,fontSize:10.5,fontWeight:800,color:"#FFF",cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.07em",boxShadow:inC?"0 2px 8px rgba(10,10,8,0.20)":"0 3px 10px rgba(184,154,90,0.32)",display:"flex",alignItems:"center",justifyContent:"center",gap:7,transition:"box-shadow .2s ease"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow=inC?"0 4px 14px rgba(10,10,8,0.30)":"0 6px 18px rgba(184,154,90,0.45)";}} onMouseLeave={e=>{e.currentTarget.style.boxShadow=inC?"0 2px 8px rgba(10,10,8,0.20)":"0 3px 10px rgba(184,154,90,0.32)";}}>{inC?<><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Dans le panier</>:<>S'abonner<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}</button>}
                 {!sub&&!trial&&user&&(
                   <div style={{display:"flex",gap:7}}>
-                    <button onClick={()=>openCalendlyDemo(sw.name)} title="Réserver une démo gratuite avec un commercial ONIQ" style={{flex:1,background:"transparent",border:`1.5px solid ${C.gold}`,borderRadius:7,padding:"9px 8px",fontFamily:SS,fontSize:9.5,fontWeight:800,color:C.gold,cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.06em",display:"flex",alignItems:"center",justifyContent:"center",gap:5,transition:"background .2s ease,color .2s ease"}} onMouseEnter={e=>{e.currentTarget.style.background=C.goldDim;e.currentTarget.style.color="#A06D2E";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.gold;}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Démo</button>
-                    <button onClick={()=>inC?setCart(p=>p.filter(x=>x!==sw.id)):openSeatModal(sw)} style={{flex:1.4,background:inC?`linear-gradient(135deg,#1F1A14,#2A2218)`:`linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)`,border:"none",borderRadius:7,padding:"9px",fontFamily:SS,fontSize:9.5,fontWeight:800,color:"#FFF",cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.06em",boxShadow:inC?"0 2px 8px rgba(10,10,8,0.20)":"0 3px 10px rgba(184,154,90,0.32)",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"box-shadow .2s ease"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow=inC?"0 4px 14px rgba(10,10,8,0.30)":"0 6px 18px rgba(184,154,90,0.45)";}} onMouseLeave={e=>{e.currentTarget.style.boxShadow=inC?"0 2px 8px rgba(10,10,8,0.20)":"0 3px 10px rgba(184,154,90,0.32)";}}>{inC?<><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ajouté</>:<>S'abonner<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}</button>
+                    <button onClick={()=>openCalendlyDemo(sw.name)} title="Réserver une démo gratuite avec un commercial ONIQ" style={{flex:1,background:"#FFFFFF",border:`1px solid #ECE9E3`,borderRadius:12,padding:"10px 8px",fontFamily:SS,fontSize:12.5,fontWeight:600,color:C.ink,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .18s ease"}} onMouseEnter={e=>{e.currentTarget.style.borderColor=C.gold;e.currentTarget.style.color=C.gold;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="#ECE9E3";e.currentTarget.style.color=C.ink;}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Démo</button>
+                    <button onClick={()=>inC?setCart(p=>p.filter(x=>x!==sw.id)):openSeatModal(sw)} style={{flex:1.4,background:inC?"#3A3530":"#1A1715",border:"none",borderRadius:12,padding:"10px",fontFamily:SS,fontSize:12.5,fontWeight:600,color:"#FFF",cursor:"pointer",boxShadow:"0 6px 16px -8px rgba(26,23,21,.5)",display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .18s ease"}} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";}} onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";}}>{inC?<><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Ajouté</>:<>S'abonner<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}</button>
                   </div>
                 )}
                 {!sub&&!trial&&!user&&(
@@ -5250,10 +5225,11 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
             {/* ─── TARIFICATION ─── */}
             {(()=>{
               const PLANS={
-                batimanager:{base:detail.price,seats:[{r:'Patron + 1 salarié',p:'inclus'},{r:'Comptes 2 à 3',p:'+49 €/utilisateur'},{r:'Comptes 4 et +',p:'+29 €/utilisateur'}]},
-                metrimanager:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+59 €/utilisateur'},{r:'Comptes 4 et +',p:'+35 €/utilisateur'}]},
-                onicompta:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+29 €/utilisateur'},{r:'Comptes 4 et +',p:'+19 €/utilisateur'}]},
-                onipilote:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+39 €/utilisateur'},{r:'Comptes 4 et +',p:'+25 €/utilisateur'}]},
+                batimanager:{base:detail.price,seats:[{r:'Patron + 1 salarié',p:'inclus'},{r:'Comptes 2 à 3',p:'+55 €/utilisateur'},{r:'Comptes 4 et +',p:'+35 €/utilisateur'}]},
+                metrimanager:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+65 €/utilisateur'},{r:'Comptes 4 et +',p:'+40 €/utilisateur'}]},
+                onicompta:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+15 €/utilisateur'},{r:'Comptes 4 et +',p:'+10 €/utilisateur'}]},
+                onipilote:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+20 €/utilisateur'},{r:'Comptes 4 et +',p:'+15 €/utilisateur'}]},
+                oniassist:{base:detail.price,seats:[{r:'1 utilisateur principal',p:'inclus'},{r:'Comptes 2 à 3',p:'+60 €/utilisateur'},{r:'Comptes 4 et +',p:'+35 €/utilisateur'}]},
               };
               const plan=PLANS[detail.slug]||{base:detail.price,seats:[{r:'1 utilisateur',p:'inclus'}]};
               return (
@@ -7682,7 +7658,7 @@ const DevisClient=({user})=>{
                 <FL label="Votre besoin"/>
                 <textarea value={form.need} onChange={e=>setForm(p=>({...p,need:e.target.value}))} rows={6} placeholder="Décrivez le logiciel souhaité, les fonctionnalités clés, les équipes concernées et le résultat attendu." style={{width:"100%",background:C.dim,border:`1px solid ${C.linen}`,borderRadius:4,padding:"11px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
               </div>
-              <button onClick={()=>form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget&&setSent(true)} style={{width:"100%",background:C.gold,border:"none",borderRadius:6,padding:12,fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:C.ink,cursor:"pointer",opacity:form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget?1:0.5}}>Valider l'étape 1</button>
+              <button onClick={()=>form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget&&setSent(true)} style={{width:"100%",background:"#1A1715",border:"none",borderRadius:12,padding:"14px",fontFamily:SS,fontSize:14,fontWeight:600,color:"#fff",cursor:"pointer",boxShadow:"0 8px 20px -8px rgba(26,23,21,.5)",opacity:form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget?1:0.5}}>Valider l'étape 1</button>
             </div>
           )}
         </div>
@@ -12016,7 +11992,7 @@ function App() {
       )}
 
       {/* Sidebar v6 — CREAM SOFT comme OniPilote, gold accents subtils, ink active */}
-      <div className="oniq-sidebar" style={{width:mob?"100%":260,position:mob?"relative":"fixed",top:mob?"auto":0,left:0,bottom:mob?"auto":0,zIndex:mob?15:10,flexShrink:0,maxHeight:mob?"70vh":"none",overflowY:mob?"auto":"hidden",display:mob?(sideOpen?"flex":"none"):"flex",flexDirection:"column",background:'linear-gradient(180deg,#FBF9F3 0%,#F2EEE5 100%)',borderRight:mob?'none':'1px solid #E8E2D8',boxShadow:mob?'none':'1px 0 0 rgba(184,154,90,0.06)'}}>
+      <div className="oniq-sidebar" style={{width:mob?"100%":260,position:mob?"relative":"fixed",top:mob?"auto":0,left:0,bottom:mob?"auto":0,zIndex:mob?15:10,flexShrink:0,maxHeight:mob?"70vh":"none",overflowY:mob?"auto":"hidden",display:mob?(sideOpen?"flex":"none"):"none",flexDirection:"column",background:'linear-gradient(180deg,#FBF9F3 0%,#F2EEE5 100%)',borderRight:mob?'none':'1px solid #E8E2D8',boxShadow:mob?'none':'1px 0 0 rgba(184,154,90,0.06)'}}>
         {/* Halo doré subtil top-left pour donner du volume */}
         <div style={{position:'absolute',top:0,left:0,width:200,height:140,background:'radial-gradient(ellipse at 0% 0%,rgba(184,154,90,0.10) 0%,transparent 70%)',pointerEvents:'none',zIndex:0}}/>
         {/* Halo doré subtil bottom-right */}
@@ -12155,8 +12131,52 @@ function App() {
         </div>
       </div>
 
+      {/* ══ TOP BAR (desktop) — refonte Qonto/Apple, sticky glassy ══ */}
+      {!mob && (
+      <header className="oniq-topbar" style={{position:'fixed',top:14,left:18,right:18,height:72,zIndex:40,display:'flex',alignItems:'center',gap:14,padding:'0 12px 0 22px',background:'rgba(251,250,248,0.72)',backdropFilter:'saturate(180%) blur(20px)',WebkitBackdropFilter:'saturate(180%) blur(20px)',border:'1px solid rgba(255,255,255,0.8)',borderRadius:16,boxShadow:'0 1px 1px rgba(255,255,255,0.6) inset,0 10px 34px -14px rgba(26,23,21,0.22)'}}>
+        <div onClick={()=>setView('landing')} style={{fontFamily:SF,fontSize:32,fontWeight:700,letterSpacing:'.05em',color:'#1A1715',cursor:'pointer',marginRight:10,lineHeight:1,position:'relative',top:'-4px'}}>ONIQ</div>
+        <nav style={{display:'flex',gap:2,marginLeft:6,overflowX:'auto',maxWidth:'50vw'}}>
+          {_navs.PUBLIC.filter(i=>i.id!=='landing').map(item=>{const isActive=activeNav===item.id;const ico=NAV_ICONS[item.g]||'';return <button key={item.id} onClick={()=>setView(item.id)} style={{display:'inline-flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:999,whiteSpace:'nowrap',background:isActive?'rgba(255,255,255,0.9)':'transparent',color:isActive?'#1A1715':'#6B655D',border:isActive?'1px solid rgba(255,255,255,0.95)':'1px solid transparent',cursor:'pointer',fontFamily:SS,fontSize:13.5,fontWeight:isActive?600:500,boxShadow:isActive?'0 1px 3px rgba(26,23,21,0.07)':'none',transition:'all .16s'}} onMouseEnter={e=>{if(!isActive){e.currentTarget.style.background='rgba(255,255,255,0.55)';e.currentTarget.style.color='#1A1715';}}} onMouseLeave={e=>{if(!isActive){e.currentTarget.style.background='transparent';e.currentTarget.style.color='#6B655D';}}}><span style={{width:16,height:16,display:'inline-flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:ico}}/>{item.label}</button>;})}
+        </nav>
+        {(isAdmin||isCommercial||isSupport) && (
+          <div className="oniq-more" style={{flexShrink:0}}>
+            <button style={{display:'inline-flex',alignItems:'center',gap:7,padding:'9px 15px',borderRadius:999,background:'#1A1715',color:'#fff',border:'none',cursor:'pointer',fontFamily:SS,fontSize:13.5,fontWeight:600,whiteSpace:'nowrap'}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>{isAdmin?'Admin':isCommercial?'Commercial':'Support'}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div className="oniq-more-menu">
+              {(isAdmin?_navs.ADMIN:isCommercial?_navs.COMMERCIAL:_navs.SUPPORT).map(item=>(
+                <button key={item.id} onClick={()=>setView(item.id)} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',borderRadius:9,background:activeNav===item.id?'#F6F4F0':'transparent',border:'none',cursor:'pointer',fontFamily:SS,fontSize:13,fontWeight:activeNav===item.id?600:500,color:'#3D352B',textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.background='#F6F4F0'} onMouseLeave={e=>e.currentTarget.style.background=activeNav===item.id?'#F6F4F0':'transparent'}><span style={{width:16,height:16,display:'inline-flex',color:'#8C8070'}} dangerouslySetInnerHTML={{__html:NAV_ICONS[item.g]||''}}/>{item.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{flex:1}}/>
+        <LangProvider><LangSwitcher compact/></LangProvider>
+        <button onClick={()=>{try{window.dispatchEvent(new CustomEvent('oniq-open-chat'));}catch(e){}}} title="Support live" style={{width:38,height:38,borderRadius:11,border:'1px solid #ECE9E3',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#6B655D',flexShrink:0}}><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg></button>
+        {user ? (<div className="oniq-more" style={{flexShrink:0}}>
+          <button style={{display:'flex',alignItems:'center',gap:8,padding:'4px 8px 4px 4px',borderRadius:999,border:'1px solid #ECE9E3',background:'#fff',cursor:'pointer'}}>
+            <span style={{width:36,height:36,borderRadius:'50%',overflow:'hidden',background:(user&&user.companyLogo)?'#fff':'linear-gradient(135deg,#C6A765,#A9863F)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontFamily:SS,fontSize:12.5,fontWeight:700,border:'1px solid rgba(0,0,0,0.06)'}}>{(user&&user.companyLogo)?<img src={user.companyLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:(user?user.avatar:'?')}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B655D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div className="oniq-more-menu">
+            {user && <div style={{padding:'8px 12px 10px',borderBottom:'1px solid #F0EDE7',marginBottom:6}}><div style={{fontFamily:SS,fontSize:13,fontWeight:700,color:'#1A1715'}}>{user.company||user.name||''}</div><div style={{fontFamily:SS,fontSize:11,color:'#9A938A'}}>{user.email||''}</div></div>}
+            {[...(user?_navs.CLIENT_PRO:_navs.LOCKED_PRO),...(user?_navs.CLIENT_HUB:_navs.LOCKED_HUB)].map(item=>(
+              <button key={item.id} onClick={()=>user?setView(item.id):openAuth('register')} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',borderRadius:9,background:'transparent',border:'none',cursor:'pointer',fontFamily:SS,fontSize:13,fontWeight:500,color:'#3D352B',textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.background='#F6F4F0'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><span style={{width:16,height:16,display:'inline-flex',color:'#8C8070'}} dangerouslySetInnerHTML={{__html:NAV_ICONS[item.g]||''}}/>{item.label}</button>
+            ))}
+            <div style={{height:1,background:'#F0EDE7',margin:'6px 0'}}/>
+            {user
+              ? <button onClick={logout} style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',borderRadius:9,background:'transparent',border:'none',cursor:'pointer',fontFamily:SS,fontSize:13,fontWeight:600,color:'#A8514A',textAlign:'left'}} onMouseEnter={e=>e.currentTarget.style.background='#FBEEEE'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>Déconnexion</button>
+              : <div style={{display:'flex',flexDirection:'column',gap:6,padding:'4px'}}><button onClick={()=>openAuth('register')} style={{padding:'10px',borderRadius:10,border:'none',background:'#1A1715',color:'#fff',fontFamily:SS,fontSize:13,fontWeight:600,cursor:'pointer'}}>Créer un compte</button><button onClick={()=>openAuth('login')} style={{padding:'10px',borderRadius:10,border:'1px solid #ECE9E3',background:'#fff',color:'#1A1715',fontFamily:SS,fontSize:13,fontWeight:600,cursor:'pointer'}}>Se connecter</button></div>}
+          </div>
+        </div>) : (
+          <div style={{display:'flex',gap:8,flexShrink:0}}>
+            <button onClick={()=>openAuth('login')} style={{padding:'10px 18px',borderRadius:12,border:'1px solid #E3D6C2',background:'transparent',color:'#1A1715',fontFamily:SS,fontSize:13.5,fontWeight:600,cursor:'pointer'}}>Connexion</button>
+            <button onClick={()=>openAuth('register')} style={{padding:'10px 18px',borderRadius:12,border:'none',background:'#1A1715',color:'#fff',fontFamily:SS,fontSize:13.5,fontWeight:600,cursor:'pointer'}}>Inscription</button>
+          </div>
+        )}
+      </header>
+      )}
+
       {/* Main */}
-      <div style={{marginLeft:mob?0:260,flex:1,display:"flex",flexDirection:"column",minHeight:"100vh",overflowY:"auto"}}>
+      <div style={{marginLeft:0,marginTop:mob?0:100,flex:1,display:"flex",flexDirection:"column",minHeight:"100vh",overflowY:"auto"}}>
 
         {/* Contenu principal — prend tout l'espace disponible */}
         <div style={{flex:1}}>
@@ -12288,7 +12308,7 @@ async function getSoftwareAccessMap(userId){
 const SUPPORT_CTX=`Tu es l'assistant IA d'ONIQ, plateforme SaaS BTP proposant des logiciels de gestion pour les professionnels du bâtiment et de la construction. Réponds en 1 à 3 phrases maximum, en français, de façon directe et professionnelle.
 Produits disponibles sur ONIQ : BatiManager (gestion chantiers, balance budgétaire, trésorerie, import factures IA — 199€/mois HT, base 1 patron + 1 salarié), OniMetri (métré assisté, DPGF par lot, analyse plans IA — 239€/mois HT, base 1 patron + 1 salarié), et d'autres logiciels métier accessibles sur la marketplace ONIQ.
 La plateforme ONIQ permet aux professionnels BTP de gérer leurs abonnements, accéder à leurs logiciels et suivre leur activité.
-Si tu ne parviens pas à répondre à une question, dis-le clairement et propose de mettre l'utilisateur en relation avec un agent humain. Ne propose pas de mise en relation humaine si tu peux répondre toi-même.`;
+Si l'utilisateur demande à parler à un humain / un conseiller / une vraie personne (ou si tu ne parviens vraiment pas à répondre), donne-lui ce contact pour joindre un humain directement : WhatsApp +33 6 24 08 19 10 (lien : https://wa.me/33624081910). Invite-le à écrire sur ce WhatsApp. Ne propose PAS la mise en relation humaine si tu peux répondre toi-même.`;
 
 const SUPPORT_LS_KEY='oniq_support_conv_id';
 
