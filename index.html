@@ -4491,6 +4491,7 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   const [featForm,setFeatForm]=useState({title:'',desc:'',name:user?.company||user?.name||'',phone:'',email:user?.email||''});
   const [featSent,setFeatSent]=useState(false);
   const [seatModalNb,setSeatModalNb]=useState(2);
+  const [seatPayLoading,setSeatPayLoading]=useState(false);
   const getSeats=(slug)=>seats[slug]||2;
 
   const calcSeatPrice=(sw,nbSeats)=>{ const base=sw.price; if(sw&&sw.slug==='metrimanager') return base + Math.max(0, nbSeats-4)*49; if(nbSeats<=2)return base;
@@ -4513,6 +4514,23 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
     setCart(p=>p.includes(seatModal.id)?p:[...p,seatModal.id]);
     if(!already) window.oniqNotify("✓ "+seatModal.name+" ajouté au panier","ok");
     setSeatModal(null);
+  };
+  /* v103 lancement — paiement direct depuis le modal : createStripeCheckout pour CE logiciel
+     avec le nb de comptes choisi, puis redirection PLEINE PAGE vers Stripe (window.location =
+     jamais bloquée par les anti-popups, contrairement à window.open après un await). */
+  const payNowFromModal=async()=>{
+    if(!seatModal||seatPayLoading)return;
+    if(!user){onAuth("register");return;}
+    try{
+      setSeats(p=>({...p,[seatModal.slug]:seatModalNb}));
+      setSeatPayLoading(true);
+      const session=await createStripeCheckout([{...seatModal,quantity:seatModalNb}], user.email);
+      if(session&&session.url){ window.location.href=session.url; return; }
+      throw new Error("session de paiement vide");
+    }catch(e){
+      try{ window.oniqNotify("Paiement indisponible : "+((e&&e.message)||e),"err"); }catch(_n){}
+      setSeatPayLoading(false);
+    }
   };
 
   const toggleCart=id=>{
@@ -5644,31 +5662,21 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                   </div>
                 </div>
               </div>
-              <div style={{marginBottom:24}}>
-                <div style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:10}}>Grille tarifaire</div>
-                {[
-                  ...(seatModal.slug==='metrimanager'?[
-          {label:"Forfait Pro OniMetri",desc:"4 comptes utilisateurs inclus",info:"239 € / mois",active:seatModalNb<=4,included:true},
-          {label:"Comptes supplémentaires",desc:"À partir du 5e compte",info:"+49 € / compte / mois",active:seatModalNb>4,included:seatModalNb>4},
-          {label:"50 chiffrages IA / mois inclus",desc:"Au-delà : 3,99 € / chiffrage · re-lectures du même projet gratuites",info:"Inclus",active:false,included:true},
-          ]:[
-          {label:"Forfait de base",desc:"1 patron + 1 salarié inclus",info:"2 comptes",active:seatModalNb<=2,included:true},
-          {label:"Comptes supplémentaires",desc:"Du 3e au 5e compte",info:"+49 € / compte / mois",active:seatModalNb>2&&seatModalNb<=5,included:seatModalNb>2},
-          {label:"Comptes additionnels",desc:"À partir du 6e compte",info:"+29 € / compte / mois",active:seatModalNb>5,included:seatModalNb>5},
-          ]),
-                ].map((tier,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,marginBottom:6,background:tier.active?C.goldDim:tier.included?"#f0f7f2":C.dim,border:`1px solid ${tier.active?C.gold:tier.included?"#b6dfca":C.linen}`}}>
-                    <div style={{width:22,height:22,borderRadius:"50%",background:tier.active?C.gold:tier.included?"#1e6641":"transparent",border:`2px solid ${tier.active?C.gold:tier.included?"#1e6641":C.linen}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:9,fontWeight:700,color:tier.active?C.ink:"white"}}>
-                      {tier.included?"✓":""}
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:SS,fontSize:11,fontWeight:700,color:tier.active?C.ink:tier.included?"#1e6641":C.stone}}>{tier.label}</div>
-                      <div style={{fontFamily:SS,fontSize:10,color:tier.active?"#6b5f52":tier.included?"#4a9a6a":"#b0a898"}}>{tier.desc}</div>
-                    </div>
-                    <div style={{fontFamily:SS,fontSize:11,fontWeight:700,color:tier.active?C.gold:tier.included?"#1e6641":C.sand}}>{tier.info}</div>
-                  </div>
-                ))}
-              </div>
+              <div style={{marginBottom:20}}>
+        {(seatModal.slug==='metrimanager'?[
+          "4 comptes utilisateurs inclus — puis 49 € / compte / mois",
+          "50 chiffrages IA / mois inclus — puis 3,99 € / chiffrage",
+          "Re-lectures du même projet illimitées et gratuites"
+        ]:[
+          "2 comptes inclus (1 patron + 1 salarié)",
+          "Comptes supplémentaires : +49 € / mois du 3e au 5e, +29 € dès le 6e"
+        ]).map((t,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:9,padding:"7px 2px",fontFamily:SS,fontSize:11.5,color:"#4a4438"}}>
+            <div style={{width:17,height:17,borderRadius:"50%",background:"#1e6641",color:"#fff",fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✓</div>
+            <span>{t}</span>
+          </div>
+        ))}
+      </div>
               {seatModal.slug==='metrimanager'&&<div style={{background:"#f7f0e0",border:"1px solid #d8c49a",borderRadius:8,padding:"11px 14px",marginBottom:18,fontFamily:SS,fontSize:10.5,lineHeight:1.65,color:"#6b5f52"}}><b style={{color:"#8a6d2f"}}>🏢 Grande équipe ou gros volume ?</b> Formule <b>Agence — 499 € / mois</b> : 10 comptes inclus, 150 chiffrages / mois, puis 2,99 € / chiffrage et +39 € / compte au-delà de 10. <b>Contactez-nous pour l'activer.</b></div>}
       <div style={{background:"linear-gradient(135deg,#1F1A14 0%,#2A2218 100%)",borderRadius:10,padding:"16px 20px",marginBottom:20}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
@@ -5695,10 +5703,8 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                 <span style={{color:C.linen2}}>·</span>
                 <span style={{display:"inline-flex",alignItems:"center",gap:5}}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{color:C.gold}}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Stripe sécurisé</span>
               </div>
-              <button onClick={confirmSeatModal} style={{width:"100%",background:"linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)",border:"none",borderRadius:10,padding:"16px",fontFamily:SS,fontSize:12,fontWeight:800,color:"#FFF",cursor:"pointer",textTransform:"uppercase",letterSpacing:"0.1em",boxShadow:"0 6px 18px rgba(184,154,90,0.40)",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"box-shadow .22s ease"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 10px 28px rgba(184,154,90,0.55)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 6px 18px rgba(184,154,90,0.40)"}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span>Ajouter au panier — {calcSeatPrice(seatModal,seatModalNb)} € HT/mois</span>
-              </button>
+              <button onClick={payNowFromModal} disabled={seatPayLoading} style={{width:"100%",background:seatPayLoading?"linear-gradient(135deg,#8a6d2f 0%,#6b5424 100%)":"linear-gradient(135deg,#D4A24C 0%,#A06D2E 100%)",border:"none",borderRadius:10,padding:"17px",fontFamily:SS,fontSize:12.5,fontWeight:800,color:"#FFF",cursor:seatPayLoading?"wait":"pointer",textTransform:"uppercase",letterSpacing:"0.1em",boxShadow:"0 6px 18px rgba(184,154,90,0.40)",display:"flex",alignItems:"center",justifyContent:"center",gap:10,transition:"box-shadow .22s ease"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 10px 28px rgba(184,154,90,0.55)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 6px 18px rgba(184,154,90,0.40)"}> <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> <span>{seatPayLoading?"Redirection vers le paiement sécurisé…":("Payer maintenant — "+calcSeatPrice(seatModal,seatModalNb)+" € HT/mois")}</span> </button>
+      <button onClick={confirmSeatModal} style={{width:"100%",background:"transparent",border:"none",marginTop:10,fontFamily:SS,fontSize:10.5,color:C.stone,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>ou ajouter au panier — pour régler en une fois avec un autre logiciel</button>
             </div>
           </div>
         </div>
