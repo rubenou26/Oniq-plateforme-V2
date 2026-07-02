@@ -1637,7 +1637,7 @@ const STRIPE_PK="pk_live_51TDFibBL1UEuHDAQLwnVW3KzwqHLHfZp7KXVkaFvefbdLCu4lFRRub
    Structure : slug:{base:"price_...", seat:"price_..."} (pack = base seul, onipromail = seat seul) */
 const STRIPE_PRICES={
   batimanager:{base:"price_1TgPf8BL1UEuHDAQ2GlupowZ",seat:"price_1TgPf9BL1UEuHDAQ71VS7WAb"},
-  metrimanager:{base:"price_1TgPfABL1UEuHDAQd46GZv52",metered:"REMPLACER_PRICE_ONIMETRI_CONSO_PRO",seatsIncluded:4}, "metrimanager-agence":{base:"REMPLACER_PRICE_ONIMETRI_AGENCE_499",metered:"REMPLACER_PRICE_ONIMETRI_CONSO_AGENCE",seatsIncluded:10},
+  metrimanager:{base:"price_1TgPfABL1UEuHDAQd46GZv52",metered:"price_1TobKaBL1UEuHDAQjakhaiHX",seat:"REMPLACER_PRICE_ONIMETRI_SEAT_PRO",seatsIncluded:4}, "metrimanager-agence":{base:"price_1TobKbBL1UEuHDAQmdzXvieF",metered:"price_1TobKcBL1UEuHDAQqNN8HicV",seat:"REMPLACER_PRICE_ONIMETRI_SEAT_AGENCE",seatsIncluded:10},
   onicompta:{base:"price_1TgPfCBL1UEuHDAQFDQ7UoC9",seat:"price_1TgPfCBL1UEuHDAQLm5p1H3v"},
   onipilote:{base:"price_1TgPfDBL1UEuHDAQO5JfB2bv",seat:"price_1TgPfEBL1UEuHDAQf31DACcS"},
   oniassist:{base:"price_1TgPfFBL1UEuHDAQH2fCJnOb",seat:"price_1TgPfGBL1UEuHDAQZRlHsh2B"},
@@ -1660,7 +1660,7 @@ async function createStripeCheckout(cartItems, customerEmail){
     const p=STRIPE_PRICES[sw.slug];
     if(!p||(typeof p!=='object'))throw new Error(`Prix Stripe manquant pour : ${sw.slug||'inconnu'}`);
     const seats=Math.max(1, parseInt(sw.quantity,10)||1);
-    if(p.base){ lineItems.push({price:p.base, quantity:1}); if(p.metered && String(p.metered).indexOf('price_')===0) lineItems.push({price:p.metered}); const _incl=(p.seatsIncluded||1); if(p.seat && seats>_incl) lineItems.push({price:p.seat, quantity:seats-_incl}); } else if(p.seat){
+    if(p.base){ lineItems.push({price:p.base, quantity:1}); if(p.metered && String(p.metered).indexOf('price_')===0) lineItems.push({price:p.metered}); const _incl=(p.seatsIncluded||1); if(p.seat && String(p.seat).indexOf('price_')===0 && seats>_incl) lineItems.push({price:p.seat, quantity:seats-_incl}); } else if(p.seat){
       lineItems.push({price:p.seat, quantity:seats});
     } else {
       throw new Error(`Prix Stripe invalide pour : ${sw.slug}`);
@@ -4493,7 +4493,7 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   const [seatModalNb,setSeatModalNb]=useState(2);
   const getSeats=(slug)=>seats[slug]||2;
 
-  const calcSeatPrice=(sw,nbSeats)=>{ const base=sw.price; if(sw&&sw.slug==='metrimanager') return base; if(nbSeats<=2)return base;
+  const calcSeatPrice=(sw,nbSeats)=>{ const base=sw.price; if(sw&&sw.slug==='metrimanager') return base + Math.max(0, nbSeats-4)*49; if(nbSeats<=2)return base;
     const extraSeats=nbSeats-2;
     const tier1=Math.min(extraSeats,3);
     const tier2=Math.max(0,extraSeats-3);
@@ -5647,9 +5647,15 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
               <div style={{marginBottom:24}}>
                 <div style={{fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:10}}>Grille tarifaire</div>
                 {[
-                  {label:"Forfait de base",desc:"1 patron + 1 salarié inclus",info:"2 comptes",active:seatModalNb<=2,included:true},
-                  {label:"Comptes supplémentaires",desc:"Du 3e au 5e compte",info:"+49 € / compte / mois",active:seatModalNb>2&&seatModalNb<=5,included:seatModalNb>2},
-                  {label:"Comptes additionnels",desc:"À partir du 6e compte",info:"+29 € / compte / mois",active:seatModalNb>5,included:seatModalNb>5},
+                  ...(seatModal.slug==='metrimanager'?[
+          {label:"Forfait Pro OniMetri",desc:"4 comptes utilisateurs inclus",info:"239 € / mois",active:seatModalNb<=4,included:true},
+          {label:"Comptes supplémentaires",desc:"À partir du 5e compte",info:"+49 € / compte / mois",active:seatModalNb>4,included:seatModalNb>4},
+          {label:"50 chiffrages IA / mois inclus",desc:"Au-delà : 3,99 € / chiffrage · re-lectures du même projet gratuites",info:"Inclus",active:false,included:true},
+          ]:[
+          {label:"Forfait de base",desc:"1 patron + 1 salarié inclus",info:"2 comptes",active:seatModalNb<=2,included:true},
+          {label:"Comptes supplémentaires",desc:"Du 3e au 5e compte",info:"+49 € / compte / mois",active:seatModalNb>2&&seatModalNb<=5,included:seatModalNb>2},
+          {label:"Comptes additionnels",desc:"À partir du 6e compte",info:"+29 € / compte / mois",active:seatModalNb>5,included:seatModalNb>5},
+          ]),
                 ].map((tier,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:8,marginBottom:6,background:tier.active?C.goldDim:tier.included?"#f0f7f2":C.dim,border:`1px solid ${tier.active?C.gold:tier.included?"#b6dfca":C.linen}`}}>
                     <div style={{width:22,height:22,borderRadius:"50%",background:tier.active?C.gold:tier.included?"#1e6641":"transparent",border:`2px solid ${tier.active?C.gold:tier.included?"#1e6641":C.linen}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:9,fontWeight:700,color:tier.active?C.ink:"white"}}>
@@ -5663,19 +5669,19 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                   </div>
                 ))}
               </div>
-              <div style={{background:"linear-gradient(135deg,#1F1A14 0%,#2A2218 100%)",borderRadius:10,padding:"16px 20px",marginBottom:20}}>
+              {seatModal.slug==='metrimanager'&&<div style={{background:"#f7f0e0",border:"1px solid #d8c49a",borderRadius:8,padding:"11px 14px",marginBottom:18,fontFamily:SS,fontSize:10.5,lineHeight:1.65,color:"#6b5f52"}}><b style={{color:"#8a6d2f"}}>🏢 Grande équipe ou gros volume ?</b> Formule <b>Agence — 499 € / mois</b> : 10 comptes inclus, 150 chiffrages / mois, puis 2,99 € / chiffrage et +39 € / compte au-delà de 10. <b>Contactez-nous pour l'activer.</b></div>}
+      <div style={{background:"linear-gradient(135deg,#1F1A14 0%,#2A2218 100%)",borderRadius:10,padding:"16px 20px",marginBottom:20}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.5)"}}>Forfait de base</span>
                   <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.6)"}}>{seatModal.price} €</span>
                 </div>
-                {seatModalNb>2&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                {(seatModal.slug==='metrimanager'?(seatModalNb>4&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}> <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.5)"}}>{seatModalNb-4} compte{seatModalNb-4>1?"s":""} supp. × 49 €</span> <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.6)"}}>{(seatModalNb-4)*49} €</span> </div>):(<>{seatModalNb>2&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.5)"}}>{Math.min(seatModalNb-2,3)} compte{Math.min(seatModalNb-2,3)>1?"s":""} supp. × 49 €</span>
                   <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.6)"}}>{Math.min(seatModalNb-2,3)*49} €</span>
-                </div>}
-                {seatModalNb>5&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                </div>}{seatModalNb>5&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                   <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.5)"}}>{seatModalNb-5} compte{seatModalNb-5>1?"s":""} add. × 29 €</span>
                   <span style={{fontFamily:SS,fontSize:11,color:"rgba(255,255,255,0.6)"}}>{(seatModalNb-5)*29} €</span>
-                </div>}
+                </div>}</>))}
                 <div style={{borderTop:"1px solid rgba(255,255,255,0.1)",paddingTop:10,marginTop:6,display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
                   <span style={{fontFamily:SS,fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.1em"}}>Total HT / mois</span>
                   <div style={{textAlign:"right"}}>
@@ -6420,7 +6426,7 @@ const SoftwareLaunchModal=({software,onClose,user,onAuth})=>{
         }
         return;
       }
-      if(evt.data.type==='bati-chiffrage-done'){ /* v244 lancement — journal d'usage + compteur Stripe, fire-and-forget */ try{ const _hdrs={'Content-Type':'application/json'}; let _tok=supabaseKey; try{ if(supabaseClient){ const {data:_s}=await supabaseClient.auth.getSession(); if(_s?.session?.access_token) _tok=_s.session.access_token; } }catch(_e){} _hdrs['Authorization']='Bearer '+_tok; fetch(SUPABASE_FUNCTIONS_BASE+'/report-chiffrage',{method:'POST',headers:_hdrs,body:JSON.stringify({project:evt.data.project||'',runId:evt.data.runId||''})}).catch(()=>{}); }catch(_e){} return; }
+      if(evt.data.type==='bati-chiffrage-done'){ /* v244 lancement — journal d'usage + compteur Stripe, fire-and-forget */ try{ const _hdrs={'Content-Type':'application/json'}; let _tok=supabaseKey; try{ if(supabaseClient){ const {data:_s}=await supabaseClient.auth.getSession(); if(_s?.session?.access_token) _tok=_s.session.access_token; } }catch(_e){} _hdrs['Authorization']='Bearer '+_tok; fetch(SUPABASE_FUNCTIONS_BASE+'/report-chiffrage',{method:'POST',headers:_hdrs,body:JSON.stringify({project:evt.data.project||'',runId:evt.data.runId||''})}).then(r=>r.json()).then(d=>{ try{ var n=d&&d.chiffrages_ce_mois; if(typeof n==='number'&&n>0){ var el=document.getElementById('oniq-usage-pill'); if(!el){ el=document.createElement('div'); el.id='oniq-usage-pill'; el.style.cssText='position:fixed;bottom:18px;right:18px;z-index:2147483000;background:linear-gradient(135deg,#1F1A14,#2A2218);color:#F4E9D5;font:600 12.5px system-ui;padding:11px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);border:1px solid rgba(212,162,76,.35);max-width:340px;line-height:1.55;cursor:pointer'; el.onclick=function(){ el.style.display='none'; }; document.body.appendChild(el); } el.innerHTML='📐 <b>Chiffrage n° '+n+'</b> ce mois-ci — '+(n<=50?((50-n)+' restant'+((50-n)>1?'s':'')+' inclus dans votre forfait.'):'au-delà des 50 inclus : 3,99 € HT / chiffrage.'); el.style.display='block'; clearTimeout(window.__oniqUsageT); window.__oniqUsageT=setTimeout(function(){ try{ el.style.display='none'; }catch(_e2){} },9000); } }catch(_e3){} }).catch(()=>{}); }catch(_e){} return; }
       if(evt.data.type==='bati-claude-vision-request'&&evt.data.reqId){
         try{
           const result=await callClaudeVisionProxy(evt.data.payload);
