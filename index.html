@@ -1541,6 +1541,48 @@ body{background:#F6F4F0}
 </style>
 </head>
 <body>
+<script>
+/* v289-shell — GARDE ANTI-PAGE-BLANCHE (cas Melvyn 2026-07-09 : page tronquée en route → écran
+   blanc muet). (1) au « load » : si le témoin de FIN de page est absent → la page est TRONQUÉE →
+   UN rechargement automatique avec ?cb= (contourne tout cache HTTP) ; s'il a déjà eu lieu → écran
+   explicite avec diagnostic à photographier. (2) après 25 s : page complète mais application non
+   montée → écran explicite (retiré tout seul si l'appli finit par monter — machines lentes). */
+(function(){
+  try{
+    var deja = /[?&]cb=/.test(location.search);
+    function ecran(msg, diag){
+      var d=document.createElement('div');
+      d.style.cssText='position:fixed;inset:0;background:#FBF7EF;color:#4a3a22;font-family:Segoe UI,Arial,sans-serif;display:flex;align-items:center;justify-content:center;z-index:2147483647;text-align:center;padding:24px';
+      d.innerHTML='<div style="max-width:540px"><div style="font-size:40px">&#9888;&#65039;</div><h2 style="margin:10px 0 6px">Chargement incomplet</h2><p style="margin:6px 0;line-height:1.5">'+msg+'</p><p style="font-size:11.5px;color:#8a7960;word-break:break-all">'+diag+'</p><button onclick="location.replace(location.pathname+&quot;?cb=&quot;+Date.now())" style="padding:12px 22px;border-radius:10px;border:0;background:#6b4e16;color:#fff;font-weight:800;cursor:pointer;font-size:15px">&#128260; Recharger sans cache</button><p style="font-size:11.5px;color:#8a7960;margin-top:10px">Si cet &eacute;cran revient : photographiez-le et envoyez-le au support.</p></div>';
+      function add(){ try{ document.body.appendChild(d); }catch(e){} }
+      if(document.body) add(); else document.addEventListener('DOMContentLoaded', add);
+      try{
+        var mo=new MutationObserver(function(){ var r=document.getElementById('root'); if(r&&r.children&&r.children.length>0){ try{ d.parentNode&&d.parentNode.removeChild(d); mo.disconnect(); }catch(e){} } });
+        mo.observe(document.body||document.documentElement,{childList:true,subtree:true});
+      }catch(e){}
+    }
+    function diagTxt(){
+      var t=0; try{ t=document.documentElement.outerHTML.length; }catch(e){}
+      return 'diagnostic : '+Math.round(t/1024)+' Ko dans le navigateur &middot; fin de page '+(window.__oniqFinChargee?'OK':'ABSENTE')+' &middot; '+String(navigator.userAgent||'').slice(0,90);
+    }
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        if(window.__oniqFinChargee) return;
+        if(!deja){ try{ location.replace(location.pathname+'?cb='+Date.now()+location.hash); }catch(e){} return; }
+        ecran('La page re&ccedil;ue est <b>tronqu&eacute;e</b> (cache, antivirus &laquo; protection web &raquo;, proxy ou r&eacute;seau). Le rechargement sans cache n&rsquo;a pas suffi &mdash; essayez un autre navigateur, ou d&eacute;sactivez 2 minutes la protection web de l&rsquo;antivirus.', diagTxt());
+      }, 1500);
+    });
+    setTimeout(function(){
+      if(window.__oniqFinChargee){
+        var r=document.getElementById('root');
+        if(r && r.children && r.children.length>0) return;
+        ecran('La page est arriv&eacute;e compl&egrave;te mais l&rsquo;application n&rsquo;a pas d&eacute;marr&eacute; (navigateur trop ancien ou m&eacute;moire insuffisante). Mettez Chrome &agrave; jour ou essayez un autre navigateur.', diagTxt());
+      }
+    }, 25000);
+  }catch(e){}
+})();
+</script>
+
 <!-- ═══ INTRO ANIMATION : sablier marron → cream ═══ -->
 <style>
 #oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.4s cubic-bezier(.5,0,.3,1) forwards;animation-delay:5.0s;pointer-events:none;overflow:hidden}
@@ -13651,5 +13693,6 @@ See DEPLOYMENT.md for the full guide.
   [0,250,600,1200,2200,3500].forEach(function(d){setTimeout(fixLogos,d);});
   try{var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(fixLogos,300);}).observe(document.body,{childList:true,subtree:true});}catch(e){}
 })();</script>
+<script>window.__oniqFinChargee=true;</script>
 </body>
 </html>
