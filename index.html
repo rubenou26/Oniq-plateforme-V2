@@ -2665,6 +2665,34 @@ const softwareLaunchers={
 ,
   onimarketer:{src:"/apps/onimarketer.html",mode:"iframe"}
 };
+/* v289-shell — IFRAMES EN BLOB: AU LIEU DE data: (incident Melvyn : OniMetri en iframe blanche,
+   site OK, navigation privée pareille, PC redémarré pareil → signature d'un blocage des iframes
+   « data:text/html » par la protection web d'un antivirus/politique — vecteur de phishing classique,
+   souvent neutralisé en silence). Un blob: est un vrai document local, non suspect, plus robuste
+   pour 2-8 Mo. Conversion PARESSEUSE (au 1er accès), cache, et REPLI sur l'URL data: d'origine si
+   quoi que ce soit échoue → zéro régression possible. */
+(function(){
+  const conv=(dataUrl)=>{
+    try{
+      const b64=String(dataUrl).split(',')[1]||'';
+      const bin=atob(b64);
+      const by=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) by[i]=bin.charCodeAt(i);
+      const u=URL.createObjectURL(new Blob([by],{type:'text/html'}));
+      try{ window.__oniqBlobUsed=(window.__oniqBlobUsed||0)+1; }catch(e){}
+      return u;
+    }catch(e){ return dataUrl; }
+  };
+  try{
+    Object.keys(softwareLaunchers).forEach((k)=>{
+      const L=softwareLaunchers[k];
+      if(!L||typeof L.src!=='string'||L.src.indexOf('data:text/html;base64,')!==0) return;
+      const orig=L.src; let cache=null;
+      Object.defineProperty(L,'src',{ get(){ if(!cache) cache=conv(orig); return cache; }, configurable:true });
+    });
+    try{ window.__oniqBlobSrcOk=true; }catch(e){}
+  }catch(e){}
+})();
 const openSoftwareApp=(sw)=>{
   const launcher=sw?.slug&&softwareLaunchers[sw.slug];
   if(launcher) {
