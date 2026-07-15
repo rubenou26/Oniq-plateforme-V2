@@ -12442,7 +12442,8 @@ async function getSoftwareAccessMap(userId){
 // ══════════════════════════════════════════════════════════════
 // SUPPORT — helpers Supabase
 // ══════════════════════════════════════════════════════════════
-const SUPPORT_CTX=`Tu es l'assistant IA d'ONIQ, plateforme SaaS BTP proposant des logiciels de gestion pour les professionnels du bâtiment et de la construction. Réponds en 1 à 3 phrases maximum, en français, de façon directe et professionnelle.
+const SUPPORT_CTX=`Tu es Léa, du support ONIQ — plateforme SaaS BTP proposant des logiciels de gestion pour les professionnels du bâtiment et de la construction.
+STYLE : tu écris comme une collègue chaleureuse et efficace sur un chat : 1 à 3 phrases courtes, en français, ton naturel et direct, jamais de listes à puces ni de ton corporate. Un emoji de temps en temps, jamais plus d'un par message. Tu réagis d'abord à ce que la personne vient de dire, puis tu réponds. Si on te demande si tu es un robot ou une IA, tu le confirmes simplement avec le sourire — tu es l'assistante virtuelle d'ONIQ — et tu proposes de passer à un collègue humain si la personne préfère.
 Produits disponibles sur ONIQ : BatiManager (gestion chantiers, balance budgétaire, trésorerie, import factures IA — 199€/mois HT, base 1 patron + 1 salarié), OniMetri (métré assisté, DPGF par lot, analyse plans IA — formule Pro 239€/mois HT : 4 comptes inclus, 50 chiffrages/mois inclus puis 3,99€ par chiffrage supplémentaire ; formule Agence 499€/mois HT : 10 comptes, 150 chiffrages/mois inclus puis 2,99€), et d'autres logiciels métier accessibles sur la marketplace ONIQ.
 La plateforme ONIQ permet aux professionnels BTP de gérer leurs abonnements, accéder à leurs logiciels et suivre leur activité.
 Si l'utilisateur demande à parler à un humain / un conseiller / une vraie personne (ou si tu ne parviens vraiment pas à répondre), donne-lui ce contact pour joindre un humain directement : WhatsApp +33 6 24 08 19 10 (lien : https://wa.me/33624081910). Invite-le à écrire sur ce WhatsApp. Ne propose PAS la mise en relation humaine si tu peux répondre toi-même.`;
@@ -12663,7 +12664,7 @@ function LiveChatWidget({user, canAccessSupport}){
     return ()=>{window.removeEventListener('oniq-iframe-opened',onIframeOpen);window.removeEventListener('oniq-iframe-closed',onIframeClose);window.removeEventListener('oniq-open-support',onOpenSupport);window.removeEventListener('oniq-open-chat',onOpenChat);};
   },[]);
   const [screen,setScreen]=useState('home');
-  const [msgs,setMsgs]=useState([{role:'bot',content:'Bonjour 👋 Je suis l\'assistant IA d\'ONIQ. Je suis là pour répondre à toutes vos questions sur notre plateforme et nos logiciels.\n\nSi je ne parviens pas à répondre à votre question, je vous mettrai en relation avec un agent humain. Comment puis-je vous aider ?',ts:Date.now()}]);
+  const [msgs,setMsgs]=useState([{role:'bot',content:'Bonjour 👋 Moi c\'est Léa, du support ONIQ.\n\nDites-moi ce qui vous amène — et si je sèche, je passe le relais à un collègue humain, ou on continue sur WhatsApp 😊',ts:Date.now()}]);
   const [input,setInput]=useState('');
   const [busy,setBusy]=useState(false);
   const [convId,setConvId]=useState(()=>{ try{return localStorage.getItem(SUPPORT_LS_KEY)||null;}catch(e){return null;}});
@@ -12766,6 +12767,7 @@ function LiveChatWidget({user, canAccessSupport}){
       const history=newMsgs.filter(m=>m.role==='user'||m.role==='bot').slice(-8).map(m=>({role:m.role==='bot'?'assistant':'user',content:m.content}));
       const resp=await callMistralProxy({model:'mistral-small-latest',messages:[{role:'system',content:SUPPORT_CTX},...history],temperature:0.3,max_tokens:200});
       const reply=resp?.choices?.[0]?.message?.content||'Je n\'ai pas pu traiter votre demande. Souhaitez-vous parler à un agent ?';
+      await new Promise(r=>setTimeout(r,1100+Math.random()*1600)); /* la réponse instantanée fait robot — on laisse Léa « taper » */
       const botMsg={role:'bot',content:reply,ts:Date.now()};
       const final=[...newMsgs,botMsg];
       setMsgs(final);
@@ -12852,6 +12854,7 @@ function LiveChatWidget({user, canAccessSupport}){
       const history=newMsgs.filter(m=>m.role==='user'||m.role==='bot').slice(-8).map(m=>({role:m.role==='bot'?'assistant':'user',content:m.content}));
       const resp=await callMistralProxy({model:'mistral-small-latest',messages:[{role:'system',content:SUPPORT_CTX},...history],temperature:0.3,max_tokens:200});
       const reply=resp?.choices?.[0]?.message?.content||'Je n\'ai pas pu traiter votre demande. Souhaitez-vous parler à un agent ?';
+      await new Promise(r=>setTimeout(r,1100+Math.random()*1600)); /* la réponse instantanée fait robot — on laisse Léa « taper » */
       const botMsg={role:'bot',content:reply,ts:Date.now()};
       const final=[...newMsgs,botMsg];
       setMsgs(final);
@@ -12887,7 +12890,7 @@ function LiveChatWidget({user, canAccessSupport}){
   }
 
   function newConv(){
-    const init=[{role:'bot',content:'Bonjour 👋 Je suis l\'assistant IA d\'ONIQ. Je suis là pour répondre à toutes vos questions sur notre plateforme et nos logiciels.\n\nSi je ne parviens pas à répondre à votre question, je vous mettrai en relation avec un agent humain. Comment puis-je vous aider ?',ts:Date.now()}];
+    const init=[{role:'bot',content:'Bonjour 👋 Moi c\'est Léa, du support ONIQ.\n\nDites-moi ce qui vous amène — et si je sèche, je passe le relais à un collègue humain, ou on continue sur WhatsApp 😊',ts:Date.now()}];
     setMsgs(init);setConvId(null);setEscalated(false);setUnread(0);setScreen('chat');
     try{localStorage.removeItem(SUPPORT_LS_KEY);}catch(e){}
   }
@@ -12943,7 +12946,7 @@ function LiveChatWidget({user, canAccessSupport}){
               <div style={{fontFamily:SF,fontSize:14,fontWeight:700,color:'#fff'}}>ONIQ Support</div>
               <div style={{display:'flex',alignItems:'center',gap:5}}>
                 <div style={{width:6,height:6,borderRadius:'50%',background:'#4ade80'}}/>
-                <span style={{fontFamily:SS,fontSize:10,color:'rgba(255,255,255,0.45)'}}>Répond en quelques secondes</span>
+                <span style={{fontFamily:SS,fontSize:10,color:'rgba(255,255,255,0.45)'}}>En ligne — Léa vous répond</span>
               </div>
             </div>
           </div>
@@ -12960,7 +12963,7 @@ function LiveChatWidget({user, canAccessSupport}){
             <div style={{width:40,height:40,borderRadius:'50%',background:'linear-gradient(135deg,#1F1A14,#3D3528)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>💬</div>
             <div style={{flex:1}}>
               <div style={{fontFamily:SS,fontSize:13,fontWeight:700,color:'#111',marginBottom:2}}>Démarrer une conversation</div>
-              <div style={{fontFamily:SS,fontSize:11,color:'#888'}}>Notre IA répond instantanément</div>
+              <div style={{fontFamily:SS,fontSize:11,color:'#888'}}>Léa vous répond en direct</div>
             </div>
             <span style={{color:'#ccc',fontSize:16}}>→</span>
           </div>
@@ -12973,6 +12976,20 @@ function LiveChatWidget({user, canAccessSupport}){
             <div style={{flex:1}}>
               <div style={{fontFamily:SS,fontSize:13,fontWeight:700,color:'#111',marginBottom:2}}>Mes tickets</div>
               <div style={{fontFamily:SS,fontSize:11,color:'#888'}}>Voir l'historique de vos demandes</div>
+            </div>
+            <span style={{color:'#ccc',fontSize:16}}>→</span>
+          </div>
+        </div>
+
+        {/* Card WhatsApp */}
+        <div style={{background:'#fff',borderRadius:14,boxShadow:'0 4px 20px rgba(0,0,0,0.1)',overflow:'hidden',marginBottom:12,cursor:'pointer'}} onClick={()=>window.open('https://wa.me/33624081910?text='+encodeURIComponent('Bonjour, je vous écris depuis la plateforme ONIQ.'),'_blank')}>
+          <div style={{padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:40,height:40,borderRadius:'50%',background:'linear-gradient(135deg,#25D366,#128C7E)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:SS,fontSize:13,fontWeight:700,color:'#111',marginBottom:2}}>Continuer sur WhatsApp</div>
+              <div style={{fontFamily:SS,fontSize:11,color:'#888'}}>La même conversation, dans votre poche</div>
             </div>
             <span style={{color:'#ccc',fontSize:16}}>→</span>
           </div>
@@ -13067,7 +13084,8 @@ function LiveChatWidget({user, canAccessSupport}){
         const history=newMsgs.filter(m=>m.role==='user'||m.role==='bot').slice(-6).map(m=>({role:m.role==='bot'?'assistant':'user',content:m.content}));
         const resp=await callMistralProxy({model:'mistral-small-latest',messages:[{role:'system',content:SUPPORT_CTX},...history],temperature:0.3,max_tokens:200});
         const reply=resp?.choices?.[0]?.message?.content||'Je transmets votre message à l\'équipe.';
-        const botMsg={role:'bot',content:reply,ts:Date.now()};
+        await new Promise(r=>setTimeout(r,1100+Math.random()*1600)); /* la réponse instantanée fait robot — on laisse Léa « taper » */
+      const botMsg={role:'bot',content:reply,ts:Date.now()};
         const final=[...newMsgs,botMsg];
         setSelTicket({...t,messages:final});
         await dbSaveConv(t.id,final,'bot',userInfo);
@@ -13104,7 +13122,7 @@ function LiveChatWidget({user, canAccessSupport}){
                 </div>
               )}
               <div style={{display:'flex',flexDirection:'column',alignItems:isUser?'flex-end':'flex-start',gap:2}}>
-                {!isUser&&<div style={{fontFamily:SS,fontSize:9,fontWeight:700,color:isAgent?'#6366f1':'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginLeft:2}}>{isAgent?`👤 ${m.author||'Agent ONIQ'}`:'✦ IA ONIQ'}</div>}
+                {!isUser&&<div style={{fontFamily:SS,fontSize:9,fontWeight:700,color:isAgent?'#6366f1':'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginLeft:2}}>{isAgent?`👤 ${m.author||'Agent ONIQ'}`:'Léa · ONIQ'}</div>}
                 <div style={{maxWidth:'80%',background:isUser?'#0A0A08':isAgent?'#EEF2FF':'#fff',color:isUser?'#fff':'#111',padding:'9px 13px',borderRadius:isUser?'16px 16px 4px 16px':'16px 16px 16px 4px',fontFamily:SS,fontSize:13,lineHeight:1.6,boxShadow:isAgent?'0 2px 8px rgba(99,102,241,0.12)':'0 1px 3px rgba(0,0,0,0.06)',border:isAgent?'2px solid #C7D2FE':isUser?'none':'1px solid #eee'}}>
                   {m.content}
                 </div>
@@ -13147,7 +13165,7 @@ function LiveChatWidget({user, canAccessSupport}){
         <div style={{width:360,height:580,borderRadius:20,boxShadow:'0 24px 80px rgba(0,0,0,0.22)',display:'flex',flexDirection:'column',overflow:'hidden',background:'#fff',border:'1px solid rgba(0,0,0,0.06)'}}>
           <div style={{display:screen==='home'?'flex':'none',flexDirection:'column',flex:1,overflow:'hidden'}}><ScreenHome/></div>
           <div style={{display:screen==='chat'?'flex':'none',flexDirection:'column',flex:1,overflow:'hidden'}}>
-            <Header title="Conversation" back={()=>setScreen('home')} action={
+            <Header title="Léa — Support ONIQ" back={()=>setScreen('home')} action={
               convId?<button onClick={newConv} style={{background:'rgba(255,255,255,0.1)',border:'none',borderRadius:8,padding:'5px 10px',cursor:'pointer',color:'rgba(255,255,255,0.7)',fontFamily:SS,fontSize:10,fontWeight:700}}>+ Nouveau</button>:null
             }/>
             <div style={{flex:1,overflowY:'auto',padding:'14px',display:'flex',flexDirection:'column',gap:10,background:'#f9f9fb'}}>
@@ -13165,7 +13183,7 @@ function LiveChatWidget({user, canAccessSupport}){
                     </div>
                   )}
                   <div style={{display:'flex',flexDirection:'column',alignItems:isUser?'flex-end':'flex-start',gap:2}}>
-                    {!isUser&&<div style={{fontFamily:SS,fontSize:9,fontWeight:700,color:isAgent?'#6366f1':'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginLeft:2}}>{isAgent?`👤 ${m.author||'Agent ONIQ'}`:'✦ IA ONIQ'}</div>}
+                    {!isUser&&<div style={{fontFamily:SS,fontSize:9,fontWeight:700,color:isAgent?'#6366f1':'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginLeft:2}}>{isAgent?`👤 ${m.author||'Agent ONIQ'}`:'Léa · ONIQ'}</div>}
                     <div style={{maxWidth:'80%',background:isUser?'#0A0A08':isAgent?'#EEF2FF':'#fff',color:isUser?'#fff':'#111',padding:'10px 14px',borderRadius:isUser?'18px 18px 4px 18px':'18px 18px 18px 4px',fontFamily:SS,fontSize:13,lineHeight:1.6,boxShadow:isAgent?'0 2px 8px rgba(99,102,241,0.12)':'0 1px 4px rgba(0,0,0,0.07)',border:isAgent?'2px solid #C7D2FE':isUser?'none':'1px solid #eee'}}>
                       {m.content}
                     </div>
@@ -13183,9 +13201,14 @@ function LiveChatWidget({user, canAccessSupport}){
             </div>
             {!escalated&&msgs.length>=4&&(
               <div style={{padding:'6px 12px',background:'#fff',borderTop:'1px solid #f0f0f0',flexShrink:0}}>
-                <button onClick={doEscalate} style={{width:'100%',background:'none',border:'1px solid #e5e7eb',borderRadius:10,padding:'8px',fontFamily:SS,fontSize:11,fontWeight:600,color:'#555',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                  <span>👤</span> Parler à un agent humain
+                <div style={{display:'flex',gap:8}}>
+                <button onClick={doEscalate} style={{flex:1,background:'none',border:'1px solid #e5e7eb',borderRadius:10,padding:'8px',fontFamily:SS,fontSize:11,fontWeight:600,color:'#555',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <span>👤</span> Parler à un humain
                 </button>
+                <button onClick={()=>window.open('https://wa.me/33624081910?text='+encodeURIComponent('Bonjour, je vous écris depuis le chat ONIQ.'),'_blank')} style={{flex:1,background:'none',border:'1px solid #A7E3C4',borderRadius:10,padding:'8px',fontFamily:SS,fontSize:11,fontWeight:700,color:'#128C7E',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#128C7E"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg> WhatsApp
+                </button>
+                </div>
               </div>
             )}
             <div style={{padding:'10px 12px',background:'#fff',borderTop:'1px solid #f0f0f0',display:'flex',gap:8,flexShrink:0,alignItems:'center'}}>
