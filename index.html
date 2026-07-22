@@ -10182,6 +10182,8 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   const [aiResults,setAiResults]=useState(null);
   const [aiSector,setAiSector]=useState('Bâtiment');
   const [aiRegion,setAiRegion]=useState('France');
+  const [aiMobileOnly,setAiMobileOnly]=useState(false);
+  const oniqIsMobileFR=(tel)=>{var d=String(tel||'').replace(/\D/g,'');if(d.slice(0,4)==='0033')d=d.slice(4);else if(d.slice(0,2)==='33'&&d.length>=11)d=d.slice(2);if(d.length===9)d='0'+d;return d.length===10&&d.charAt(0)==='0'&&(d.charAt(1)==='6'||d.charAt(1)==='7');};
   // Résout l'ID CRM du commercial connecté pour TOUT utilisateur authentifié (admin inclus).
   // La pipeline utilise ce filtre pour rester strictement personnelle, même pour les admins.
   // Dashboard / Leaderboard / Équipe restent globaux (partagés entre tous les admins).
@@ -10760,14 +10762,17 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
           React.createElement('div',null,React.createElement('label',{style:ls},'Région'),React.createElement('input',{value:aiRegion,onChange:e=>setAiRegion(e.target.value),style:is})),
           React.createElement('div',null,React.createElement('label',{style:ls},'Assigner à'),React.createElement(CommercialDropdown,{value:selCo==='all'?'':selCo,onChange:v=>setSelCo(v||'all'),crm,users,C,SS}))
         ),
-        React.createElement('button',{onClick:runAiProspect,disabled:aiLoading,style:{background:C.ink,border:'none',borderRadius:6,padding:'12px 28px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:'pointer',opacity:aiLoading?0.6:1}},aiLoading?'🔄 Recherche en cours...':'🤖 Lancer la prospection IA')
+        React.createElement('button',{onClick:runAiProspect,disabled:aiLoading,style:{background:C.ink,border:'none',borderRadius:6,padding:'12px 28px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:'pointer',opacity:aiLoading?0.6:1}},aiLoading?'🔄 Recherche en cours...':'🤖 Lancer la prospection IA'),
+        React.createElement('label',{title:'Ne garder que les portables (06/07) — le décideur en direct. Écarte les 04/05 (standards, accueil).',style:{display:'inline-flex',alignItems:'center',gap:8,marginLeft:16,fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:'pointer',userSelect:'none'}},
+          React.createElement('input',{type:'checkbox',checked:aiMobileOnly,onChange:e=>setAiMobileOnly(e.target.checked),style:{accentColor:(C.gold||'#C6A765'),width:15,height:15,cursor:'pointer'}}),
+          '📱 Numéros mobiles uniquement (06/07)')
       ),
       aiResults&&aiResults.length>0&&React.createElement('div',null,
         React.createElement('div',{style:{background:'rgba(74,124,89,0.08)',border:'1px solid rgba(74,124,89,0.3)',borderRadius:8,padding:'10px 14px',marginBottom:12,fontFamily:SS,fontSize:11,color:'#4A7C59'}},
-          '✅ Vraies entreprises avec contacts vérifiés — Source Apollo.io'
+          '✅ '+aiResults.length+' entreprise(s) · '+aiResults.filter(r=>oniqIsMobileFR(r.tel)).length+' avec mobile 06/07'+(aiMobileOnly?' · filtre mobiles actif':' — contacts vérifiés Apollo.io')
         ),
         React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(auto-fill,minmax(300px,1fr))',gap:12}},
-          aiResults.map((r,i)=>
+          (aiMobileOnly?aiResults.filter(r=>oniqIsMobileFR(r.tel)):aiResults).map((r,i)=>
             React.createElement('div',{key:i,style:{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:'16px',position:'relative'}},
               r.score&&React.createElement('div',{style:{position:'absolute',top:10,right:10,background:r.score>=80?'#e8f5ee':r.score>=60?'#fdf4e0':'#fde8e8',color:r.score>=80?'#1e6641':r.score>=60?'#9a6800':'#b52020',fontFamily:SS,fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20}},r.score+'/100'),
               React.createElement('div',{style:{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,marginBottom:2,paddingRight:55}},r.nom),
