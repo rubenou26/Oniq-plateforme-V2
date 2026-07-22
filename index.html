@@ -4466,6 +4466,9 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
   const [cat,setCat]=useState(_initParams.get("cat")||"Tous");
   const [search,setSearch]=useState(_initParams.get("q")||"");
   const [sort,setSort]=useState(_initParams.get("sort")||"popular");
+  const [showEteModal,setShowEteModal]=useState(false);
+  useEffect(()=>{ try{ var seen=localStorage.getItem('oniq_ete_modal_seen'); if(seen&&(Date.now()-parseInt(seen,10)<24*60*60*1000)) return; }catch(e){} var _t=setTimeout(function(){setShowEteModal(true);},3000); return function(){clearTimeout(_t);}; },[]);
+  const closeEteModal=()=>{ try{localStorage.setItem('oniq_ete_modal_seen',String(Date.now()));}catch(e){} setShowEteModal(false); };
   // Sync URL quand les filtres changent (debounced pour la recherche)
   useEffect(()=>{
     const t=setTimeout(()=>{
@@ -4695,6 +4698,41 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
     <div style={{padding:isMob()?"20px 14px":"36px 40px",position:"relative",background:"#F6F4F0",minHeight:"100vh"}}>
       <div aria-hidden="true" style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 50% at 30% 0%, rgba(193,139,69,0.08), transparent 60%)",pointerEvents:"none",zIndex:0}}/>
       <div style={{position:"relative",zIndex:1}}>
+
+      {showEteModal&&(
+        <div onClick={closeEteModal} style={{position:'fixed',inset:0,zIndex:99998,background:'rgba(8,6,4,0.66)',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}}>
+          <div onClick={e=>e.stopPropagation()} style={{position:'relative',width:'min(400px,92vw)',background:'linear-gradient(178deg,#191510 0%,#14110D 46%,#100D0A 100%)',border:'1px solid rgba(198,167,101,0.35)',borderRadius:18,overflow:'hidden',boxShadow:'0 40px 100px rgba(0,0,0,0.55)',animation:'oniqEtePop .3s cubic-bezier(.2,.8,.3,1.05)'}}>
+            <div aria-hidden="true" style={{position:'absolute',top:-140,left:'50%',transform:'translateX(-50%)',width:440,height:290,background:'radial-gradient(ellipse at center,rgba(198,167,101,0.15),transparent 62%)',pointerEvents:'none'}}/>
+            <div aria-hidden="true" style={{position:'absolute',top:-70,right:-90,width:270,height:270,border:'1.5px solid rgba(198,167,101,0.12)',borderRadius:'50%',pointerEvents:'none'}}/>
+            <button onClick={closeEteModal} aria-label="Fermer" style={{position:'absolute',top:12,right:12,width:30,height:30,borderRadius:'50%',background:'rgba(244,233,213,0.08)',color:'rgba(244,233,213,0.7)',border:'none',fontSize:16,cursor:'pointer',zIndex:3,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+            <div style={{position:'relative',zIndex:2,padding:'30px 30px 26px'}}>
+              <div style={{display:'flex',alignItems:'baseline',gap:11}}>
+                <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontWeight:700,fontSize:29,letterSpacing:'0.03em',color:'#E8CE93'}}>ONIQ</div>
+                <div style={{fontFamily:"ui-monospace,Consolas,monospace",fontSize:8.5,color:'#8C8070',letterSpacing:'0.2em'}}>LOGICIELS IA · BÂTIMENT</div>
+              </div>
+              <div style={{display:'inline-flex',alignItems:'center',gap:7,marginTop:18,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'5px 13px',fontFamily:SS,fontSize:10,fontWeight:800,letterSpacing:'0.16em',textTransform:'uppercase'}}>Offre d'été</div>
+              <div style={{marginTop:15,fontFamily:SS,fontSize:26,fontWeight:800,color:'#F4E9D5',lineHeight:1.12,letterSpacing:'-0.02em'}}>Le logiciel <span style={{color:'#E8CE93'}}>IA</span> sur mesure<br/><span style={{color:'#E8CE93',fontWeight:900}}>des métiers du bâtiment.</span></div>
+              <div style={{display:'flex',alignItems:'center',gap:16,marginTop:16}}>
+                <div style={{fontFamily:SS,fontSize:50,fontWeight:900,color:'#F4E9D5',letterSpacing:'-0.03em',lineHeight:1}}>OFFERT.</div>
+                <div style={{width:64,height:64,borderRadius:'50%',border:'2px solid #C6A765',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,transform:'rotate(7deg)'}}>
+                  <div style={{fontFamily:SS,fontSize:19,fontWeight:900,color:'#E8CE93',lineHeight:1}}>0 €</div>
+                  <div style={{fontFamily:"ui-monospace,monospace",fontSize:6,fontWeight:700,color:'#C6A765',letterSpacing:'0.03em',marginTop:2,textAlign:'center',lineHeight:1.35}}>DE DÉV.<br/>ÉTÉ 2026</div>
+                </div>
+              </div>
+              <div style={{marginTop:16,fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>Un outil qui chiffre vos plans, relance vos impayés, pilote vos chantiers ? <b style={{color:'#F4E9D5'}}>Décrivez-le. On le construit.</b></div>
+              <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:9}}>
+                {['Une IA entraînée sur votre métier','Tâches répétitives automatisées','Sur mesure, à vos méthodes'].map((x,i)=>(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,fontFamily:SS,fontSize:12.5,fontWeight:600,color:'#D8CCB2'}}>
+                    <span style={{width:20,height:20,borderRadius:'50%',border:'1.5px solid #C6A765',color:'#E8CE93',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,flexShrink:0}}>✓</span>{x}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={()=>{closeEteModal();setView&&setView('c-devis');}} style={{width:'100%',background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',padding:'15px',fontFamily:SS,fontSize:12.5,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.05em'}}>Demander mon outil — réponse sous 48 h →</button>
+          </div>
+          <style>{'@keyframes oniqEtePop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}'}</style>
+        </div>
+      )}
       {/* Header — éditorial redesign */}
       <div style={{marginBottom:24,position:'relative'}}>
         <div aria-hidden="true" className="oniq-float" style={{position:'absolute',top:'-30%',left:'-3%',width:'520px',height:'320px',borderRadius:'50%',background:'radial-gradient(ellipse,rgba(193,139,69,0.16),transparent 65%)',filter:'blur(60px)',pointerEvents:'none',zIndex:0}}/>
@@ -5992,7 +6030,7 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
 
       {/* Popup promotionnelle Pack Bâtiment — apparaît 25s après chargement
           + récurrence 5min ; dismissible 24h ou pour toujours */}
-      <PackBatimentPopup user={user} software={software} setView={setView} setDetail={setDetail}/>
+      {null/* pop-up remplacé par le modal centré Offre d'été (Marketplace) */}
 
       </div>
     </div>
@@ -7775,6 +7813,19 @@ const DevisClient=({user})=>{
   return (
     <div style={{padding:isMob()?"16px 12px":"28px 36px"}}>
       <PH section="Clés en main" title="Obtenir un logiciel clés en main à -70 %"/>
+      {/* Bannière OFFRE D'ÉTÉ — développement offert (durée limitée) */}
+      <div style={{position:'relative',overflow:'hidden',background:'linear-gradient(135deg,#1F1A14 0%,#3A2410 50%,#1F1A14 100%)',border:'1px solid #D4A24C',borderRadius:16,padding:isMob()?'18px 18px':'20px 24px',margin:'0 0 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:18,flexWrap:'wrap',boxShadow:'0 12px 40px rgba(0,0,0,0.25),0 0 60px rgba(212,162,76,0.10)'}}>
+        <div style={{minWidth:240,flex:1}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'5px 13px',fontFamily:SS,fontSize:10.5,fontWeight:800,letterSpacing:'0.14em',textTransform:'uppercase',marginBottom:10}}>Offre d'été · Durée limitée</div>
+          <div style={{fontFamily:SF,fontSize:isMob()?21:25,fontWeight:800,color:'#F4E9D5',lineHeight:1.15,letterSpacing:'-0.02em'}}>Cet été, le développement est <span style={{color:'#E8CE93'}}>OFFERT.</span></div>
+          <div style={{fontFamily:SS,fontSize:13.5,color:'rgba(244,233,213,0.75)',marginTop:7,lineHeight:1.5}}>Au lieu de −70 % le reste de l'année. Remplissez le formulaire, <b style={{color:'#F4E9D5'}}>on s'occupe du reste.</b></div>
+        </div>
+        <div style={{width:70,height:70,borderRadius:'50%',border:'2px solid #C6A765',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,transform:'rotate(7deg)'}}>
+          <div style={{fontFamily:SF,fontSize:22,fontWeight:900,color:'#E8CE93',lineHeight:1}}>0 €</div>
+          <div style={{fontFamily:SS,fontSize:7.5,fontWeight:700,color:'#C6A765',letterSpacing:'0.05em',marginTop:2}}>DE DÉV.</div>
+        </div>
+      </div>
+
       <div style={{display:"grid",gridTemplateColumns:"1.1fr 0.9fr",gap:28}}>
         <div>
           {sent?(
@@ -9770,6 +9821,15 @@ function _generateTrialCode(softwareSlug, durationDays=7, note=''){
 
 async function redeemTrialCode(codeStr, userId, userEmail){
   const codeUp=codeStr.trim().toUpperCase();
+  /* v-rls : sous RLS, promo_codes = admin-only et software_access = écriture service_role.
+     On valide + octroie via la RPC SECURITY DEFINER redeem_promo_code (tout côté serveur).
+     Repli sur la logique locale ci-dessous si la RPC n'est pas encore déployée (l'app ne casse pas). */
+  try{
+    if(typeof supabaseClient!=='undefined' && supabaseClient){
+      const {data:_rpc,error:_rpcErr}=await supabaseClient.rpc('redeem_promo_code',{p_code:codeUp});
+      if(!_rpcErr && _rpc && typeof _rpc.ok!=='undefined'){ return _rpc; }
+    }
+  }catch(_e){ /* repli local ci-dessous */ }
   // Chercher dans localStorage
   let codes=getTrialCodes();
   let found=codes.find(c=>c.code===codeUp);
