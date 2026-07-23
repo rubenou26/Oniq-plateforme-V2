@@ -10217,6 +10217,135 @@ const EspaceCommercial=({user,setUser})=>{
   );
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+//  RESSOURCES COMMERCIALES — bannières téléchargeables + templates mail/WhatsApp
+//  + envoi 1 clic (mailto & wa.me pré-remplis, personnalisés au lead)
+// ══════════════════════════════════════════════════════════════════════════
+const ONIQ_PUB_LINK="https://oniq.online";
+// Normalise un tel FR vers l'international sans "+" (33XXXXXXXXX) pour wa.me
+const oniqTelIntl=(tel)=>{var d=String(tel||"").replace(/\D/g,"");if(!d)return"";if(d.slice(0,4)==="0033")d=d.slice(4);else if(d.slice(0,2)==="33"&&d.length>=11)d=d.slice(2);if(d.length===9)d="0"+d;if(d.length===10&&d.charAt(0)==="0")return "33"+d.slice(1);return d;};
+// Remplace les variables {contact} {entreprise} {ville} {secteur} par les infos du lead
+const oniqFillTpl=(str,lead)=>String(str||"").replace(/\{contact\}/g,((lead&&(lead.contact||"").trim())||"Bonjour")).replace(/\{entreprise\}/g,((lead&&lead.entreprise)||"votre entreprise")).replace(/\{ville\}/g,((lead&&(lead.ville||lead.region))||"")).replace(/\{secteur\}/g,((lead&&lead.secteur)||"votre secteur"));
+// Templates de publicité (mail = objet + corps ; wa = version courte WhatsApp)
+const ONIQ_PUB_TEMPLATES=[
+  {id:"ete",nom:"Offre d'été — logiciel offert",
+   subject:"{entreprise} — votre logiciel métier développé gratuitement cet été",
+   mail:"Bonjour {contact},\n\nJe me permets de vous contacter au sujet d'ONIQ, la plateforme de logiciels sur mesure pour les métiers du bâtiment.\n\nCet été seulement, nous OFFRONS le développement de votre logiciel (au lieu de -70% le reste de l'année) : vous décrivez l'outil dont vous avez besoin — chiffrage de plans, relance des impayés, suivi de chantiers — et on le construit.\n\n- Une IA entraînée sur votre métier\n- Vos tâches répétitives automatisées\n- Développement 100% OFFERT cet été\n\nTout est expliqué ici : https://oniq.online\n\nSeriez-vous disponible pour un échange rapide cette semaine ?\n\nBien à vous,\nL'équipe ONIQ",
+   wa:"Bonjour {contact} 👋\n\nCet été, ONIQ développe *gratuitement* votre logiciel sur mesure pour le bâtiment : chiffrage de plans, relances d'impayés, suivi de chantiers… avec une IA entraînée sur votre métier.\n\n👉 https://oniq.online\n\nSeriez-vous dispo pour un échange rapide ?"},
+  {id:"market",nom:"Marketplace — logiciels prêts à l'emploi",
+   subject:"{entreprise} — des logiciels bâtiment prêts à l'emploi (-70%)",
+   mail:"Bonjour {contact},\n\nONIQ regroupe des logiciels métier pour le bâtiment, prêts à l'emploi et à -70% : gestion de chantiers, devis & factures, chiffrage IA de vos plans, relance automatique des impayés.\n\nEssai 7 jours gratuit, sans carte bancaire.\n\nDécouvrez la marketplace : https://oniq.online\n\nJe reste à votre disposition pour une démonstration adaptée à votre activité.\n\nBien à vous,\nL'équipe ONIQ",
+   wa:"Bonjour {contact} 👋\n\nONIQ, ce sont des logiciels bâtiment prêts à l'emploi à -70% (chantiers, devis/factures, chiffrage IA, relances). Essai 7 jours gratuit, sans CB.\n\n👉 https://oniq.online\n\nJe vous fais une démo quand vous voulez !"},
+  {id:"relance",nom:"Relance douce",
+   subject:"{entreprise} — je reviens vers vous",
+   mail:"Bonjour {contact},\n\nJe me permets de revenir vers vous concernant ONIQ, nos logiciels sur mesure pour les métiers du bâtiment.\n\nAvez-vous eu l'occasion d'y réfléchir ? Je serais ravi de répondre à vos questions ou de vous préparer une démonstration adaptée à votre activité.\n\nTout est ici : https://oniq.online\n\nBien à vous,\nL'équipe ONIQ",
+   wa:"Bonjour {contact} 👋 Je reviens vers vous concernant ONIQ (logiciels sur mesure pour le bâtiment). Vous avez pu y jeter un œil ? Je réponds à vos questions avec plaisir 👉 https://oniq.online"}
+];
+// Rasterise un <svg> du DOM en PNG téléchargeable (canvas natif, sans librairie)
+const oniqSvgToPng=(svgEl,filename,w,h)=>{
+  try{
+    if(!svgEl){return;}
+    var clone=svgEl.cloneNode(true);
+    clone.removeAttribute("style");
+    clone.setAttribute("width",w);clone.setAttribute("height",h);
+    var xml=new XMLSerializer().serializeToString(clone);
+    var url="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(xml);
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var c=document.createElement("canvas");c.width=w;c.height=h;
+        var ctx=c.getContext("2d");ctx.drawImage(img,0,0,w,h);
+        c.toBlob(function(b){if(!b){return;}var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(function(){try{URL.revokeObjectURL(a.href);a.remove();}catch(e){}},1500);},"image/png");
+      }catch(e){window.oniqNotify&&window.oniqNotify("Téléchargement impossible sur ce navigateur.","warn");}
+    };
+    img.onerror=function(){window.oniqNotify&&window.oniqNotify("Téléchargement impossible sur ce navigateur.","warn");};
+    img.src=url;
+  }catch(e){}
+};
+const RessourcesCommercial=({mob})=>{
+  const [copied,setCopied]=React.useState("");
+  const copy=(txt,key)=>{try{navigator.clipboard.writeText(txt);setCopied(key);setTimeout(()=>setCopied(""),1600);}catch(e){window.oniqNotify&&window.oniqNotify("Copie impossible sur ce navigateur.","warn");}};
+  const gold="#E8CE93",goldD="#C6A765",cream="#F4E9D5",dark="#14110D",stone="#8C8070";
+  const VBanner=(w,h,id)=>{
+    const cx=w/2;
+    return React.createElement("svg",{id:"oniq-ban-"+id,viewBox:"0 0 "+w+" "+h,xmlns:"http://www.w3.org/2000/svg",style:{width:"100%",height:"100%",display:"block"}},
+      React.createElement("rect",{x:0,y:0,width:w,height:h,fill:dark}),
+      React.createElement("circle",{cx:w-70,cy:110,r:230,fill:"none",stroke:"rgba(198,167,101,0.18)","strokeWidth":2}),
+      React.createElement("circle",{cx:w-70,cy:110,r:180,fill:"none",stroke:"rgba(198,167,101,0.12)","strokeWidth":1.5}),
+      React.createElement("text",{x:cx,y:h*0.15,fill:gold,"fontFamily":"Georgia, serif","fontSize":w*0.105,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"ONIQ"),
+      React.createElement("text",{x:cx,y:h*0.15+w*0.052,fill:stone,"fontFamily":"Consolas, monospace","fontSize":w*0.024,"textAnchor":"middle","letterSpacing":4},"LOGICIELS IA · BÂTIMENT"),
+      React.createElement("rect",{x:cx-w*0.205,y:h*0.27,width:w*0.41,height:w*0.072,rx:w*0.036,fill:gold}),
+      React.createElement("text",{x:cx,y:h*0.27+w*0.05,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":w*0.032,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"OFFRE D'ÉTÉ"),
+      React.createElement("text",{x:cx,y:h*0.44,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.064,"fontWeight":"800","textAnchor":"middle"},"Votre logiciel métier."),
+      React.createElement("text",{x:cx,y:h*0.44+w*0.135,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.145,"fontWeight":"900","textAnchor":"middle","letterSpacing":1},"OFFERT."),
+      React.createElement("circle",{cx:cx,cy:h*0.66,r:w*0.11,fill:"none",stroke:goldD,"strokeWidth":4}),
+      React.createElement("text",{x:cx,y:h*0.66-w*0.004,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.072,"fontWeight":"900","textAnchor":"middle"},"0€"),
+      React.createElement("text",{x:cx,y:h*0.66+w*0.05,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":w*0.019,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"DE DÉVELOPPEMENT"),
+      React.createElement("text",{x:cx,y:h*0.80,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"Cet été seulement — au lieu de -70%."),
+      React.createElement("text",{x:cx,y:h*0.80+w*0.046,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"On construit l'outil IA de votre bâtiment."),
+      React.createElement("rect",{x:cx-w*0.16,y:h*0.88,width:w*0.32,height:2,fill:goldD}),
+      React.createElement("text",{x:cx,y:h*0.93,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.05,"fontWeight":"800","textAnchor":"middle"},"oniq.online")
+    );
+  };
+  const HBanner=(w,h,id)=>{
+    return React.createElement("svg",{id:"oniq-ban-"+id,viewBox:"0 0 "+w+" "+h,xmlns:"http://www.w3.org/2000/svg",style:{width:"100%",height:"100%",display:"block"}},
+      React.createElement("rect",{x:0,y:0,width:w,height:h,fill:dark}),
+      React.createElement("circle",{cx:w-30,cy:70,r:210,fill:"none",stroke:"rgba(198,167,101,0.16)","strokeWidth":2}),
+      React.createElement("circle",{cx:w-30,cy:70,r:165,fill:"none",stroke:"rgba(198,167,101,0.10)","strokeWidth":1.5}),
+      React.createElement("text",{x:72,y:120,fill:gold,"fontFamily":"Georgia, serif","fontSize":70,"fontWeight":"700","textAnchor":"start","letterSpacing":2},"ONIQ"),
+      React.createElement("text",{x:74,y:150,fill:stone,"fontFamily":"Consolas, monospace","fontSize":17,"textAnchor":"start","letterSpacing":3},"LOGICIELS IA · BÂTIMENT"),
+      React.createElement("rect",{x:72,y:196,width:224,height:50,rx:25,fill:gold}),
+      React.createElement("text",{x:184,y:228,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":21,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"OFFRE D'ÉTÉ"),
+      React.createElement("text",{x:72,y:328,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":50,"fontWeight":"800","textAnchor":"start"},"Votre logiciel métier."),
+      React.createElement("text",{x:70,y:412,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":86,"fontWeight":"900","textAnchor":"start","letterSpacing":1},"OFFERT."),
+      React.createElement("text",{x:72,y:474,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":23,"textAnchor":"start"},"Cet été — au lieu de -70%. Décrivez-le, on le construit."),
+      React.createElement("rect",{x:72,y:512,width:250,height:2,fill:goldD}),
+      React.createElement("text",{x:72,y:562,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":40,"fontWeight":"800","textAnchor":"start"},"oniq.online"),
+      React.createElement("circle",{cx:w-185,cy:h*0.5,r:120,fill:"none",stroke:goldD,"strokeWidth":4}),
+      React.createElement("text",{x:w-185,y:h*0.5+4,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":76,"fontWeight":"900","textAnchor":"middle"},"0€"),
+      React.createElement("text",{x:w-185,y:h*0.5+46,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":17,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"DE DÉVELOPPEMENT")
+    );
+  };
+  const banners=[
+    {id:"post",nom:"Post carré",fmt:"Instagram / Facebook · 1080×1080",w:1080,h:1080,dw:mob?150:210,dh:mob?150:210},
+    {id:"story",nom:"Story verticale",fmt:"Instagram / WhatsApp · 1080×1920",w:1080,h:1920,dw:mob?110:150,dh:mob?196:267},
+    {id:"paysage",nom:"Banni\u00e8re paysage",fmt:"LinkedIn / en-t\u00eate email \u00b7 1200\u00d7628",w:1200,h:628,dw:mob?240:300,dh:mob?126:157}
+  ];
+  const btn={padding:"8px 14px",border:"1px solid "+C.linen,borderRadius:6,fontFamily:SS,fontSize:10,fontWeight:700,color:C.ink,cursor:"pointer",background:C.paper,letterSpacing:"0.04em"};
+  const card={background:C.paper,border:"1px solid "+C.linen,borderRadius:10,padding:mob?"14px":"18px 20px"};
+  return React.createElement("div",null,
+    React.createElement("div",{style:{fontFamily:SF,fontSize:mob?16:20,fontWeight:700,color:C.ink,marginBottom:4}},"🎨 Ressources commerciales"),
+    React.createElement("p",{style:{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:22,lineHeight:1.6,maxWidth:640}},"Vos supports prêts à l'emploi : téléchargez les bannières pour vos réseaux et messages, copiez les modèles de mail et WhatsApp. Depuis la Pipeline, un clic sur un contact permet aussi d'envoyer la pub pré-remplie."),
+    // ── Bannières ──
+    React.createElement("div",{style:{fontFamily:SS,fontSize:9,fontWeight:700,color:C.stone,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:12}},"Bannières à télécharger"),
+    React.createElement("div",{style:{display:"flex",gap:16,flexWrap:"wrap",marginBottom:30}},
+      banners.map(b=>React.createElement("div",{key:b.id,style:{...card,display:"flex",flexDirection:"column",alignItems:"center",gap:10}},
+        React.createElement("div",{style:{width:b.dw,height:b.dh,borderRadius:10,overflow:"hidden",boxShadow:"0 6px 20px rgba(0,0,0,0.25)"}},(b.w>b.h?HBanner:VBanner)(b.w,b.h,b.id)),
+        React.createElement("div",{style:{textAlign:"center"}},
+          React.createElement("div",{style:{fontFamily:SS,fontSize:12,fontWeight:700,color:C.ink}},b.nom),
+          React.createElement("div",{style:{fontFamily:SS,fontSize:10,color:C.stone,marginTop:2}},b.fmt)
+        ),
+        React.createElement("button",{onClick:()=>oniqSvgToPng(document.getElementById("oniq-ban-"+b.id),"ONIQ_offre_ete_"+b.id+".png",b.w,b.h),style:{...btn,background:C.ink,color:C.ivory,border:"none",width:"100%"}},"⬇ Télécharger PNG")
+      ))
+    ),
+    // ── Templates ──
+    React.createElement("div",{style:{fontFamily:SS,fontSize:9,fontWeight:700,color:C.stone,textTransform:"uppercase",letterSpacing:"0.14em",marginBottom:12}},"Modèles de messages"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:mob?"1fr":"1fr 1fr",gap:14}},
+      ONIQ_PUB_TEMPLATES.map(t=>React.createElement("div",{key:t.id,style:card},
+        React.createElement("div",{style:{fontFamily:SF,fontSize:14,fontWeight:700,color:C.ink,marginBottom:8}},t.nom),
+        React.createElement("div",{style:{fontFamily:SS,fontSize:10,fontWeight:700,color:C.stone,marginBottom:4}},"Objet : "+t.subject),
+        React.createElement("div",{style:{fontFamily:SS,fontSize:11,color:C.stone,whiteSpace:"pre-wrap",background:C.dim,border:"1px solid "+C.linen,borderRadius:6,padding:"10px 12px",maxHeight:150,overflow:"auto",marginBottom:10,lineHeight:1.5}},t.mail),
+        React.createElement("div",{style:{display:"flex",gap:8,flexWrap:"wrap"}},
+          React.createElement("button",{onClick:()=>copy(t.subject,t.id+"-s"),style:btn},copied===t.id+"-s"?"✓ Copié":"Copier l'objet"),
+          React.createElement("button",{onClick:()=>copy(t.mail,t.id+"-m"),style:btn},copied===t.id+"-m"?"✓ Copié":"Copier le mail"),
+          React.createElement("button",{onClick:()=>copy(t.wa,t.id+"-w"),style:{...btn,color:"#128C7E",borderColor:"#a8d8cc"}},copied===t.id+"-w"?"✓ Copié":"Copier le WhatsApp")
+        )
+      ))
+    ),
+    React.createElement("div",{style:{fontFamily:SS,fontSize:11,color:C.stone,marginTop:18,padding:"12px 14px",background:"rgba(184,154,90,0.08)",border:"1px solid rgba(184,154,90,0.25)",borderRadius:8,lineHeight:1.6}},"💡 Les variables {contact} et {entreprise} sont remplacées automatiquement par les infos du client quand vous envoyez la pub depuis la Pipeline.")
+  );
+};
+
 const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentUserEmail,currentUserName})=>{
   const [crm,setCrm]=useState(()=>getCRM());
   const [crmCloudStatus,setCrmCloudStatus]=useState({status:'idle',ts:null,msg:null});
@@ -10282,6 +10411,7 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   const [selCo,setSelCo]=useState('all');
   const [selPeriod,setSelPeriod]=useState(crmMonth());
   const [editLead,setEditLead]=useState(null);
+  const [pubTpl,setPubTpl]=useState((ONIQ_PUB_TEMPLATES[0]||{}).id);
   const [newCo,setNewCo]=useState({nom:'',email:'',tel:'',zone:''});
   const [newLead,setNewLead]=useState({entreprise:'',contact:'',email:'',tel:'',secteur:'Bâtiment',region:'',logiciel:software[0]?.slug||'',source:'Manuel',commercial:'',notes:'',valeur:0});
   const [newInteraction,setNewInteraction]=useState({type:'📞 Appel',note:'',date:new Date().toISOString().slice(0,16)});
@@ -10470,6 +10600,16 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   const perdus=byStage('perdu');
   const cooldownLeads=crm.leads.filter(l=>isInCooldown(l));
   const pipeline=leads.filter(l=>!['conclu'].includes(l.stage));
+const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x.id===lead.id);if(l){l.interactions=l.interactions||[];l.interactions.push({type:"\uD83D\uDCE3 Pub "+canal,note:"Publicit\u00e9 envoy\u00e9e ("+canal+")",date:crmNow()});}save(d);}catch(e){}};
+    const exportNonContactes=()=>{
+    const rows=(leads||[]).filter(l=>((l.interactions||[]).length===0)&&!['conclu','perdu'].includes(l.stage));
+    if(!rows.length){window.oniqNotify&&window.oniqNotify("Aucun contact \u00ab pas encore appel\u00e9 \u00bb \u00e0 exporter.","info");return;}
+    const head=["Entreprise","T\u00e9l\u00e9phone","Mobile","Contact","Secteur","R\u00e9gion/Ville","Email","Valeur/mois","\u00c9tape"];
+    const esc=(v)=>{v=String(v==null?"":v);return /[";\n]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v;};
+    const data=rows.map(l=>[l.entreprise,l.tel,(oniqIsMobileFR(l.tel)?"Oui":""),l.contact,l.secteur,(l.region||l.ville||""),l.email,(l.valeur||""),(CRM_STAGE_LABELS[l.stage]||l.stage)]);
+    const csv="\ufeff"+[head].concat(data).map(r=>r.map(esc).join(";")).join("\r\n");
+    try{const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ONIQ_a_contacter_"+(selPeriod||"")+".csv";document.body.appendChild(a);a.click();setTimeout(()=>{try{URL.revokeObjectURL(a.href);a.remove();}catch(e){}},1500);}catch(e){}
+  };
   const totalCA=signes.reduce((s,l)=>s+(l.valeur||0),0);
   // Commissions en attente = leads conclus sans paiement Stripe confirmé
   const confirmedLeadIds=new Set(confirmedCommissions.map(c=>c.lead_id).filter(Boolean));
@@ -10547,6 +10687,7 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
       React.createElement(TabBtn,{id:'dashboard',icon:'📊',label:'Dashboard'}),
       React.createElement(TabBtn,{id:'pipeline',icon:'🔄',label:'Pipeline'}),
       React.createElement(TabBtn,{id:'prospection',icon:'🔍',label:'Prospection IA'}),
+      React.createElement(TabBtn,{id:'ressources',icon:'\uD83C\uDFA8',label:'Ressources'}),
       React.createElement(TabBtn,{id:'relances',icon:'🤖',label:'Relances IA'}),
       React.createElement(TabBtn,{id:'mes_commissions',icon:'💰',label:'Mes commissions'}),
       React.createElement(TabBtn,{id:'leaderboard',icon:'🏆',label:'Leaderboard'}),
@@ -10683,11 +10824,13 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
     ),
 
     // ═══ TAB PIPELINE (personnelle — admin & commercial voient uniquement LEURS leads) ═══
+    tab==='ressources'&&React.createElement(RessourcesCommercial,{mob:mob}),
     tab==='pipeline'&&React.createElement('div',null,
       React.createElement('div',{style:{background:'rgba(184,154,90,0.08)',border:'1px solid rgba(184,154,90,0.25)',borderRadius:6,padding:'8px 14px',marginBottom:12,fontFamily:SS,fontSize:11,color:C.stone}},
         '🔒 Vue personnelle — Pipeline & Dashboard affichent uniquement vos leads. Leaderboard & Équipe restent partagés.'
       ),
       React.createElement('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:12}},
+        React.createElement('button',{onClick:exportNonContactes,title:'T\u00e9l\u00e9charger en Excel les contacts jamais appel\u00e9s',style:{padding:'8px 18px',background:'#1e6641',border:'none',borderRadius:6,fontFamily:SS,fontSize:10,fontWeight:700,color:'#fff',cursor:'pointer',letterSpacing:'0.06em',marginRight:8}},'\u2B07 Exporter les non-appel\u00e9s'),
         React.createElement('button',{onClick:()=>setShowAddLead(true),style:{padding:'8px 18px',background:C.gold,border:'none',borderRadius:6,fontFamily:SS,fontSize:10,fontWeight:700,color:C.ink,cursor:'pointer',letterSpacing:'0.06em'}},'+ Nouveau contact')
       ),
       !myPipelineCoId&&React.createElement('div',{style:{background:'#fdf0e0',border:'1px solid #e8c8a0',borderRadius:6,padding:'14px 18px',marginBottom:12,fontFamily:SS,fontSize:12,color:'#9a6800'}},
@@ -10954,6 +11097,16 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
         React.createElement('div',{style:{fontFamily:SS,fontSize:11,color:C.stone,marginBottom:4}},editLead.contact+(editLead.email?' · '+editLead.email:'')+(editLead.tel?' · '+editLead.tel:'')),
         editLead.valeur>0&&React.createElement('div',{style:{fontFamily:SS,fontSize:12,fontWeight:700,color:C.gold,marginBottom:4}},editLead.valeur+'€/mois · Commission si signé: '+calcCommissionAmount(editLead.valeur).toFixed(0)+'€ (50% 1er mois)'),
         editLead.notes&&React.createElement('div',{style:{fontFamily:SS,fontSize:11,color:C.stone,marginBottom:14,fontStyle:'normal'}},editLead.notes),
+
+        React.createElement('div',{key:'oniqpub',style:{margin:'0 0 16px',padding:'14px 16px',background:'#f4f8f4',border:'1px solid #cfe3cf',borderRadius:8}},
+          React.createElement('div',{style:{fontFamily:SS,fontSize:9,fontWeight:700,color:'#1e6641',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:8}},'\uD83D\uDCE3 Envoyer une publicit\u00e9'),
+          React.createElement('select',{value:pubTpl,onChange:e=>setPubTpl(e.target.value),style:{width:'100%',padding:'8px 10px',border:'1px solid #cfe3cf',borderRadius:6,fontFamily:SS,fontSize:12,background:'#fff',marginBottom:8,boxSizing:'border-box'}},ONIQ_PUB_TEMPLATES.map(t=>React.createElement('option',{key:t.id,value:t.id},t.nom))),
+          React.createElement('div',{style:{display:'flex',gap:8}},
+            React.createElement('button',{onClick:()=>{var t=ONIQ_PUB_TEMPLATES.find(x=>x.id===pubTpl)||ONIQ_PUB_TEMPLATES[0];if(!editLead.email){window.oniqNotify&&window.oniqNotify("Pas d'email pour ce contact.","warn");return;}var subj=oniqFillTpl(t.subject,editLead);var body=oniqFillTpl(t.mail,editLead);window.location.href="mailto:"+editLead.email+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);logPub(editLead,"mail");},style:{flex:1,padding:'11px',background:'#1a3f7a',border:'none',borderRadius:7,fontFamily:SS,fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer'}},'\u2709 Pub par mail'),
+            React.createElement('button',{onClick:()=>{var t=ONIQ_PUB_TEMPLATES.find(x=>x.id===pubTpl)||ONIQ_PUB_TEMPLATES[0];var num=oniqTelIntl(editLead.tel);if(!num){window.oniqNotify&&window.oniqNotify('Pas de num\u00e9ro pour ce contact.','warn');return;}var body=oniqFillTpl(t.wa,editLead);window.open('https://wa.me/'+num+'?text='+encodeURIComponent(body),'_blank');logPub(editLead,"WhatsApp");},style:{flex:1,padding:'11px',background:'#128C7E',border:'none',borderRadius:7,fontFamily:SS,fontSize:11,fontWeight:700,color:'#fff',cursor:'pointer'}},'\uD83D\uDCAC Pub WhatsApp')
+          ),
+          React.createElement('div',{style:{fontFamily:SS,fontSize:9,color:'#6b7f6b',marginTop:6}},"Le message s'ouvre pr\u00e9-rempli et personnalis\u00e9 \u2014 v\u00e9rifiez puis envoyez.")
+        ),
 
         // ── Actions guidées par étape ──
         React.createElement('div',{style:{marginBottom:18}},
