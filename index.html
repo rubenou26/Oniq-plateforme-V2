@@ -10322,8 +10322,8 @@ const ONIQ_PUB_TEMPLATES=[
    wa:"Bonjour {contact} 👋\n\nONIQ, ce sont des logiciels métier prêts à l'emploi propulsés par l'IA (chantiers, devis/factures, chiffrage IA, relances) — et du sur mesure 4× moins cher que les agences. Essai 7 jours gratuit, sans CB.\n\n👉 https://oniq.online\n\nJe vous fais une démo quand vous voulez !"},
   {id:"relance",nom:"Relance douce",
    subject:"{entreprise} — je reviens vers vous",
-   mail:"Bonjour {contact},\n\nJe me permets de revenir vers vous concernant ONIQ, nos logiciels sur mesure pour les métiers du bâtiment.\n\nAvez-vous eu l'occasion d'y réfléchir ? Je serais ravi de répondre à vos questions ou de vous préparer une démonstration adaptée à votre activité.\n\nTout est ici : https://oniq.online\n\nBien à vous,\nL'équipe ONIQ",
-   wa:"Bonjour {contact} 👋 Je reviens vers vous concernant ONIQ (logiciels sur mesure pour le bâtiment). Vous avez pu y jeter un œil ? Je réponds à vos questions avec plaisir 👉 https://oniq.online"}
+   mail:"Bonjour {contact},\n\nJe me permets de revenir vers vous concernant ONIQ, votre logiciel sur mesure (devis divisé par 4 grâce à nos méthodes IA).\n\nAvez-vous eu l'occasion d'y réfléchir ? Je serais ravi de répondre à vos questions ou de vous préparer une démonstration adaptée à votre activité.\n\nTout est ici : https://oniq.online\n\nBien à vous,\nL'équipe ONIQ",
+   wa:"Bonjour {contact} 👋 Je reviens vers vous concernant ONIQ (votre logiciel sur mesure, 4× moins cher grâce à l’IA). Vous avez pu y jeter un œil ? Je réponds à vos questions avec plaisir 👉 https://oniq.online"}
 ];
 // Rasterise un <svg> du DOM en PNG téléchargeable (canvas natif, sans librairie)
 const oniqSvgToPng=(svgEl,filename,w,h)=>{
@@ -10350,44 +10350,80 @@ const RessourcesCommercial=({mob})=>{
   const [copied,setCopied]=React.useState("");
   const copy=(txt,key)=>{try{navigator.clipboard.writeText(txt);setCopied(key);setTimeout(()=>setCopied(""),1600);}catch(e){window.oniqNotify&&window.oniqNotify("Copie impossible sur ce navigateur.","warn");}};
   const gold="#E8CE93",goldD="#C6A765",cream="#F4E9D5",dark="#14110D",stone="#8C8070";
+  /* ═══ Bannières FUTURISTES animées — dégradé profond, anneaux rotatifs,
+     ÷4 avec halo pulsant. Les animations (SMIL) tournent dans l'aperçu ;
+     le PNG téléchargé capture l'image nette. ═══ */
+  const _banDefs=(id,w)=>React.createElement("defs",null,
+    React.createElement("radialGradient",{id:"obg-"+id,cx:"30%",cy:"18%",r:"1.1"},
+      React.createElement("stop",{offset:"0%","stopColor":"#241708"}),
+      React.createElement("stop",{offset:"45%","stopColor":"#120C06"}),
+      React.createElement("stop",{offset:"100%","stopColor":"#060403"})),
+    React.createElement("linearGradient",{id:"ogold-"+id,x1:"0",y1:"0",x2:"1",y2:"1"},
+      React.createElement("stop",{offset:"0%","stopColor":"#FFE9A8"}),
+      React.createElement("stop",{offset:"55%","stopColor":"#E8CE93"}),
+      React.createElement("stop",{offset:"100%","stopColor":"#A9863F"})),
+    React.createElement("filter",{id:"oglow-"+id,x:"-60%",y:"-60%",width:"220%",height:"220%"},
+      React.createElement("feGaussianBlur",{"stdDeviation":w*0.012,result:"b"}),
+      React.createElement("feMerge",null,
+        React.createElement("feMergeNode",{in:"b"}),
+        React.createElement("feMergeNode",{in:"SourceGraphic"})))
+  );
+  const _banRing=(cx,cy,r,id,dur,dash)=>React.createElement("g",null,
+    React.createElement("circle",{cx:cx,cy:cy,r:r,fill:"none",stroke:"rgba(198,167,101,0.22)","strokeWidth":1.6,"strokeDasharray":dash},
+      React.createElement("animateTransform",{attributeName:"transform",type:"rotate",from:"0 "+cx+" "+cy,to:"360 "+cx+" "+cy,dur:dur,repeatCount:"indefinite"}))
+  );
+  const _banGrid=(w,h)=>{
+    const els=[];const step=Math.max(w,h)/14;
+    for(let x=step;x<w;x+=step)els.push(React.createElement("line",{key:"v"+x,x1:x,y1:0,x2:x,y2:h,stroke:"rgba(232,206,147,0.035)","strokeWidth":1}));
+    for(let y=step;y<h;y+=step)els.push(React.createElement("line",{key:"h"+y,x1:0,y1:y,x2:w,y2:y,stroke:"rgba(232,206,147,0.035)","strokeWidth":1}));
+    return React.createElement("g",null,els);
+  };
   const VBanner=(w,h,id)=>{
-    const cx=w/2;
+    const cx=w/2;const story=h>w*1.3;
     return React.createElement("svg",{id:"oniq-ban-"+id,viewBox:"0 0 "+w+" "+h,xmlns:"http://www.w3.org/2000/svg",style:{width:"100%",height:"100%",display:"block"}},
-      React.createElement("rect",{x:0,y:0,width:w,height:h,fill:dark}),
-      React.createElement("circle",{cx:w-70,cy:110,r:230,fill:"none",stroke:"rgba(198,167,101,0.18)","strokeWidth":2}),
-      React.createElement("circle",{cx:w-70,cy:110,r:180,fill:"none",stroke:"rgba(198,167,101,0.12)","strokeWidth":1.5}),
-      React.createElement("text",{x:cx,y:h*0.15,fill:gold,"fontFamily":"Georgia, serif","fontSize":w*0.105,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"ONIQ"),
-      React.createElement("text",{x:cx,y:h*0.15+w*0.052,fill:stone,"fontFamily":"Consolas, monospace","fontSize":w*0.024,"textAnchor":"middle","letterSpacing":4},"LOGICIELS SUR MESURE · IA"),
-      React.createElement("rect",{x:cx-w*0.205,y:h*0.27,width:w*0.41,height:w*0.072,rx:w*0.036,fill:gold}),
-      React.createElement("text",{x:cx,y:h*0.27+w*0.05,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":w*0.032,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"SUR MESURE ÷4"),
-      React.createElement("text",{x:cx,y:h*0.44,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.064,"fontWeight":"800","textAnchor":"middle"},"Votre logiciel sur mesure."),
-      React.createElement("text",{x:cx,y:h*0.44+w*0.135,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.145,"fontWeight":"900","textAnchor":"middle","letterSpacing":1},"÷4."),
-      React.createElement("circle",{cx:cx,cy:h*0.66,r:w*0.11,fill:"none",stroke:goldD,"strokeWidth":4}),
-      React.createElement("text",{x:cx,y:h*0.66-w*0.004,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.072,"fontWeight":"900","textAnchor":"middle"},"4×"),
-      React.createElement("text",{x:cx,y:h*0.66+w*0.05,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":w*0.019,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"MOINS CHER VS AGENCES"),
-      React.createElement("text",{x:cx,y:h*0.80,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"Nos méthodes IA divisent vos devis par 4."),
-      React.createElement("text",{x:cx,y:h*0.80+w*0.046,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"On construit l'outil IA de votre bâtiment."),
-      React.createElement("rect",{x:cx-w*0.16,y:h*0.88,width:w*0.32,height:2,fill:goldD}),
-      React.createElement("text",{x:cx,y:h*0.93,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.05,"fontWeight":"800","textAnchor":"middle"},"oniq.online")
+      _banDefs(id,w),
+      React.createElement("rect",{x:0,y:0,width:w,height:h,fill:"url(#obg-"+id+")"}),
+      _banGrid(w,h),
+      _banRing(cx,h*(story?0.60:0.62),w*0.30,id,"46s","5 9"),
+      _banRing(cx,h*(story?0.60:0.62),w*0.245,id,"70s","2 12"),
+      React.createElement("circle",{cx:cx,cy:h*(story?0.60:0.62),r:w*0.20,fill:"rgba(212,162,76,0.10)"},
+        React.createElement("animate",{attributeName:"opacity",values:"0.5;1;0.5",dur:"3.6s",repeatCount:"indefinite"})),
+      React.createElement("text",{x:cx,y:h*(story?0.09:0.12),fill:"url(#ogold-"+id+")","fontFamily":"Georgia, serif","fontSize":w*0.10,"fontWeight":"700","textAnchor":"middle","letterSpacing":3},"ONIQ"),
+      React.createElement("text",{x:cx,y:h*(story?0.09:0.12)+w*0.045,fill:"rgba(198,167,101,0.75)","fontFamily":"Consolas, monospace","fontSize":w*0.021,"textAnchor":"middle","letterSpacing":6},"L O G I C I E L S  S U R  M E S U R E"),
+      React.createElement("rect",{x:cx-w*0.24,y:h*(story?0.155:0.205),width:w*0.48,height:w*0.062,rx:w*0.031,fill:"none",stroke:"url(#ogold-"+id+")","strokeWidth":2}),
+      React.createElement("text",{x:cx,y:h*(story?0.155:0.205)+w*0.042,fill:"#E8CE93","fontFamily":"system-ui, sans-serif","fontSize":w*0.026,"fontWeight":"800","textAnchor":"middle","letterSpacing":4},"⚡ PROPULSÉ PAR L'IA"),
+      React.createElement("text",{x:cx,y:h*(story?0.30:0.38),fill:"#F4E9D5","fontFamily":"system-ui, sans-serif","fontSize":w*0.062,"fontWeight":"800","textAnchor":"middle","letterSpacing":-1},"Votre logiciel sur mesure."),
+      React.createElement("text",{x:cx,y:h*(story?0.30:0.38)+w*0.062,fill:"rgba(244,233,213,0.72)","fontFamily":"system-ui, sans-serif","fontSize":w*0.030,"textAnchor":"middle"},"Nos méthodes IA divisent vos devis par 4."),
+      React.createElement("text",{x:cx,y:h*(story?0.635:0.665),fill:"url(#ogold-"+id+")",filter:"url(#oglow-"+id+")","fontFamily":"system-ui, sans-serif","fontSize":w*0.235,"fontWeight":"900","textAnchor":"middle","letterSpacing":-3},"÷4",
+        React.createElement("animate",{attributeName:"opacity",values:"0.88;1;0.88",dur:"3.6s",repeatCount:"indefinite"})),
+      React.createElement("text",{x:cx,y:h*(story?0.685:0.72),fill:"rgba(198,167,101,0.9)","fontFamily":"Consolas, monospace","fontSize":w*0.023,"fontWeight":"700","textAnchor":"middle","letterSpacing":5},"VS AGENCES CLASSIQUES"),
+      React.createElement("text",{x:cx,y:h*(story?0.80:0.83),fill:"rgba(244,233,213,0.78)","fontFamily":"system-ui, sans-serif","fontSize":w*0.029,"textAnchor":"middle"},"Décrivez votre outil. On le construit."),
+      React.createElement("rect",{x:cx-w*0.17,y:h*(story?0.855:0.875),width:w*0.34,height:w*0.066,rx:w*0.033,fill:"url(#ogold-"+id+")"}),
+      React.createElement("text",{x:cx,y:h*(story?0.855:0.875)+w*0.045,fill:"#14110D","fontFamily":"system-ui, sans-serif","fontSize":w*0.032,"fontWeight":"900","textAnchor":"middle"},"oniq.online")
     );
   };
   const HBanner=(w,h,id)=>{
+    const ccx=w-190,ccy=h*0.5;
     return React.createElement("svg",{id:"oniq-ban-"+id,viewBox:"0 0 "+w+" "+h,xmlns:"http://www.w3.org/2000/svg",style:{width:"100%",height:"100%",display:"block"}},
-      React.createElement("rect",{x:0,y:0,width:w,height:h,fill:dark}),
-      React.createElement("circle",{cx:w-30,cy:70,r:210,fill:"none",stroke:"rgba(198,167,101,0.16)","strokeWidth":2}),
-      React.createElement("circle",{cx:w-30,cy:70,r:165,fill:"none",stroke:"rgba(198,167,101,0.10)","strokeWidth":1.5}),
-      React.createElement("text",{x:72,y:120,fill:gold,"fontFamily":"Georgia, serif","fontSize":70,"fontWeight":"700","textAnchor":"start","letterSpacing":2},"ONIQ"),
-      React.createElement("text",{x:74,y:150,fill:stone,"fontFamily":"Consolas, monospace","fontSize":17,"textAnchor":"start","letterSpacing":3},"LOGICIELS SUR MESURE · IA"),
-      React.createElement("rect",{x:72,y:196,width:224,height:50,rx:25,fill:gold}),
-      React.createElement("text",{x:184,y:228,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":21,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"SUR MESURE ÷4"),
-      React.createElement("text",{x:72,y:328,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":50,"fontWeight":"800","textAnchor":"start"},"Votre logiciel sur mesure."),
-      React.createElement("text",{x:70,y:412,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":86,"fontWeight":"900","textAnchor":"start","letterSpacing":1},"÷4."),
-      React.createElement("text",{x:72,y:474,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":23,"textAnchor":"start"},"4× moins cher que les agences. Décrivez-le, on le construit."),
-      React.createElement("rect",{x:72,y:512,width:250,height:2,fill:goldD}),
-      React.createElement("text",{x:72,y:562,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":40,"fontWeight":"800","textAnchor":"start"},"oniq.online"),
-      React.createElement("circle",{cx:w-185,cy:h*0.5,r:120,fill:"none",stroke:goldD,"strokeWidth":4}),
-      React.createElement("text",{x:w-185,y:h*0.5+4,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":76,"fontWeight":"900","textAnchor":"middle"},"4×"),
-      React.createElement("text",{x:w-185,y:h*0.5+46,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":17,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"MOINS CHER VS AGENCES")
+      _banDefs(id,w),
+      React.createElement("rect",{x:0,y:0,width:w,height:h,fill:"url(#obg-"+id+")"}),
+      _banGrid(w,h),
+      _banRing(ccx,ccy,170,id,"46s","5 9"),
+      _banRing(ccx,ccy,138,id,"70s","2 12"),
+      React.createElement("circle",{cx:ccx,cy:ccy,r:118,fill:"rgba(212,162,76,0.10)"},
+        React.createElement("animate",{attributeName:"opacity",values:"0.5;1;0.5",dur:"3.6s",repeatCount:"indefinite"})),
+      React.createElement("text",{x:72,y:110,fill:"url(#ogold-"+id+")","fontFamily":"Georgia, serif","fontSize":64,"fontWeight":"700","textAnchor":"start","letterSpacing":2},"ONIQ"),
+      React.createElement("text",{x:74,y:140,fill:"rgba(198,167,101,0.75)","fontFamily":"Consolas, monospace","fontSize":15,"textAnchor":"start","letterSpacing":5},"L O G I C I E L S  S U R  M E S U R E"),
+      React.createElement("rect",{x:72,y:178,width:300,height:44,rx:22,fill:"none",stroke:"url(#ogold-"+id+")","strokeWidth":2}),
+      React.createElement("text",{x:222,y:207,fill:"#E8CE93","fontFamily":"system-ui, sans-serif","fontSize":18,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"⚡ PROPULSÉ PAR L'IA"),
+      React.createElement("text",{x:72,y:300,fill:"#F4E9D5","fontFamily":"system-ui, sans-serif","fontSize":46,"fontWeight":"800","textAnchor":"start","letterSpacing":-1},"Votre logiciel sur mesure."),
+      React.createElement("text",{x:72,y:345,fill:"rgba(244,233,213,0.72)","fontFamily":"system-ui, sans-serif","fontSize":22,"textAnchor":"start"},"Nos méthodes IA divisent vos devis par 4."),
+      React.createElement("text",{x:72,y:390,fill:"rgba(244,233,213,0.72)","fontFamily":"system-ui, sans-serif","fontSize":22,"textAnchor":"start"},"Décrivez votre outil. On le construit."),
+      React.createElement("rect",{x:72,y:470,width:280,height:56,rx:28,fill:"url(#ogold-"+id+")"}),
+      React.createElement("text",{x:212,y:507,fill:"#14110D","fontFamily":"system-ui, sans-serif","fontSize":27,"fontWeight":"900","textAnchor":"middle"},"oniq.online"),
+      React.createElement("text",{x:ccx,y:ccy+14,fill:"url(#ogold-"+id+")",filter:"url(#oglow-"+id+")","fontFamily":"system-ui, sans-serif","fontSize":92,"fontWeight":"900","textAnchor":"middle","letterSpacing":-2},"÷4",
+        React.createElement("animate",{attributeName:"opacity",values:"0.88;1;0.88",dur:"3.6s",repeatCount:"indefinite"})),
+      React.createElement("text",{x:ccx,y:ccy+52,fill:"rgba(198,167,101,0.9)","fontFamily":"Consolas, monospace","fontSize":15,"fontWeight":"700","textAnchor":"middle","letterSpacing":3},"VS AGENCES")
     );
   };
   const banners=[
@@ -10472,12 +10508,106 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   const [aiSector,setAiSector]=useState('Bâtiment');
   const [aiRegion,setAiRegion]=useState('France');
   const [aiMobileOnly,setAiMobileOnly]=useState(false);
+  const [aiCaMin,setAiCaMin]=useState(0);
+  const [aiEnriching,setAiEnriching]=useState(false);
+  const fmtCA=(n)=>{if(!isFinite(n))return '';return n>=1e6?((Math.round(n/1e5)/10).toLocaleString('fr-FR')+' M€'):(Math.round(n/1e3).toLocaleString('fr-FR')+' k€');};
+  const waLinkFR=(tel,r)=>{
+    var d=String(tel||'').replace(/\D/g,'');
+    if(d.slice(0,4)==='0033')d=d.slice(4);else if(d.slice(0,2)==='33'&&d.length>=11)d=d.slice(2);
+    if(d.length===10&&d.charAt(0)==='0')d=d.slice(1);
+    if(d.length!==9||(d.charAt(0)!=='6'&&d.charAt(0)!=='7'))return null;
+    /* Message personnalisé : on s'adresse au DIRIGEANT par son nom quand on le connaît */
+    const who=(r&&(r.dirigeant||r.contact))?(' '+String(r.dirigeant||r.contact).replace(/\s+/g,' ').trim()):'';
+    const soc=(r&&r.nom)?(' chez '+r.nom):'';
+    const txt='Bonjour'+who+' 👋\n\nONIQ construit le logiciel sur mesure des entreprises'+soc+' — devis divisé par 4 grâce à nos méthodes propulsées par l\'IA, à qualité égale.\n\nNos réalisations en démo : https://oniq.online\n\nSeriez-vous disponible pour un échange rapide ?';
+    return 'https://wa.me/33'+d+'?text='+encodeURIComponent(txt);
+  };
+  /* Enrichissement CA réel — base officielle Sirene/INPI (recherche-entreprises.api.gouv.fr, gratuite) */
+  const enrichCA=async()=>{
+    if(!aiResults||!aiResults.length||aiEnriching)return;
+    setAiEnriching(true);
+    const upd=[...aiResults];
+    for(let i=0;i<upd.length;i++){
+      const r=upd[i];
+      if(r.ca!==undefined||!r.nom)continue;
+      try{
+        const q=encodeURIComponent(String(r.nom)+(r.ville?(' '+r.ville):''));
+        const resp=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+q+'&per_page=1');
+        const j=await resp.json();
+        const e0=(j.results||[])[0];
+        r.ca=null;
+        if(e0){
+          r.siren=e0.siren;r.cat=e0.categorie_entreprise||'';
+          const fin=e0.finances||{};const yrs=Object.keys(fin).sort();
+          if(yrs.length){const f=fin[yrs[yrs.length-1]];const v=parseFloat(f&&f.ca);if(isFinite(v)){r.ca=v;r.caAnnee=yrs[yrs.length-1];}}
+          /* DÉCIDEUR NOMMÉ (registre officiel) : président / gérant / DG en priorité */
+          const dirs=(e0.dirigeants||[]).filter(d=>d&&d.type_dirigeant==='personne physique'&&d.nom);
+          const prio=(q)=>{q=String(q||'').toLowerCase();return /pr[ée]sident|g[ée]rant/.test(q)?0:/directeur g[ée]n/.test(q)?1:2;};
+          dirs.sort((a,b)=>prio(a.qualite)-prio(b.qualite));
+          const d0=dirs[0];
+          if(d0){
+            const cap=(s)=>String(s||'').toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g,(m,p,c)=>p+c.toUpperCase());
+            r.dirigeant=(cap(d0.prenoms||'').split(' ')[0]+' '+String(d0.nom||'').toUpperCase()).trim();
+            r.dirigeantQualite=d0.qualite||'';
+          }
+        }
+      }catch(e){r.ca=null;}
+      setAiResults(upd.slice());
+      await new Promise(rs=>setTimeout(rs,180));
+    }
+    setAiEnriching(false);
+  };
+  /* ═══ TROUVEUR DE WHATSAPP (entreprise + décideur) ═══
+     Lit UNIQUEMENT ce que l'entreprise publie elle-même sur son site :
+     lien wa.me → numéro à côté du mot « WhatsApp » → mobiles 06/07 publiés.
+     Edge Function oniq-whatsapp-finder (le navigateur ne peut pas lire un site tiers : CORS). */
+  const [aiWaScan,setAiWaScan]=useState(false);
+  const [aiWaOnly,setAiWaOnly]=useState(false);
+  const ONIQ_WA_FINDER='https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniq-whatsapp-finder';
+  const scanWhatsApp=async()=>{
+    if(!aiResults||!aiResults.length||aiWaScan)return;
+    setAiWaScan(true);
+    const upd=[...aiResults];
+    for(let i=0;i<upd.length;i++){
+      const r=upd[i];
+      if(r.waNums!==undefined)continue;
+      /* 1) le numéro déjà connu est un mobile → WhatsApp très probable */
+      const base=[];
+      if(oniqIsMobileFR(r.tel)){const n=String(r.tel).replace(/\D/g,'').replace(/^0033/,'').replace(/^33/,'').replace(/^0/,'');base.push({numero:'33'+n,affichage:r.tel,mobile:true,source:'mobile de la fiche',confiance:'probable',wa_link:'https://wa.me/33'+n});}
+      /* 2) scan du site publié par l'entreprise */
+      if(r.site){
+        try{
+          const resp=await fetch(ONIQ_WA_FINDER+'?site='+encodeURIComponent(r.site));
+          const j=await resp.json();
+          if(j&&j.ok&&Array.isArray(j.numeros))j.numeros.forEach(n=>{if(!base.some(b=>b.numero===n.numero))base.push(n);});
+        }catch(e){}
+      }
+      const rank=(c)=>c==='certaine'?0:c==='élevée'?1:2;
+      r.waNums=base.sort((a,b)=>rank(a.confiance)-rank(b.confiance));
+      setAiResults(upd.slice());
+      await new Promise(rs=>setTimeout(rs,120));
+    }
+    setAiWaScan(false);
+  };
+  const aiFiltered=()=>{
+    let rows=aiResults||[];
+    if(aiWaOnly)rows=rows.filter(r=>(r.waNums&&r.waNums.length)||oniqIsMobileFR(r.tel));
+    if(aiMobileOnly)rows=rows.filter(r=>oniqIsMobileFR(r.tel));
+    if(aiCaMin>0)rows=rows.filter(r=>isFinite(r.ca)&&r.ca>=aiCaMin);
+    /* Tri « décideur joignable en 30 s » : WhatsApp certain > mobile > dirigeant nommé, puis CA */
+    const sc=(r)=>{
+      const wa=(r.waNums||[]);
+      const cert=wa.some(w=>w.confiance==='certaine')?8:wa.length?5:0;
+      return cert+(oniqIsMobileFR(r.tel)?4:0)+(r.dirigeant?2:0)+(r.email?1:0);
+    };
+    return rows.slice().sort((a,b)=>{const d=sc(b)-sc(a);if(d)return d;return (isFinite(b.ca)?b.ca:-1)-(isFinite(a.ca)?a.ca:-1);});
+  };
   const oniqIsMobileFR=(tel)=>{var d=String(tel||'').replace(/\D/g,'');if(d.slice(0,4)==='0033')d=d.slice(4);else if(d.slice(0,2)==='33'&&d.length>=11)d=d.slice(2);if(d.length===9)d='0'+d;return d.length===10&&d.charAt(0)==='0'&&(d.charAt(1)==='6'||d.charAt(1)==='7');};
   const exportAiExcel=()=>{
-    const rows=(aiMobileOnly?(aiResults||[]).filter(r=>oniqIsMobileFR(r.tel)):(aiResults||[]));
+    const rows=aiFiltered();
     if(!rows.length){return;}
-    const head=['Entreprise','Téléphone','Mobile','Contact','Poste','Ville','Email','Site'];
-    const data=rows.map(r=>[r.nom||'',r.tel||'',(oniqIsMobileFR(r.tel)?'Oui':''),r.contact||'',r.poste||'',r.ville||'',r.email||'',(r.site||'')]);
+    const head=['Entreprise','Dirigeant','Fonction','CA','Téléphone','Mobile','WhatsApp trouvé','Source WhatsApp','Lien WhatsApp','Contact','Poste','Ville','Email','Site'];
+    const data=rows.map(r=>{const w=(r.waNums||[])[0];return [r.nom||'',r.dirigeant||'',r.dirigeantQualite||'',(isFinite(r.ca)?fmtCA(r.ca):''),r.tel||'',(oniqIsMobileFR(r.tel)?'Oui':''),(w?(w.affichage||('+'+w.numero)):''),(w?w.source:''),(w?w.wa_link:(waLinkFR(r.tel,r)||'')),r.contact||'',r.poste||'',r.ville||'',r.email||'',(r.site||'')];});
     const esc=(v)=>{v=String(v==null?'':v);return /[";\n]/.test(v)?('"'+v.replace(/"/g,'""')+'"'):v;};
     const csv='﻿'+[head].concat(data).map(r=>r.map(esc).join(';')).join('\r\n');
     const fn='Prospection_'+String(aiSector||'ONIQ').replace(/[^A-Za-z0-9]+/g,'_')+'_'+String(aiRegion||'').replace(/[^A-Za-z0-9]+/g,'_')+'.csv';
@@ -11078,7 +11208,18 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
         React.createElement('button',{onClick:runAiProspect,disabled:aiLoading,style:{background:C.ink,border:'none',borderRadius:6,padding:'12px 28px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.ivory,cursor:'pointer',opacity:aiLoading?0.6:1}},aiLoading?'🔄 Recherche en cours...':'🤖 Lancer la prospection IA'),
         React.createElement('label',{title:'Ne garder que les portables (06/07) — le décideur en direct. Écarte les 04/05 (standards, accueil).',style:{display:'inline-flex',alignItems:'center',gap:8,marginLeft:16,fontFamily:SS,fontSize:11,fontWeight:700,color:C.stone,cursor:'pointer',userSelect:'none'}},
           React.createElement('input',{type:'checkbox',checked:aiMobileOnly,onChange:e=>setAiMobileOnly(e.target.checked),style:{accentColor:(C.gold||'#C6A765'),width:15,height:15,cursor:'pointer'}}),
-          '📱 Numéros mobiles uniquement (06/07)')
+          '📱 Numéros mobiles uniquement (06/07)'),
+        React.createElement('select',{value:aiCaMin,onChange:e=>setAiCaMin(parseInt(e.target.value,10)),title:'Filtrer par chiffre d’affaires réel (comptes publiés INPI — clique d’abord « Enrichir CA »)',style:{marginLeft:12,border:'1px solid '+(C.linen||'#ECE5D8'),borderRadius:6,padding:'9px 10px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:'pointer',background:'#fff'}},
+          React.createElement('option',{value:0},'💶 CA : tous'),
+          React.createElement('option',{value:100000},'CA ≥ 100 k€'),
+          React.createElement('option',{value:500000},'CA ≥ 500 k€'),
+          React.createElement('option',{value:1000000},'CA ≥ 1 M€'),
+          React.createElement('option',{value:5000000},'CA ≥ 5 M€')),
+        React.createElement('button',{onClick:enrichCA,disabled:aiEnriching||!(aiResults&&aiResults.length),title:'Récupère le CA réel ET le nom du dirigeant de chaque entreprise (registre officiel Sirene/INPI, gratuit) — puis trie les plus joignables en premier',style:{marginLeft:8,background:'transparent',border:'1px solid '+(C.gold||'#C6A765'),color:(C.gold||'#C6A765'),borderRadius:6,padding:'9px 12px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer',opacity:(aiEnriching||!(aiResults&&aiResults.length))?0.55:1}},aiEnriching?'🎯 Enrichissement en cours…':'🎯 Enrichir : CA + dirigeant'),
+        React.createElement('button',{onClick:scanWhatsApp,disabled:aiWaScan||!(aiResults&&aiResults.length),title:'Analyse le site public de chaque entreprise et récupère le WhatsApp qu’elle a elle-même publié (lien wa.me, numéro à côté de « WhatsApp », mobiles 06/07)',style:{marginLeft:8,background:'#25D366',border:'none',color:'#fff',borderRadius:6,padding:'9px 13px',fontFamily:SS,fontSize:11,fontWeight:800,cursor:'pointer',opacity:(aiWaScan||!(aiResults&&aiResults.length))?0.55:1,boxShadow:'0 3px 10px -3px rgba(37,211,102,0.5)'}},aiWaScan?'💬 Recherche WhatsApp…':'💬 Trouver les WhatsApp'),
+        React.createElement('label',{title:'N’afficher que les entreprises joignables sur WhatsApp',style:{display:'inline-flex',alignItems:'center',gap:8,marginLeft:12,fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:'pointer'}},
+          React.createElement('input',{type:'checkbox',checked:aiWaOnly,onChange:e=>setAiWaOnly(e.target.checked),style:{accentColor:'#25D366',width:15,height:15,cursor:'pointer'}}),
+          '💬 WhatsApp uniquement')
       ),
       aiResults&&aiResults.length>0&&React.createElement('div',null,
         React.createElement('div',{style:{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:12}},
@@ -11086,15 +11227,30 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
           React.createElement('button',{onClick:exportAiExcel,title:'Télécharger la liste (Entreprise, Téléphone, Contact…) — s’ouvre dans Excel, prête à imprimer',style:{background:'#14110D',color:'#F4E9D5',border:'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}},'⬇ Exporter (Excel)')
         ),
         React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(auto-fill,minmax(300px,1fr))',gap:12}},
-          (aiMobileOnly?aiResults.filter(r=>oniqIsMobileFR(r.tel)):aiResults).map((r,i)=>
+          aiFiltered().map((r,i)=>
             React.createElement('div',{key:i,style:{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:'16px',position:'relative'}},
               r.score&&React.createElement('div',{style:{position:'absolute',top:10,right:10,background:r.score>=80?'#e8f5ee':r.score>=60?'#fdf4e0':'#fde8e8',color:r.score>=80?'#1e6641':r.score>=60?'#9a6800':'#b52020',fontFamily:SS,fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20}},r.score+'/100'),
               React.createElement('div',{style:{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,marginBottom:2,paddingRight:55}},r.nom),
               React.createElement('div',{style:{fontFamily:SS,fontSize:10,color:C.stone,marginBottom:6}},(r.secteur||'')+(r.ville?' · '+r.ville:'')+(r.taille?' · '+r.taille:'')),
+              (r.ca!==undefined)&&React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:5,background:isFinite(r.ca)?'rgba(198,167,101,0.13)':'rgba(140,128,112,0.10)',border:'1px solid '+(isFinite(r.ca)?'rgba(198,167,101,0.45)':'rgba(140,128,112,0.25)'),borderRadius:999,padding:'3px 10px',fontFamily:SS,fontSize:10.5,fontWeight:800,color:isFinite(r.ca)?'#8a6a1a':C.stone,marginBottom:7}},isFinite(r.ca)?('💶 CA '+fmtCA(r.ca)+(r.caAnnee?' · '+r.caAnnee:'')+(r.cat?' · '+r.cat:'')):'💶 CA non publié'),
+              r.dirigeant&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:6,background:'rgba(45,86,135,0.07)',border:'1px solid rgba(45,86,135,0.25)',borderRadius:7,padding:'6px 10px',marginBottom:7}},
+                React.createElement('span',{style:{fontSize:12}},'🎯'),
+                React.createElement('div',null,
+                  React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,fontWeight:800,color:'#2D5687',lineHeight:1.2}},r.dirigeant),
+                  React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,color:C.stone}},(r.dirigeantQualite||'Dirigeant')+' · registre officiel'))),
               r.contact&&React.createElement('div',{style:{fontFamily:SS,fontSize:11,color:C.ink,fontWeight:600,marginBottom:6}},'👤 '+r.contact+(r.poste?' — '+r.poste:'')),
               r.site&&React.createElement('a',{href:r.site.startsWith('http')?r.site:'https://'+r.site,target:'_blank',rel:'noopener noreferrer',style:{display:'flex',alignItems:'center',gap:5,fontFamily:SS,fontSize:11,color:'#3A6EA5',marginBottom:4,textDecoration:'none',fontWeight:500}},'🌐 ',r.site.replace(/^https?:\/\//,'')),
               r.email&&React.createElement('a',{href:'mailto:'+r.email,style:{display:'flex',alignItems:'center',gap:5,fontFamily:SS,fontSize:11,color:'#4A7C59',marginBottom:4,textDecoration:'none',fontWeight:500}},'✉️ ',r.email),
               r.tel&&React.createElement('a',{href:'tel:'+r.tel,style:{display:'flex',alignItems:'center',gap:5,fontFamily:SS,fontSize:11,color:C.ink,marginBottom:6,textDecoration:'none',fontWeight:500}},'📞 ',r.tel),
+              /* WhatsApp trouvés sur le site public de l'entreprise */
+              (r.waNums&&r.waNums.length>0)&&React.createElement('div',{style:{background:'rgba(37,211,102,0.07)',border:'1px solid rgba(37,211,102,0.3)',borderRadius:8,padding:'8px 10px',marginBottom:8}},
+                React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,fontWeight:800,color:'#1a8d47',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:6}},'💬 WhatsApp trouvé'+(r.waNums.length>1?'s ('+r.waNums.length+')':'')),
+                r.waNums.slice(0,3).map((w,k)=>React.createElement('div',{key:k,style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:k<Math.min(2,r.waNums.length-1)?6:0}},
+                  React.createElement('div',{style:{minWidth:0}},
+                    React.createElement('div',{style:{fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink}},w.affichage||('+'+w.numero)),
+                    React.createElement('div',{style:{fontFamily:SS,fontSize:8.5,color:C.stone,lineHeight:1.3}},(w.confiance==='certaine'?'✅ ':w.confiance==='élevée'?'🟡 ':'🔎 ')+w.source)),
+                  React.createElement('a',{href:w.wa_link+'?text='+encodeURIComponent('Bonjour'+(r.dirigeant?(' '+String(r.dirigeant).split(' ')[0]):'')+' 👋\n\nONIQ construit le logiciel sur mesure des entreprises'+(r.nom?(' comme '+r.nom):'')+' — devis divisé par 4 grâce à nos méthodes propulsées par l\'IA.\n\nNos réalisations : https://oniq.online\n\nDispo pour un échange rapide ?'),target:'_blank',rel:'noopener noreferrer',style:{flexShrink:0,background:'#25D366',color:'#fff',borderRadius:6,padding:'6px 11px',fontFamily:SS,fontSize:10,fontWeight:800,textDecoration:'none'}},'Écrire')))),
+              (!(r.waNums&&r.waNums.length)&&waLinkFR(r.tel,r))&&React.createElement('a',{href:waLinkFR(r.tel,r),target:'_blank',rel:'noopener noreferrer',title:'Ouvrir WhatsApp avec le message ONIQ pré-rempli'+(r.dirigeant?(' au nom de '+r.dirigeant):''),style:{display:'inline-flex',alignItems:'center',gap:6,background:'#25D366',color:'#fff',borderRadius:6,padding:'7px 13px',fontFamily:SS,fontSize:10.5,fontWeight:800,textDecoration:'none',marginBottom:8,boxShadow:'0 3px 10px -3px rgba(37,211,102,0.55)'}},'💬 WhatsApp '+(r.dirigeant?('à '+String(r.dirigeant).split(' ')[0]):'direct')),
               r.raison&&React.createElement('div',{style:{fontFamily:SS,fontSize:9,color:C.stone,marginBottom:8,fontStyle:'normal',lineHeight:1.4}},r.raison),
               React.createElement('button',{onClick:()=>importAiLead(r),style:{width:'100%',background:C.ink,border:'none',borderRadius:5,padding:'9px',fontFamily:SS,fontSize:10,fontWeight:700,color:C.ivory,cursor:'pointer'}},'+ Importer dans le CRM')
             )
