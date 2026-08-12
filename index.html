@@ -1585,9 +1585,9 @@ body{background:#F6F4F0}
 
 <!-- ═══ INTRO ANIMATION : sablier marron → cream ═══ -->
 <style>
-#oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut 1.4s cubic-bezier(.5,0,.3,1) forwards;animation-delay:5.0s;pointer-events:none;overflow:hidden}
-#oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade 1.4s ease-out forwards 5.0s}
-#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(120px,21vw,340px);letter-spacing:.02em;line-height:1.3;position:relative;top:-.05em;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 4.4s cubic-bezier(.45,.1,.3,1) forwards .4s,oniqIntroPop 1.0s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve 1.4s cubic-bezier(.5,0,.3,1) forwards 5.0s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
+#oniq-intro{position:fixed;inset:0;z-index:99999;background:#000;display:flex;align-items:center;justify-content:center;animation:oniqIntroFadeOut .65s cubic-bezier(.5,0,.3,1) forwards;animation-delay:1.25s;pointer-events:none;overflow:hidden}
+#oniq-intro::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(80,40,15,0.22),transparent 65%);pointer-events:none;animation:oniqIntroBgFade .65s ease-out forwards 1.25s}
+#oniq-intro .word{font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(64px,10vw,150px);letter-spacing:.02em;line-height:1.3;position:relative;top:-.05em;display:inline-block;background-image:linear-gradient(90deg,#FFF6DC 0%,#F4E9D5 36%,#FFE6B0 44%,#FFD89A 47%,#FFC078 49%,#A0673A 52%,#5B3812 58%,#2A1A0A 100%);background-size:300% 100%;background-position:100% 50%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:oniqIntroSweep 1.1s cubic-bezier(.45,.1,.3,1) forwards .15s,oniqIntroPop .5s cubic-bezier(.2,.8,.3,1) forwards 0s,oniqIntroDissolve .6s cubic-bezier(.5,0,.3,1) forwards 1.25s;filter:drop-shadow(0 0 28px rgba(180,90,30,0));will-change:transform,opacity,filter}
 @keyframes oniqIntroPop{0%{transform:translateY(20px) scale(.94);opacity:0}55%{opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes oniqIntroSweep{0%{background-position:100% 50%;filter:drop-shadow(0 0 0 transparent)}45%{filter:drop-shadow(0 0 36px rgba(255,180,100,.65))}80%{filter:drop-shadow(0 0 22px rgba(180,90,30,.5))}100%{background-position:0% 50%;filter:drop-shadow(0 0 12px rgba(120,60,20,.3))}}
 @keyframes oniqIntroDissolve{0%{transform:scale(1);filter:drop-shadow(0 0 12px rgba(120,60,20,.3)) blur(0)}45%{transform:scale(1.08);filter:drop-shadow(0 0 30px rgba(255,200,120,.5)) blur(0)}100%{transform:scale(1.4);filter:drop-shadow(0 0 60px rgba(255,200,120,0)) blur(14px);opacity:0}}
@@ -1639,7 +1639,7 @@ button{transition:all .3s cubic-bezier(.2,.7,.2,1)}
 @media (prefers-reduced-motion:reduce){.oniq-blob,.oniq-live-ring,.oniq-float{animation:none!important}#oniq-spotlight,#oniq-cursor-glow{display:none}}
 </style>
 <div id="oniq-intro" onanimationend="if(event.animationName==='oniqIntroFadeOut'){this.remove();}"><div class="word">ONIQ</div></div>
-<script>(function(){setTimeout(function(){var el=document.getElementById("oniq-intro");if(el)el.remove();},6800);})();</script>
+<script>(function(){setTimeout(function(){var el=document.getElementById("oniq-intro");if(el)el.remove();},2100);})();</script>
 
 <div id="root"></div>
 <!-- FAB WhatsApp — contact direct, toutes vues -->
@@ -3418,7 +3418,7 @@ const T={
     myTickets:'Mes tickets', faq:'Questions fréquentes',
     // Landing
     landingHero:'Des logiciels IA qui augmentent vos résultats',
-    landingSubtitle:"Des logiciels IA conçus pour les entreprises. Automatisez, accélérez, produisez plus — avec moins d'effort.",
+    landingSubtitle:"Décrivez votre métier — on construit l'outil exact dont votre entreprise a besoin. Nos méthodes propulsées par l'IA divisent par 4 les devis des agences classiques, sans rien sacrifier à la qualité.",
     discoverMarketplace:'Découvrir les logiciels IA',
     createFreeAccount:'Créer un compte gratuit',
     createAccount:'Créer mon compte',
@@ -3443,7 +3443,7 @@ const T={
     // Gains Sur mesure
     custom1:'Développé pour votre activité',
     custom2:'Distribué sur la marketplace',
-    custom3:'Financé à -70% mutualisé',
+    custom3:'Devis divisé par 4 grâce à l’IA',
     // Args
     arg1t:'Augmentez votre CA', arg1d:"Moins de temps sur l'administratif, plus sur le terrain.",
     arg2t:'IA qui travaille pour vous', arg2d:"OCR de factures, lecture de plans, génération de DPGF automatisée.",
@@ -3489,7 +3489,7 @@ const T={
     supportTitle:'Live support', startConversation:'Start a conversation',
     myTickets:'My tickets', faq:'Frequently asked questions',
     landingHero:'AI-powered software that boosts your results',
-    landingSubtitle:'Business software powered by artificial intelligence. Automate tasks, analyze documents and manage your business — no training, no setup.',
+    landingSubtitle:'Describe your business — we build the exact tool your company needs. Our AI-powered methods cut classic agency quotes by 4×, with zero compromise on quality.',
     discoverMarketplace:'Explore AI software',
     createFreeAccount:'Create free account',
     createAccount:'Create my account',
@@ -3511,7 +3511,7 @@ const T={
     metri3:'Zero quantity errors',
     custom1:'Built for your activity',
     custom2:'Distributed on the marketplace',
-    custom3:'Funded at -70% shared cost',
+    custom3:'Quotes cut by 4× with AI',
     arg1t:'Grow your revenue', arg1d:'Less time on admin, more on the field. Direct impact on your turnover.',
     arg2t:'AI that works for you', arg2d:'Invoice OCR, plan reading, automatic DPGF generation.',
     arg3t:'3x faster', arg3d:'Surveys, quotes, invoices — what took a day now takes an hour.',
@@ -3581,11 +3581,12 @@ function LangSwitcher({compact}){
 
 
 const RoiCalcSection=({mob,COL,SERIF,SANS,fs,glassCard,eyebrow,gradText})=>{
-  const [ca,setCa]=React.useState(350000);
-  const [chantiers,setChantiers]=React.useState(6);
+  const [devis,setDevis]=React.useState(40000);
+  const [hRep,setHRep]=React.useState(12);
   const [collab,setCollab]=React.useState(3);
-  const heuresAn=(chantiers*14+collab*8)*12;
-  const gainsAn=Math.round(heuresAn*45+ca*12*0.025);
+  const devisOniq=Math.round(devis/4/100)*100;
+  const heuresAn=(hRep+collab*2)*47;
+  const gainsAn=Math.round((devis-devisOniq)+heuresAn*45);
   const fmt=(n)=>n.toLocaleString('fr-FR');
   const sliderStyle={width:'100%',height:6,WebkitAppearance:'none',background:'linear-gradient(90deg,'+COL.gold+',rgba(244,233,213,0.15))',borderRadius:3,outline:'none',cursor:'pointer'};
   const labelStyle={fontFamily:SANS,fontSize:11,letterSpacing:'.18em',textTransform:'uppercase',color:COL.gold,fontWeight:600};
@@ -3595,25 +3596,25 @@ const RoiCalcSection=({mob,COL,SERIF,SANS,fs,glassCard,eyebrow,gradText})=>{
       <div style={{position:'absolute',top:80,right:-100,width:300,height:300,borderRadius:'50%',background:'radial-gradient(circle,rgba(212,162,76,0.10),transparent 70%)',pointerEvents:'none'}} className="oniq-float"/>
       <div style={{maxWidth:1280,margin:'0 auto',position:'relative'}}>
         <div data-reveal style={{textAlign:'center',marginBottom:mob?40:64}}>
-          <div style={{...eyebrow,marginBottom:16}}>◆ CALCULEZ VOS GAINS</div>
-          <h2 style={{fontFamily:SERIF,fontSize:fs(72,36),lineHeight:1.05,margin:0,color:COL.cream,fontWeight:800,letterSpacing:'-.03em'}}>Combien <span className="oniq-shimmer-text" style={{fontStyle:'normal'}}>ONIQ vous fait gagner</span> ?</h2>
-          <p style={{fontFamily:SERIF,fontStyle:'normal',fontSize:fs(20,15),color:'rgba(244,233,213,0.6)',marginTop:18}}>Curseur, calcul instantané. Pas de carte bleue, pas d'inscription.</p>
+          <div style={{...eyebrow,marginBottom:16}}>◆ CALCULEZ VOTRE DEVIS</div>
+          <h2 style={{fontFamily:SERIF,fontSize:fs(72,36),lineHeight:1.05,margin:0,color:COL.cream,fontWeight:800,letterSpacing:'-.03em'}}>Combien coûte <span className="oniq-shimmer-text" style={{fontStyle:'normal'}}>votre logiciel sur mesure</span> ?</h2>
+          <p style={{fontFamily:SERIF,fontStyle:'normal',fontSize:fs(20,15),color:'rgba(244,233,213,0.6)',marginTop:18}}>Glissez le curseur, calcul instantané. Nos méthodes IA divisent les devis par 4.</p>
         </div>
         <div style={{display:'grid',gridTemplateColumns:mob?'1fr':'5fr 7fr',gap:24}}>
           <div style={{...glassCard,padding:mob?28:36,display:'flex',flexDirection:'column',gap:24}}>
             <div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:14}}>
-                <span style={labelStyle}>Chiffre d'affaires mensuel</span>
-                <span style={valStyle}>{fmt(ca)} €</span>
+                <span style={labelStyle}>Devis reçu en agence classique</span>
+                <span style={valStyle}>{fmt(devis)} €</span>
               </div>
-              <input type="range" min={50000} max={2000000} step={25000} value={ca} onChange={(e)=>setCa(parseInt(e.target.value,10))} style={sliderStyle}/>
+              <input type="range" min={8000} max={200000} step={2000} value={devis} onChange={(e)=>setDevis(parseInt(e.target.value,10))} style={sliderStyle}/>
             </div>
             <div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:14}}>
-                <span style={labelStyle}>Nombre de projets / mois</span>
-                <span style={valStyle}>{chantiers}</span>
+                <span style={labelStyle}>Heures de tâches répétitives / sem.</span>
+                <span style={valStyle}>{hRep} h</span>
               </div>
-              <input type="range" min={1} max={30} step={1} value={chantiers} onChange={(e)=>setChantiers(parseInt(e.target.value,10))} style={sliderStyle}/>
+              <input type="range" min={1} max={60} step={1} value={hRep} onChange={(e)=>setHRep(parseInt(e.target.value,10))} style={sliderStyle}/>
             </div>
             <div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:14}}>
@@ -3625,12 +3626,14 @@ const RoiCalcSection=({mob,COL,SERIF,SANS,fs,glassCard,eyebrow,gradText})=>{
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:18}}>
             <div data-oniq-card style={{...glassCard,padding:mob?24:30,position:'relative',overflow:'hidden',background:'linear-gradient(135deg,rgba(212,162,76,0.18),rgba(212,162,76,0.04))',border:'1px solid rgba(212,162,76,0.4)'}}>
-              <div style={{...labelStyle,marginBottom:10}}>Heures économisées / an</div>
-              <div style={{fontFamily:SERIF,fontStyle:'normal',fontSize:fs(64,40),color:COL.cream,fontWeight:500,lineHeight:1}}>{fmt(heuresAn)} h</div>
+              <div style={{...labelStyle,marginBottom:10}}>Votre devis chez ONIQ</div>
+              <div style={{fontFamily:SERIF,fontStyle:'normal',fontSize:fs(64,40),color:COL.cream,fontWeight:500,lineHeight:1}}>{fmt(devisOniq)} €</div>
+              <div style={{fontFamily:SANS,fontSize:fs(14,12),color:'rgba(244,233,213,0.55)',marginTop:10}}><span style={{textDecoration:'line-through',opacity:0.8}}>{fmt(devis)} €</span> en agence classique — <b style={{color:COL.gold}}>÷4 grâce à l'IA</b></div>
             </div>
             <div data-oniq-card style={{...glassCard,padding:mob?24:30,position:'relative',overflow:'hidden',background:'linear-gradient(135deg,rgba(212,162,76,0.10),rgba(244,233,213,0.02))',border:'1px solid rgba(212,162,76,0.25)'}}>
-              <div style={{...labelStyle,marginBottom:10}}>Gains estimés / an</div>
+              <div style={{...labelStyle,marginBottom:10}}>Économie totale · année 1</div>
               <div style={{fontFamily:SERIF,fontStyle:'normal',fontSize:fs(64,40),color:COL.gold,fontWeight:500,lineHeight:1}}>{fmt(gainsAn)} €</div>
+              <div style={{fontFamily:SANS,fontSize:fs(14,12),color:'rgba(244,233,213,0.55)',marginTop:10}}>dont <b style={{color:COL.cream}}>{fmt(heuresAn)} h</b> de tâches répétitives automatisées</div>
             </div>
           </div>
         </div>
@@ -3752,11 +3755,11 @@ const LandingPage=({onEnter,onAuth})=>{
         {/* Hero content */}
         <div style={{position:'relative',zIndex:2,maxWidth:1280,margin:'0 auto',padding:mob?'40px 24px 40px':'60px 56px 60px',width:'100%',flex:1,display:'flex',flexDirection:'column',justifyContent:'center'}}>
           <div style={{...eyebrow,marginBottom:32}}>
-            ✦&nbsp;&nbsp;Logiciels IA pour entreprises&nbsp;&nbsp;✦
+            ✦&nbsp;&nbsp;Logiciels sur mesure · propulsés par l'IA&nbsp;&nbsp;✦
           </div>
           <h1 style={{fontFamily:'Satoshi,Inter,sans-serif',fontSize:fs(98,44),fontWeight:900,lineHeight:1.04,letterSpacing:'-.04em',color:COL.cream,margin:'0 0 24px',maxWidth:1100}}>
-            <span data-oniq-split style={{display:'block'}}>Arrêtez de perdre</span>
-            <span className="oniq-shimmer-text" style={{display:'block',fontStyle:'normal',fontWeight:900}}>du <span style={{position:'relative',display:'inline-block',color:'#FFFDF8',WebkitTextFillColor:'#FFFDF8'}}>temps<span aria-hidden="true" style={{position:'absolute',left:'-.012em',right:'-.012em',bottom:'.05em',height:'.07em',borderRadius:'6px',background:'linear-gradient(90deg,rgba(255,253,248,0) 0%,#FFFDF8 20%,#FFFDF8 80%,rgba(255,253,248,0) 100%)',boxShadow:'0 1px 16px rgba(255,255,255,.55)'}}></span></span> et de l'<span style={{position:'relative',display:'inline-block',color:'#FFFDF8',WebkitTextFillColor:'#FFFDF8'}}>argent<span aria-hidden="true" style={{position:'absolute',left:'-.012em',right:'-.012em',bottom:'.05em',height:'.07em',borderRadius:'6px',background:'linear-gradient(90deg,rgba(255,253,248,0) 0%,#FFFDF8 20%,#FFFDF8 80%,rgba(255,253,248,0) 100%)',boxShadow:'0 1px 16px rgba(255,255,255,.55)'}}></span></span>.</span>
+            <span data-oniq-split style={{display:'block'}}>Votre logiciel sur mesure.</span>
+            <span className="oniq-shimmer-text" style={{display:'block',fontStyle:'normal',fontWeight:900}}>Devis <span style={{position:'relative',display:'inline-block',color:'#FFFDF8',WebkitTextFillColor:'#FFFDF8'}}>divisé par 4<span aria-hidden="true" style={{position:'absolute',left:'-.012em',right:'-.012em',bottom:'.05em',height:'.07em',borderRadius:'6px',background:'linear-gradient(90deg,rgba(255,253,248,0) 0%,#FFFDF8 20%,#FFFDF8 80%,rgba(255,253,248,0) 100%)',boxShadow:'0 1px 16px rgba(255,255,255,.55)'}}></span></span>.</span>
           </h1>
           <p style={{fontFamily:SANS,fontWeight:300,fontSize:fs(22,15),lineHeight:1.55,color:'rgba(244,233,213,0.7)',maxWidth:780,marginBottom:48}}>
             {t('landingSubtitle')}
@@ -3781,13 +3784,13 @@ const LandingPage=({onEnter,onAuth})=>{
               {[
                 {a:'OniMetri',v:'a généré une DPGF · 287 k€',t:'à 09h42'},
                 {a:'BatiManager',v:'a importé 14 factures fournisseurs',t:'à 09h58'},
-                {a:'OniCompta',v:'a clos une déclaration TVA',t:'à 10h15'},
+                {a:'Sur mesure',v:'CRM livré · cabinet de courtage',t:'à 10h15'},
                 {a:'OniMetri',v:'a chiffré 1 247 m² de placo',t:'à 10h33'},
-                {a:'BatiManager',v:'a alerté un dépassement de budget',t:'à 11h08'},
+                {a:'Sur mesure',v:'devis ÷4 envoyé · planning paysagiste',t:'à 11h08'},
                 {a:'OniCompta',v:'a archivé 89 factures Factur-X',t:'à 11h27'},
                 {a:'OniMetri',v:'a exporté un BPU vers Excel',t:'à 14h12'},
                 {a:'BatiManager',v:'a synchronisé 3 chantiers',t:'à 14h45'},
-                {a:'OniCompta',v:'a réconcilié 412 écritures',t:'à 15h20'},
+                {a:'Sur mesure',v:'maquette validée · gestion d’atelier auto',t:'à 15h20'},
                 {a:'OniMetri',v:'a détecté 18 ouvrages manquants',t:'à 15h58'},
                 {a:'BatiManager',v:'a clôturé un OS · 42 k€',t:'à 16h34'},
                 {a:'OniCompta',v:'a généré la balance mensuelle',t:'à 17h12'}
@@ -3833,8 +3836,8 @@ const LandingPage=({onEnter,onAuth})=>{
       {/* ═══ BEST-SELLERS ═══ */}
       <div style={{position:'relative',padding:mob?'80px 24px':'120px 56px',background:COL.bg2 || '#0F0905'}}>
         <div style={{maxWidth:1280,margin:'0 auto'}}>
-          <div style={eyebrow}>◆ Best-sellers</div>
-          <h2 style={{fontFamily:SERIF,fontSize:fs(80,38),fontWeight:800,lineHeight:1.05,letterSpacing:'-.035em',color:COL.cream,margin:'0 0 60px',maxWidth:1100}}>Les 3 <em className="oniq-shimmer-text" style={{fontStyle:'normal',fontWeight:800}}>essentiels</em> du moment.</h2>
+          <div style={eyebrow}>◆ Nos réalisations</div>
+          <h2 style={{fontFamily:SERIF,fontSize:fs(80,38),fontWeight:800,lineHeight:1.05,letterSpacing:'-.035em',color:COL.cream,margin:'0 0 60px',maxWidth:1100}}>Construits par ONIQ. <em className="oniq-shimmer-text" style={{fontStyle:'normal',fontWeight:800}}>Essayez-les.</em></h2>
           <div style={{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(3,1fr)',gap:18}}>
             {SW_CARDS.filter(sw=>sw.slug).map((sw,i)=>(
               <div key={i} data-reveal data-reveal-style="rise" data-tilt data-oniq-card onClick={()=>enterToSoftware(sw.slug)} style={{position:'relative',background:'linear-gradient(155deg,rgba(244,233,213,0.04) 0%,rgba(244,233,213,0.01) 100%)',border:'1px solid rgba(212,162,76,0.18)',borderRadius:18,padding:mob?28:36,cursor:'pointer',overflow:'hidden',display:'flex',flexDirection:'column',minHeight:mob?'auto':400}}>
@@ -4710,16 +4713,16 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
                 <div style={{fontFamily:"'Playfair Display',Georgia,serif",fontWeight:700,fontSize:29,letterSpacing:'0.03em',color:'#E8CE93'}}>ONIQ</div>
                 <div style={{fontFamily:"ui-monospace,Consolas,monospace",fontSize:8.5,color:'#8C8070',letterSpacing:'0.2em'}}>LOGICIELS IA · BÂTIMENT</div>
               </div>
-              <div style={{display:'inline-flex',alignItems:'center',gap:7,marginTop:18,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'5px 13px',fontFamily:SS,fontSize:10,fontWeight:800,letterSpacing:'0.16em',textTransform:'uppercase'}}>Offre d'été</div>
-              <div style={{marginTop:15,fontFamily:SS,fontSize:26,fontWeight:800,color:'#F4E9D5',lineHeight:1.12,letterSpacing:'-0.02em'}}>Le logiciel <span style={{color:'#E8CE93'}}>IA</span> sur mesure<br/><span style={{color:'#E8CE93',fontWeight:900}}>des métiers du bâtiment.</span></div>
+              <div style={{display:'inline-flex',alignItems:'center',gap:7,marginTop:18,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'5px 13px',fontFamily:SS,fontSize:10,fontWeight:800,letterSpacing:'0.16em',textTransform:'uppercase'}}>⚡ Propulsé par l'IA</div>
+              <div style={{marginTop:15,fontFamily:SS,fontSize:26,fontWeight:800,color:'#F4E9D5',lineHeight:1.12,letterSpacing:'-0.02em'}}>Le logiciel <span style={{color:'#E8CE93'}}>sur mesure</span><br/><span style={{color:'#E8CE93',fontWeight:900}}>de votre entreprise.</span></div>
               <div style={{display:'flex',alignItems:'center',gap:16,marginTop:16}}>
-                <div style={{fontFamily:SS,fontSize:50,fontWeight:900,color:'#F4E9D5',letterSpacing:'-0.03em',lineHeight:1}}>OFFERT.</div>
+                <div style={{fontFamily:SS,fontSize:50,fontWeight:900,color:'#F4E9D5',letterSpacing:'-0.03em',lineHeight:1}}>÷4.</div>
                 <div style={{width:64,height:64,borderRadius:'50%',border:'2px solid #C6A765',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,transform:'rotate(7deg)'}}>
-                  <div style={{fontFamily:SS,fontSize:19,fontWeight:900,color:'#E8CE93',lineHeight:1}}>0 €</div>
-                  <div style={{fontFamily:"ui-monospace,monospace",fontSize:6,fontWeight:700,color:'#C6A765',letterSpacing:'0.03em',marginTop:2,textAlign:'center',lineHeight:1.35}}>DE DÉV.<br/>ÉTÉ 2026</div>
+                  <div style={{fontFamily:SS,fontSize:15,fontWeight:900,color:'#E8CE93',lineHeight:1}}>4×</div>
+                  <div style={{fontFamily:"ui-monospace,monospace",fontSize:6,fontWeight:700,color:'#C6A765',letterSpacing:'0.03em',marginTop:2,textAlign:'center',lineHeight:1.35}}>MOINS CHER<br/>VS AGENCES</div>
                 </div>
               </div>
-              <div style={{marginTop:16,fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>Un outil qui chiffre vos plans, relance vos impayés, pilote vos chantiers ? <b style={{color:'#F4E9D5'}}>Décrivez-le. On le construit.</b></div>
+              <div style={{marginTop:16,fontFamily:SS,fontSize:13,color:'rgba(244,233,213,0.72)',lineHeight:1.5}}>Un outil qui gère vos devis, vos clients, vos stocks, vos plannings — à votre façon ? <b style={{color:'#F4E9D5'}}>Décrivez-le. On le construit, 4× moins cher.</b></div>
               <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:9}}>
                 {['Une IA entraînée sur votre métier','Tâches répétitives automatisées','Sur mesure, à vos méthodes'].map((x,i)=>(
                   <div key={i} style={{display:'flex',alignItems:'center',gap:10,fontFamily:SS,fontSize:12.5,fontWeight:600,color:'#D8CCB2'}}>
@@ -4739,9 +4742,9 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         <div style={{position:'relative',zIndex:1,display:'flex',justifyContent:'space-between',alignItems:'center',gap:24,flexWrap:'wrap'}}>
           <div style={{minWidth:0,flex:'1 1 480px'}}>
             <h1 style={{margin:0,fontFamily:SF,fontSize:isMob()?30:46,fontWeight:700,color:C.ink,letterSpacing:'-0.01em',lineHeight:1.16,overflow:'visible',maxWidth:820,textWrap:'balance'}}>
-              Les logiciels qui font tourner votre entreprise, <span className="oniq-shimmer-text" style={{fontStyle:'normal',fontWeight:600}}>augmentés par l'IA.</span>
+              Nos réalisations, <span className="oniq-shimmer-text" style={{fontStyle:'normal',fontWeight:600}}>la preuve par la démo.</span>
             </h1>
-            <div style={{fontFamily:SS,fontSize:isMob()?14:17,color:C.stone,marginTop:14,maxWidth:560,lineHeight:1.5}}>Métré, chantier, compta, CRM, prospection — automatisez vos tâches et gagnez des heures chaque semaine.</div>
+            <div style={{fontFamily:SS,fontSize:isMob()?14:17,color:C.stone,marginTop:14,maxWidth:560,lineHeight:1.5}}>Métré IA, chantier, compta, CRM, prospection — des logiciels que nous avons construits et que vous pouvez essayer. Votre métier mérite le sien : <b style={{color:C.ink}}>on le développe sur mesure, 4× moins cher qu'une agence classique.</b></div>
             <div style={{display:'flex',gap:10,marginTop:24,alignItems:'center',flexWrap:'wrap'}}>
               <button onClick={()=>user?setView('c-espace'):onAuth("register")} style={{background:'#1A1715',color:'#fff',border:'none',borderRadius:13,padding:'14px 26px',fontFamily:SS,fontSize:15,fontWeight:600,cursor:'pointer',boxShadow:'0 10px 24px -10px rgba(26,23,21,.55)',transition:'transform .18s'}} onMouseEnter={e=>e.currentTarget.style.transform='translateY(-2px)'} onMouseLeave={e=>e.currentTarget.style.transform='translateY(0)'}>{user?'Accéder à mon espace →':'Démarrer gratuitement →'}</button>
               {user&&cart.length>0&&<button onClick={()=>setShowCart(true)} style={{background:C.gold,border:'none',borderRadius:13,padding:'14px 22px',fontFamily:SS,fontSize:14,fontWeight:700,color:'#fff',cursor:'pointer',boxShadow:'0 8px 20px -8px rgba(169,134,63,0.55)'}}>🛒 {cart.length} · {cartTotal} €/mois</button>}
@@ -7812,17 +7815,22 @@ const DevisClient=({user})=>{
   const [sent,setSent]=useState(false);
   return (
     <div style={{padding:isMob()?"16px 12px":"28px 36px"}}>
-      <PH section="Clés en main" title="Obtenir un logiciel clés en main à -70 %"/>
-      {/* Bannière OFFRE D'ÉTÉ — développement offert (durée limitée) */}
-      <div style={{position:'relative',overflow:'hidden',background:'linear-gradient(135deg,#1F1A14 0%,#3A2410 50%,#1F1A14 100%)',border:'1px solid #D4A24C',borderRadius:16,padding:isMob()?'18px 18px':'20px 24px',margin:'0 0 20px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:18,flexWrap:'wrap',boxShadow:'0 12px 40px rgba(0,0,0,0.25),0 0 60px rgba(212,162,76,0.10)'}}>
-        <div style={{minWidth:240,flex:1}}>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'5px 13px',fontFamily:SS,fontSize:10.5,fontWeight:800,letterSpacing:'0.14em',textTransform:'uppercase',marginBottom:10}}>Offre d'été · Durée limitée</div>
-          <div style={{fontFamily:SF,fontSize:isMob()?21:25,fontWeight:800,color:'#F4E9D5',lineHeight:1.15,letterSpacing:'-0.02em'}}>Cet été, le développement est <span style={{color:'#E8CE93'}}>OFFERT.</span></div>
-          <div style={{fontFamily:SS,fontSize:13.5,color:'rgba(244,233,213,0.75)',marginTop:7,lineHeight:1.5}}>Au lieu de −70 % le reste de l'année. Remplissez le formulaire, <b style={{color:'#F4E9D5'}}>on s'occupe du reste.</b></div>
-        </div>
-        <div style={{width:70,height:70,borderRadius:'50%',border:'2px solid #C6A765',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,transform:'rotate(7deg)'}}>
-          <div style={{fontFamily:SF,fontSize:22,fontWeight:900,color:'#E8CE93',lineHeight:1}}>0 €</div>
-          <div style={{fontFamily:SS,fontSize:7.5,fontWeight:700,color:'#C6A765',letterSpacing:'0.05em',marginTop:2}}>DE DÉV.</div>
+      {/* ═══ HERO SUR MESURE — un seul bloc, épuré & futuriste ═══ */}
+      <div style={{position:'relative',overflow:'hidden',background:'linear-gradient(135deg,#14110D 0%,#241A0F 55%,#171310 100%)',border:'1px solid rgba(212,162,76,0.35)',borderRadius:22,padding:isMob()?'40px 24px 44px':'64px 60px 68px',margin:'0 0 26px',boxShadow:'0 30px 80px -20px rgba(0,0,0,0.45),0 0 90px rgba(212,162,76,0.12)'}}>
+        <div aria-hidden="true" className="oniq-float" style={{position:'absolute',top:'-40%',right:'-8%',width:520,height:520,borderRadius:'50%',background:'radial-gradient(circle,rgba(212,162,76,0.22),transparent 65%)',pointerEvents:'none'}}/>
+        <div aria-hidden="true" style={{position:'absolute',bottom:'-50%',left:'-6%',width:420,height:420,borderRadius:'50%',background:'radial-gradient(circle,rgba(232,206,147,0.10),transparent 70%)',pointerEvents:'none'}}/>
+        <div style={{position:'relative',zIndex:1,display:'flex',alignItems:'center',gap:isMob()?24:48,flexWrap:'wrap'}}>
+          <div style={{flex:'1 1 480px',minWidth:0}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:8,border:'1px solid rgba(232,206,147,0.4)',color:'#E8CE93',borderRadius:999,padding:'6px 14px',fontFamily:SS,fontSize:10.5,fontWeight:700,letterSpacing:'0.2em',textTransform:'uppercase',marginBottom:22,background:'rgba(232,206,147,0.06)'}}>⚡ Sur mesure · propulsé par l'IA</div>
+            <div style={{fontFamily:SF,fontSize:isMob()?30:46,fontWeight:800,color:'#F4E9D5',lineHeight:1.08,letterSpacing:'-0.025em'}}>Votre logiciel. Exactement<br/>votre façon de travailler.<br/><span className="oniq-shimmer-text" style={{fontStyle:'normal',fontWeight:800}}>Devis divisé par 4.</span></div>
+            <div style={{fontFamily:SS,fontSize:isMob()?14:15.5,color:'rgba(244,233,213,0.68)',marginTop:18,maxWidth:560,lineHeight:1.6}}>Décrivez votre besoin ci-dessous — devis sous 48 h, maquette rapide, livraison en semaines.</div>
+          </div>
+          <div style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+            <div className="oniq-float" style={{width:isMob()?110:150,height:isMob()?110:150,borderRadius:'50%',border:'2px solid #C6A765',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',transform:'rotate(6deg)',background:'radial-gradient(circle at 30% 25%,rgba(232,206,147,0.16),transparent 70%)',boxShadow:'0 0 60px rgba(212,162,76,0.35), inset 0 0 30px rgba(212,162,76,0.10)'}}>
+              <div style={{fontFamily:SF,fontSize:isMob()?38:54,fontWeight:900,color:'#E8CE93',lineHeight:1}}>÷4</div>
+              <div style={{fontFamily:SS,fontSize:isMob()?8:9.5,fontWeight:700,color:'#C6A765',letterSpacing:'0.14em',marginTop:4}}>VS AGENCES</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -7860,7 +7868,14 @@ const DevisClient=({user})=>{
                 <FL label="Votre besoin"/>
                 <textarea value={form.need} onChange={e=>setForm(p=>({...p,need:e.target.value}))} rows={6} placeholder="Décrivez le logiciel souhaité, les fonctionnalités clés, les équipes concernées et le résultat attendu." style={{width:"100%",background:C.dim,border:`1px solid ${C.linen}`,borderRadius:4,padding:"11px 14px",fontFamily:SS,fontSize:13,color:C.ink,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
               </div>
-              <button onClick={()=>form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget&&setSent(true)} style={{width:"100%",background:"#1A1715",border:"none",borderRadius:12,padding:"14px",fontFamily:SS,fontSize:14,fontWeight:600,color:"#fff",cursor:"pointer",boxShadow:"0 8px 20px -8px rgba(26,23,21,.5)",opacity:form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget?1:0.5}}>Valider l'étape 1</button>
+              <button onClick={async()=>{
+                if(!(form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget))return;
+                const row={company:form.company,contact:form.contact,email:form.email,sector:form.sector||'',team_size:form.teamSize||'',timeline:form.timeline||'',dev_budget:form.devBudget,monthly_budget:form.monthlyBudget,need:form.need,statut:'nouveau'};
+                /* Envoi Supabase (la demande arrive dans Admin → Demandes sur mesure) + filet localStorage */
+                try{ if(supabaseClient){ const {error}=await supabaseClient.from('demandes_surmesure').insert(row); if(error) console.warn('demande supabase',error.message); } }catch(e){ console.warn('demande envoi',e); }
+                try{ const arr=JSON.parse(localStorage.getItem('oniq_demandes_surmesure')||'[]'); arr.unshift({...row,created_at:new Date().toISOString()}); localStorage.setItem('oniq_demandes_surmesure',JSON.stringify(arr.slice(0,200))); }catch(e){}
+                setSent(true);
+              }} style={{width:"100%",background:"#1A1715",border:"none",borderRadius:12,padding:"14px",fontFamily:SS,fontSize:14,fontWeight:600,color:"#fff",cursor:"pointer",boxShadow:"0 8px 20px -8px rgba(26,23,21,.5)",opacity:form.company&&form.contact&&form.email&&form.need&&form.devBudget&&form.monthlyBudget?1:0.5}}>Valider l'étape 1</button>
             </div>
           )}
         </div>
@@ -7878,8 +7893,8 @@ const DevisClient=({user})=>{
             ))}
           </div>
           <div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:24}}>
-            <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink,marginBottom:8}}>Pourquoi -70 % ?</div>
-            <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.7,marginBottom:14}}>Nous finançons une partie du développement en intégrant ensuite le logiciel à la marketplace ONIQ. Cela réduit vos coûts tout en nous permettant de réutiliser la base produit pour d'autres clients du même marché.</div>
+            <div style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink,marginBottom:8}}>Pourquoi 4× moins cher ?</div>
+            <div style={{fontFamily:SS,fontSize:12,color:C.stone,lineHeight:1.7,marginBottom:14}}>Nos méthodes de développement sont propulsées par l'intelligence artificielle : ce qu'une agence classique produit en des mois, nous le livrons en semaines — avec des tests plus poussés et le même niveau d'exigence. Moins d'heures facturées, même qualité : votre devis est divisé par 4.</div>
             <a href={ONIQ_CALENDLY_URL} target="_blank" rel="noreferrer" style={{display:"inline-block",background:C.ink,border:"none",borderRadius:6,padding:"10px 16px",fontFamily:SS,fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:C.ivory,textDecoration:"none"}}>Ouvrir Calendly</a>
           </div>
         </div>
@@ -7976,6 +7991,74 @@ const Apropos=({onAuth})=>(
 );
 
 // ── Admin ──────────────────────────────────────────────────────────────────
+/* ═══ ADMIN — DEMANDES SUR MESURE (formulaire « Sur mesure » → traitement) ═══ */
+const AdminDemandes=()=>{
+  const [rows,setRows]=React.useState(null);
+  const [err,setErr]=React.useState('');
+  const load=async()=>{
+    let list=[];setErr('');
+    try{
+      if(typeof supabaseClient!=='undefined'&&supabaseClient){
+        const {data,error}=await supabaseClient.from('demandes_surmesure').select('*').order('created_at',{ascending:false}).limit(200);
+        if(error)setErr(error.message);else list=data||[];
+      }
+    }catch(e){setErr(String(e&&e.message||e));}
+    if(!list.length){
+      try{const loc=JSON.parse(localStorage.getItem('oniq_demandes_surmesure')||'[]');if(loc.length)list=loc.map((l,i)=>({id:'local-'+i,...l,_local:true}));}catch(e){}
+    }
+    setRows(list);
+  };
+  React.useEffect(()=>{load();},[]);
+  const setStatut=async(r,st)=>{
+    setRows(rs=>rs.map(x=>x.id===r.id?{...x,statut:st}:x));
+    if(!r._local){try{await supabaseClient.from('demandes_surmesure').update({statut:st}).eq('id',r.id);}catch(e){}}
+  };
+  const STS=['nouveau','contacté','devis envoyé','signé','perdu'];
+  const stCol={nouveau:'#B05A2A','contacté':'#2D5687','devis envoyé':'#8C6A2E','signé':'#4A7C59',perdu:'#8C8070'};
+  const fmtD=(d)=>{try{return new Date(d).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}};
+  return (
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18,flexWrap:'wrap',gap:10}}>
+        <div>
+          <div style={{fontFamily:SF,fontSize:24,fontWeight:700,color:C.ink}}>Demandes sur mesure</div>
+          <div style={{fontFamily:SS,fontSize:12.5,color:C.stone,marginTop:3}}>Chaque formulaire « Sur mesure » arrive ici. Promesse du site : <b style={{color:C.ink}}>devis sous 48 h</b>.</div>
+        </div>
+        <button onClick={load} style={{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 16px',fontFamily:SS,fontSize:12,fontWeight:700,cursor:'pointer'}}>↻ Actualiser</button>
+      </div>
+      {err&&<div style={{background:'#FFF6E6',border:'1px solid #E0A23C',borderRadius:10,padding:'12px 16px',fontFamily:SS,fontSize:12.5,color:'#8a6a1a',marginBottom:14}}>⚠️ {err} — si la table n'existe pas encore, exécute <b>oniq-demandes-schema.sql</b> dans Supabase (SQL Editor).</div>}
+      {rows===null?<div style={{fontFamily:SS,fontSize:13,color:C.stone,padding:30,textAlign:'center'}}>Chargement…</div>
+      :rows.length===0?<div style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:12,padding:40,textAlign:'center',fontFamily:SS,fontSize:13.5,color:C.stone}}>Aucune demande pour le moment. Dès qu'un prospect valide le formulaire « Sur mesure », elle apparaît ici.</div>
+      :<div style={{display:'flex',flexDirection:'column',gap:14}}>
+        {rows.map(r=>(
+          <div key={r.id} style={{background:'#fff',border:`1px solid ${r.statut==='nouveau'?'#E0A23C':C.linen}`,borderRadius:12,padding:'18px 20px',boxShadow:r.statut==='nouveau'?'0 4px 18px -6px rgba(224,162,60,0.35)':'0 1px 4px rgba(0,0,0,0.04)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,flexWrap:'wrap'}}>
+              <div style={{minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                  <span style={{fontFamily:SF,fontSize:17,fontWeight:700,color:C.ink}}>{r.company}</span>
+                  <span style={{fontFamily:SS,fontSize:10.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'#fff',background:stCol[r.statut]||C.stone,borderRadius:999,padding:'3px 10px'}}>{r.statut||'nouveau'}</span>
+                  {r._local&&<span style={{fontFamily:SS,fontSize:10,color:C.stone}}>(local — table Supabase absente)</span>}
+                </div>
+                <div style={{fontFamily:SS,fontSize:12.5,color:C.stone,marginTop:4}}>{r.contact} · {r.email}{r.sector?` · ${r.sector}`:''}{r.team_size?` · ${r.team_size}`:''}{r.timeline?` · délai : ${r.timeline}`:''}</div>
+                <div style={{fontFamily:SS,fontSize:12.5,color:C.stone,marginTop:2}}>💶 Dév : <b style={{color:C.ink}}>{r.dev_budget}</b> · Abonnement : <b style={{color:C.ink}}>{r.monthly_budget}</b>{r.created_at?` · 🕒 ${fmtD(r.created_at)}`:''}</div>
+              </div>
+              <div style={{display:'flex',gap:8,flexShrink:0}}>
+                <a href={`mailto:${r.email}?subject=${encodeURIComponent('ONIQ — votre logiciel sur mesure ('+r.company+')')}`} style={{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:'8px 12px',fontFamily:SS,fontSize:11.5,fontWeight:700,color:C.ink,textDecoration:'none'}}>✉ Email</a>
+                <a href={`https://wa.me/33624081910`} target="_blank" rel="noreferrer" style={{background:'#25D366',border:'none',borderRadius:8,padding:'8px 12px',fontFamily:SS,fontSize:11.5,fontWeight:700,color:'#fff',textDecoration:'none'}}>WhatsApp</a>
+              </div>
+            </div>
+            <div style={{fontFamily:SS,fontSize:13,color:C.ink,lineHeight:1.6,marginTop:12,background:C.paper,border:`1px solid ${C.linen}`,borderRadius:8,padding:'12px 14px',whiteSpace:'pre-wrap'}}>{r.need}</div>
+            <div style={{display:'flex',gap:6,marginTop:12,flexWrap:'wrap'}}>
+              {STS.map(st=>(
+                <button key={st} onClick={()=>setStatut(r,st)} style={{background:(r.statut||'nouveau')===st?(stCol[st]||C.ink):'transparent',color:(r.statut||'nouveau')===st?'#fff':C.stone,border:`1px solid ${(r.statut||'nouveau')===st?(stCol[st]||C.ink):C.linen}`,borderRadius:999,padding:'5px 12px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer'}}>{st}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>}
+    </div>
+  );
+};
+
 const AdminDash=({users,software,devis,setView})=>{
   const clients=users.filter(u=>u.role==="client");
   const totalMrr=clients.reduce((s,c)=>s+getMrr(c.subs),0);
@@ -9161,19 +9244,19 @@ const PackBatimentPopup=({user,software,setView,setDetail})=>{
       onMouseLeave:e=>e.currentTarget.style.background='transparent',
       title:'Ne plus afficher'},'×'),
     /* Offre d’été */
-    React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'6px 14px',fontSize:11,fontWeight:800,letterSpacing:'0.14em',marginBottom:14,textTransform:'uppercase'}},'Offre d’été'),
+    React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(140deg,#E8CE93,#A9863F)',color:'#14110D',borderRadius:999,padding:'6px 14px',fontSize:11,fontWeight:800,letterSpacing:'0.14em',marginBottom:14,textTransform:'uppercase'}},'⚡ Propulsé par l’IA'),
     React.createElement('div',{style:{fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:800,color:'#F4E9D5',lineHeight:1.25,letterSpacing:'-0.02em',paddingRight:22}},'Votre logiciel sur mesure'),
-    React.createElement('div',{style:{fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:900,color:'#E8CE93',lineHeight:1.25,letterSpacing:'-0.02em',marginBottom:12}},'des métiers du bâtiment.'),
+    React.createElement('div',{style:{fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:900,color:'#E8CE93',lineHeight:1.25,letterSpacing:'-0.02em',marginBottom:12}},'exactement comme vous travaillez.'),
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:14,marginBottom:10}},
-      React.createElement('div',{style:{fontFamily:"'Inter',sans-serif",fontSize:44,fontWeight:900,color:'#F4E9D5',letterSpacing:'-0.03em',lineHeight:1}},'OFFERT.'),
+      React.createElement('div',{style:{fontFamily:"'Inter',sans-serif",fontSize:44,fontWeight:900,color:'#F4E9D5',letterSpacing:'-0.03em',lineHeight:1}},'÷4.'),
       React.createElement('div',{style:{width:62,height:62,borderRadius:'50%',border:'2px solid #C6A765',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0,transform:'rotate(7deg)'}},
-        React.createElement('div',{style:{fontSize:18,fontWeight:900,color:'#E8CE93',lineHeight:1}},'0 €'),
-        React.createElement('div',{style:{fontSize:7,fontWeight:700,color:'#C6A765',letterSpacing:'0.05em',marginTop:2}},'DE DÉV.')
+        React.createElement('div',{style:{fontSize:15,fontWeight:900,color:'#E8CE93',lineHeight:1}},'4×'),
+        React.createElement('div',{style:{fontSize:7,fontWeight:700,color:'#C6A765',letterSpacing:'0.05em',marginTop:2}},'MOINS CHER')
       )
     ),
-    React.createElement('div',{style:{fontSize:13,color:'rgba(244,233,213,0.75)',lineHeight:1.5,marginBottom:18}},'Devis, chiffrage, chantiers… décrivez l’outil qu’il vous faut. ',React.createElement('b',{style:{color:'#F4E9D5'}},'On le construit.')),
+    React.createElement('div',{style:{fontSize:13,color:'rgba(244,233,213,0.75)',lineHeight:1.5,marginBottom:18}},'Nos méthodes propulsées par l’IA divisent par 4 les devis des agences classiques. Décrivez l’outil qu’il vous faut. ',React.createElement('b',{style:{color:'#F4E9D5'}},'On le construit.')),
     React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap'}},
-      React.createElement('button',{onClick:()=>{close(false);try{window.open('https://wa.me/33624081910?text='+encodeURIComponent('Bonjour ! Je suis intéressé par l’offre d’été ONIQ (logiciel sur mesure offert). Mon projet : '),'_blank');}catch(e){}},style:{flex:1,minWidth:150,background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.06em',boxShadow:'0 4px 14px rgba(212,162,76,0.4)'}},'Demander mon outil →'),
+      React.createElement('button',{onClick:()=>{close(false);try{window.open('https://wa.me/33624081910?text='+encodeURIComponent('Bonjour ! Je souhaite un devis pour un logiciel sur mesure ONIQ (4× moins cher grâce à l’IA). Mon projet : '),'_blank');}catch(e){}},style:{flex:1,minWidth:150,background:'linear-gradient(135deg,#FFE9A8 0%,#D4A24C 50%,#A06D2E 100%)',color:'#1F1A14',border:'none',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:12,fontWeight:800,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.06em',boxShadow:'0 4px 14px rgba(212,162,76,0.4)'}},'Demander mon devis →'),
       React.createElement('button',{onClick:()=>close(false),style:{background:'transparent',color:'rgba(244,233,213,0.6)',border:'1px solid rgba(244,233,213,0.2)',borderRadius:8,padding:'11px 16px',fontFamily:'Inter,sans-serif',fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}},'Plus tard')
     )
   );
@@ -9592,8 +9675,8 @@ try{window.NAV_ICONS=NAV_ICONS;}catch(e){}
 function getNavs(t){
   return {
     PUBLIC:[
-      {id:"c-market",     label:t('marketplace'),  g:"store"},
-      {id:"c-devis",      label:t('keysInHand'),   g:"keys"},
+      {id:"c-devis",      label:'Sur mesure',      g:"keys"},
+      {id:"c-market",     label:'Nos logiciels',   g:"store"},
     ],
     COMMERCIAL:[
       {id:"c-market",     label:t('marketplace'),  g:"store"},
@@ -9614,6 +9697,7 @@ function getNavs(t){
     ],
     ADMIN:[
       {id:"a-dashboard",  label:t('dashboard'),    g:"layout"},
+      {id:"a-demandes",   label:'Demandes sur mesure', g:"keys"},
       {id:"a-clients",    label:t('clients'),      g:"users"},
       {id:"a-software",   label:t('software'),     g:"apps"},
       {id:"a-devis",      label:t('quotes'),       g:"doc"},
@@ -9635,12 +9719,12 @@ function getNavs(t){
   };
 }
 // Alias statiques pour compatibilité avec le code existant
-const PUBLIC_NAV=[{id:"landing",label:"Accueil",g:"layout"},{id:"c-market",label:"Marketplace",g:"store"},{id:"c-devis",label:"Clés en main",g:"keys"}];
+const PUBLIC_NAV=[{id:"landing",label:"Accueil",g:"layout"},{id:"c-devis",label:"Sur mesure",g:"keys"},{id:"c-market",label:"Nos logiciels",g:"store"}];
 const COMMERCIAL_NAV=[{id:"c-market",label:"Marketplace",g:"store"},{id:"co-crm",label:"Mon CRM",g:"crm"}];
 const SUPPORT_NAV=[{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
 const CLIENT_PRO_NAV=[{id:'c-espace',label:'Mon espace',g:'user'},{id:'c-parrainage',label:'Parrainage',g:'gift'}];
 const CLIENT_HUB_NAV=[{id:'c-hub',label:'Nos logiciels',g:'cube'}];
-const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-clients",label:"Clients",g:"users"},{id:"a-software",label:"Logiciels",g:"apps"},{id:"a-devis",label:"Devis",g:"doc"},{id:"a-factures",label:"Factures",g:"receipt"},{id:"a-referrals",label:"Parrainage",g:"gift"},{id:"a-codes",label:"Codes d'essai",g:"keys"},{id:"a-commercial",label:"Commercial",g:"crm"},{id:"a-validations",label:"Validations",g:"check"},{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
+const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-demandes",label:"Demandes sur mesure",g:"keys"},{id:"a-clients",label:"Clients",g:"users"},{id:"a-software",label:"Logiciels",g:"apps"},{id:"a-devis",label:"Devis",g:"doc"},{id:"a-factures",label:"Factures",g:"receipt"},{id:"a-referrals",label:"Parrainage",g:"gift"},{id:"a-codes",label:"Codes d'essai",g:"keys"},{id:"a-commercial",label:"Commercial",g:"crm"},{id:"a-validations",label:"Validations",g:"check"},{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
 const LOCKED_PRO=[{id:'c-espace',label:'Mon espace',g:'user',desc:'Gérez vos abonnements'},{id:'c-parrainage',label:'Parrainage',g:'gift',desc:'20% 1er mois'}];
 const LOCKED_HUB=[{id:'c-hub',label:'Nos logiciels',g:'cube',desc:"Accédez aux logiciels"}];
 
@@ -10228,14 +10312,14 @@ const oniqTelIntl=(tel)=>{var d=String(tel||"").replace(/\D/g,"");if(!d)return""
 const oniqFillTpl=(str,lead)=>String(str||"").replace(/\{contact\}/g,((lead&&(lead.contact||"").trim())||"Bonjour")).replace(/\{entreprise\}/g,((lead&&lead.entreprise)||"votre entreprise")).replace(/\{ville\}/g,((lead&&(lead.ville||lead.region))||"")).replace(/\{secteur\}/g,((lead&&lead.secteur)||"votre secteur"));
 // Templates de publicité (mail = objet + corps ; wa = version courte WhatsApp)
 const ONIQ_PUB_TEMPLATES=[
-  {id:"ete",nom:"Offre d'été — logiciel offert",
-   subject:"{entreprise} — votre logiciel métier développé gratuitement cet été",
-   mail:"Bonjour {contact},\n\nJe me permets de vous contacter au sujet d'ONIQ, la plateforme de logiciels sur mesure pour les métiers du bâtiment.\n\nCet été seulement, nous OFFRONS le développement de votre logiciel (au lieu de -70% le reste de l'année) : vous décrivez l'outil dont vous avez besoin — chiffrage de plans, relance des impayés, suivi de chantiers — et on le construit.\n\n- Une IA entraînée sur votre métier\n- Vos tâches répétitives automatisées\n- Développement 100% OFFERT cet été\n\nTout est expliqué ici : https://oniq.online\n\nSeriez-vous disponible pour un échange rapide cette semaine ?\n\nBien à vous,\nL'équipe ONIQ",
-   wa:"Bonjour {contact} 👋\n\nCet été, ONIQ développe *gratuitement* votre logiciel sur mesure pour le bâtiment : chiffrage de plans, relances d'impayés, suivi de chantiers… avec une IA entraînée sur votre métier.\n\n👉 https://oniq.online\n\nSeriez-vous dispo pour un échange rapide ?"},
-  {id:"market",nom:"Marketplace — logiciels prêts à l'emploi",
-   subject:"{entreprise} — des logiciels bâtiment prêts à l'emploi (-70%)",
-   mail:"Bonjour {contact},\n\nONIQ regroupe des logiciels métier pour le bâtiment, prêts à l'emploi et à -70% : gestion de chantiers, devis & factures, chiffrage IA de vos plans, relance automatique des impayés.\n\nEssai 7 jours gratuit, sans carte bancaire.\n\nDécouvrez la marketplace : https://oniq.online\n\nJe reste à votre disposition pour une démonstration adaptée à votre activité.\n\nBien à vous,\nL'équipe ONIQ",
-   wa:"Bonjour {contact} 👋\n\nONIQ, ce sont des logiciels bâtiment prêts à l'emploi à -70% (chantiers, devis/factures, chiffrage IA, relances). Essai 7 jours gratuit, sans CB.\n\n👉 https://oniq.online\n\nJe vous fais une démo quand vous voulez !"},
+  {id:"surmesure",nom:"Sur mesure — devis divisé par 4",
+   subject:"{entreprise} — votre logiciel sur mesure, 4× moins cher",
+   mail:"Bonjour {contact},\n\nJe me permets de vous contacter au sujet d'ONIQ : nous construisons des logiciels sur mesure pour les entreprises — l'outil exact dont VOTRE activité a besoin (devis, clients, plannings, chiffrage, automatisations…).\n\nNotre différence : nos méthodes de développement sont propulsées par l'intelligence artificielle. Résultat, nous divisons par 4 les devis des agences classiques, à qualité égale, et nous livrons en semaines plutôt qu'en mois.\n\n- Un outil qui colle à VOTRE façon de travailler\n- Une IA entraînée sur votre métier\n- Devis sous 48 h, démonstration de nos réalisations à l'appui\n\nNos réalisations en démo : https://oniq.online\n\nSeriez-vous disponible pour un échange rapide cette semaine ?\n\nBien à vous,\nL'équipe ONIQ",
+   wa:"Bonjour {contact} 👋\n\nONIQ construit le logiciel sur mesure de votre entreprise — et grâce à nos méthodes propulsées par l'IA, nos devis sont *4× moins chers* que les agences classiques, à qualité égale.\n\n👉 Nos réalisations : https://oniq.online\n\nSeriez-vous dispo pour un échange rapide ?"},
+  {id:"market",nom:"Réalisations — logiciels prêts à l'emploi",
+   subject:"{entreprise} — des logiciels métier prêts à l'emploi, propulsés par l'IA",
+   mail:"Bonjour {contact},\n\nONIQ propose des logiciels métier prêts à l'emploi, propulsés par l'IA : gestion de chantiers, devis & factures, chiffrage IA de vos plans, relance automatique des impayés.\n\nCe sont aussi nos vitrines : les mêmes méthodes nous permettent de construire VOTRE logiciel sur mesure avec un devis divisé par 4 par rapport aux agences classiques.\n\nEssai 7 jours gratuit, sans carte bancaire.\n\nDécouvrez nos réalisations : https://oniq.online\n\nJe reste à votre disposition pour une démonstration adaptée à votre activité.\n\nBien à vous,\nL'équipe ONIQ",
+   wa:"Bonjour {contact} 👋\n\nONIQ, ce sont des logiciels métier prêts à l'emploi propulsés par l'IA (chantiers, devis/factures, chiffrage IA, relances) — et du sur mesure 4× moins cher que les agences. Essai 7 jours gratuit, sans CB.\n\n👉 https://oniq.online\n\nJe vous fais une démo quand vous voulez !"},
   {id:"relance",nom:"Relance douce",
    subject:"{entreprise} — je reviens vers vous",
    mail:"Bonjour {contact},\n\nJe me permets de revenir vers vous concernant ONIQ, nos logiciels sur mesure pour les métiers du bâtiment.\n\nAvez-vous eu l'occasion d'y réfléchir ? Je serais ravi de répondre à vos questions ou de vous préparer une démonstration adaptée à votre activité.\n\nTout est ici : https://oniq.online\n\nBien à vous,\nL'équipe ONIQ",
@@ -10273,15 +10357,15 @@ const RessourcesCommercial=({mob})=>{
       React.createElement("circle",{cx:w-70,cy:110,r:230,fill:"none",stroke:"rgba(198,167,101,0.18)","strokeWidth":2}),
       React.createElement("circle",{cx:w-70,cy:110,r:180,fill:"none",stroke:"rgba(198,167,101,0.12)","strokeWidth":1.5}),
       React.createElement("text",{x:cx,y:h*0.15,fill:gold,"fontFamily":"Georgia, serif","fontSize":w*0.105,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"ONIQ"),
-      React.createElement("text",{x:cx,y:h*0.15+w*0.052,fill:stone,"fontFamily":"Consolas, monospace","fontSize":w*0.024,"textAnchor":"middle","letterSpacing":4},"LOGICIELS IA · BÂTIMENT"),
+      React.createElement("text",{x:cx,y:h*0.15+w*0.052,fill:stone,"fontFamily":"Consolas, monospace","fontSize":w*0.024,"textAnchor":"middle","letterSpacing":4},"LOGICIELS SUR MESURE · IA"),
       React.createElement("rect",{x:cx-w*0.205,y:h*0.27,width:w*0.41,height:w*0.072,rx:w*0.036,fill:gold}),
-      React.createElement("text",{x:cx,y:h*0.27+w*0.05,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":w*0.032,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"OFFRE D'ÉTÉ"),
-      React.createElement("text",{x:cx,y:h*0.44,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.064,"fontWeight":"800","textAnchor":"middle"},"Votre logiciel métier."),
-      React.createElement("text",{x:cx,y:h*0.44+w*0.135,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.145,"fontWeight":"900","textAnchor":"middle","letterSpacing":1},"OFFERT."),
+      React.createElement("text",{x:cx,y:h*0.27+w*0.05,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":w*0.032,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"SUR MESURE ÷4"),
+      React.createElement("text",{x:cx,y:h*0.44,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.064,"fontWeight":"800","textAnchor":"middle"},"Votre logiciel sur mesure."),
+      React.createElement("text",{x:cx,y:h*0.44+w*0.135,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.145,"fontWeight":"900","textAnchor":"middle","letterSpacing":1},"÷4."),
       React.createElement("circle",{cx:cx,cy:h*0.66,r:w*0.11,fill:"none",stroke:goldD,"strokeWidth":4}),
-      React.createElement("text",{x:cx,y:h*0.66-w*0.004,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.072,"fontWeight":"900","textAnchor":"middle"},"0€"),
-      React.createElement("text",{x:cx,y:h*0.66+w*0.05,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":w*0.019,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"DE DÉVELOPPEMENT"),
-      React.createElement("text",{x:cx,y:h*0.80,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"Cet été seulement — au lieu de -70%."),
+      React.createElement("text",{x:cx,y:h*0.66-w*0.004,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":w*0.072,"fontWeight":"900","textAnchor":"middle"},"4×"),
+      React.createElement("text",{x:cx,y:h*0.66+w*0.05,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":w*0.019,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"MOINS CHER VS AGENCES"),
+      React.createElement("text",{x:cx,y:h*0.80,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"Nos méthodes IA divisent vos devis par 4."),
       React.createElement("text",{x:cx,y:h*0.80+w*0.046,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":w*0.031,"textAnchor":"middle"},"On construit l'outil IA de votre bâtiment."),
       React.createElement("rect",{x:cx-w*0.16,y:h*0.88,width:w*0.32,height:2,fill:goldD}),
       React.createElement("text",{x:cx,y:h*0.93,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":w*0.05,"fontWeight":"800","textAnchor":"middle"},"oniq.online")
@@ -10293,17 +10377,17 @@ const RessourcesCommercial=({mob})=>{
       React.createElement("circle",{cx:w-30,cy:70,r:210,fill:"none",stroke:"rgba(198,167,101,0.16)","strokeWidth":2}),
       React.createElement("circle",{cx:w-30,cy:70,r:165,fill:"none",stroke:"rgba(198,167,101,0.10)","strokeWidth":1.5}),
       React.createElement("text",{x:72,y:120,fill:gold,"fontFamily":"Georgia, serif","fontSize":70,"fontWeight":"700","textAnchor":"start","letterSpacing":2},"ONIQ"),
-      React.createElement("text",{x:74,y:150,fill:stone,"fontFamily":"Consolas, monospace","fontSize":17,"textAnchor":"start","letterSpacing":3},"LOGICIELS IA · BÂTIMENT"),
+      React.createElement("text",{x:74,y:150,fill:stone,"fontFamily":"Consolas, monospace","fontSize":17,"textAnchor":"start","letterSpacing":3},"LOGICIELS SUR MESURE · IA"),
       React.createElement("rect",{x:72,y:196,width:224,height:50,rx:25,fill:gold}),
-      React.createElement("text",{x:184,y:228,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":21,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"OFFRE D'ÉTÉ"),
-      React.createElement("text",{x:72,y:328,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":50,"fontWeight":"800","textAnchor":"start"},"Votre logiciel métier."),
-      React.createElement("text",{x:70,y:412,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":86,"fontWeight":"900","textAnchor":"start","letterSpacing":1},"OFFERT."),
-      React.createElement("text",{x:72,y:474,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":23,"textAnchor":"start"},"Cet été — au lieu de -70%. Décrivez-le, on le construit."),
+      React.createElement("text",{x:184,y:228,fill:dark,"fontFamily":"system-ui, sans-serif","fontSize":21,"fontWeight":"800","textAnchor":"middle","letterSpacing":3},"SUR MESURE ÷4"),
+      React.createElement("text",{x:72,y:328,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":50,"fontWeight":"800","textAnchor":"start"},"Votre logiciel sur mesure."),
+      React.createElement("text",{x:70,y:412,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":86,"fontWeight":"900","textAnchor":"start","letterSpacing":1},"÷4."),
+      React.createElement("text",{x:72,y:474,fill:"rgba(244,233,213,0.82)","fontFamily":"system-ui, sans-serif","fontSize":23,"textAnchor":"start"},"4× moins cher que les agences. Décrivez-le, on le construit."),
       React.createElement("rect",{x:72,y:512,width:250,height:2,fill:goldD}),
       React.createElement("text",{x:72,y:562,fill:cream,"fontFamily":"system-ui, sans-serif","fontSize":40,"fontWeight":"800","textAnchor":"start"},"oniq.online"),
       React.createElement("circle",{cx:w-185,cy:h*0.5,r:120,fill:"none",stroke:goldD,"strokeWidth":4}),
-      React.createElement("text",{x:w-185,y:h*0.5+4,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":76,"fontWeight":"900","textAnchor":"middle"},"0€"),
-      React.createElement("text",{x:w-185,y:h*0.5+46,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":17,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"DE DÉVELOPPEMENT")
+      React.createElement("text",{x:w-185,y:h*0.5+4,fill:gold,"fontFamily":"system-ui, sans-serif","fontSize":76,"fontWeight":"900","textAnchor":"middle"},"4×"),
+      React.createElement("text",{x:w-185,y:h*0.5+46,fill:goldD,"fontFamily":"Consolas, monospace","fontSize":17,"fontWeight":"700","textAnchor":"middle","letterSpacing":2},"MOINS CHER VS AGENCES")
     );
   };
   const banners=[
@@ -12561,6 +12645,7 @@ if(view==='landing'){
             <div style={{padding:mob?"16px 14px":"28px 32px"}}>
               <div style={{maxWidth:"100%",margin:"0 auto"}}>
                 {view==="a-dashboard"&&<AdminDash users={users} software={software} devis={devis} setView={setView}/>}
+                {view==="a-demandes"&&<AdminDemandes/>}
                 {view==="a-clients"&&<AdminClients users={users} setUsers={setUsers} software={software} setView={setView} setSelClient={setSelClient}/>}
                 {view==="a-client-detail"&&<AdminClientDetail client={selClient} setClient={setSelClient} users={users} setUsers={setUsers} software={software} setView={setView}/>}
                 {view==="a-software"&&<AdminSoftware software={software} setSoftware={setSoftware}/>}
