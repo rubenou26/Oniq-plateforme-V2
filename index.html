@@ -10754,7 +10754,25 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   const [aiSector,setAiSector]=useState('Bâtiment');
   const [aiRegion,setAiRegion]=useState('France');
   const [aiMobileOnly,setAiMobileOnly]=useState(false);
-  const [aiCaMin,setAiCaMin]=useState(0);
+  const [aiCaMin,setAiCaMin]=useState(400000);   /* seuil d'intérêt : 400 k€ (choix Ruben) */
+  const [aiTotalDispo,setAiTotalDispo]=useState(0);
+  /* Taille d'entreprise = LE filtre décisif : une TPE de 3 personnes n'achète pas
+     un logiciel sur mesure, une PME de 20-250 salariés oui. Codes INSEE d'effectif. */
+  /* Codes INSEE d'effectif. On EXCLUT volontairement 00/01/02 (0 à 5 salariés) :
+     auto-entrepreneurs et micro-sociétés n'achètent pas de logiciel sur mesure.
+     Un auto-entrepreneur a 0 salarié → ces filtres l'écartent d'office. */
+  /* 3 salariés et + : une société de 4 personnes peut faire 800 k€ ou 11 M€ de CA
+     (vérifié sur le registre) — c'est le CA qui juge la capacité à investir,
+     pas le nombre de têtes. Les auto-entrepreneurs (0 salarié) restent exclus. */
+  const [aiTaille,setAiTaille]=useState('02,03,11,12,21,22,31,32,41,42');
+  const TAILLES=[
+    ['02,03,11,12,21,22,31,32,41,42','Vraies sociétés (3 sal. et +) — recommandé'],
+    ['03,11,12,21,22,31,32,41,42','Structurées (6 sal. et +)'],
+    ['11,12,21,22,31,32,41,42','PME établies (10 sal. et +)'],
+    ['12,21,22,31,32,41,42','Grosses PME (20 sal. et +)'],
+    ['21,22,31,32,41,42','ETI (50 sal. et +)'],
+    ['','Toutes tailles (inclut auto-entrepreneurs ⚠️)']
+  ];
   const [aiEnriching,setAiEnriching]=useState(false);
   const fmtCA=(n)=>{if(!isFinite(n))return '';return n>=1e6?((Math.round(n/1e5)/10).toLocaleString('fr-FR')+' M€'):(Math.round(n/1e3).toLocaleString('fr-FR')+' k€');};
   const waLinkFR=(tel,r)=>{
@@ -11059,6 +11077,24 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
      La prospection IA peut être avare ; ici on puise dans la base officielle :
      ex. 676 plombiers en Drôme, 10 000 au national. Toujours ≥ 10 résultats. */
   const NAF_SECTEURS=[
+    /* ═══ CIBLES PRIORITAIRES du sur-mesure (PME à process complexes) ═══ */
+    [/industrie|fabrication|usine|production/i,'25.62B'],[/métallurg|metallurg|usinage|m[ée]canique/i,'25.62B'],
+    [/agroaliment/i,'10.13A'],[/plasturgie|plastique/i,'22.29A'],
+    [/n[ée]goce|distribution|grossiste/i,'46.90Z'],[/mat[ée]riaux/i,'46.73A'],
+    [/transport routier|transport/i,'49.41A'],[/logistique|entrep[oô]t/i,'52.10B'],
+    [/promotion immobili[eè]re/i,'41.10A'],[/gestion locative|syndic|administrateur de biens/i,'68.32A'],
+    [/bureau d.[ée]tudes|ing[ée]nierie/i,'71.12B'],[/cabinet comptable|comptab|expert.?comptable/i,'69.20Z'],
+    [/avocat|juridique/i,'69.10Z'],[/conseil|audit|strat[ée]gie/i,'70.22Z'],
+    [/clinique|sant[ée]|m[ée]dical/i,'86.10Z'],[/laboratoire/i,'71.20B'],
+    [/ehpad|m[ée]dico.?social|maison de retraite/i,'87.10A'],
+    [/formation/i,'85.59A'],[/int[ée]rim|travail temporaire|recrutement/i,'78.20Z'],
+    [/nettoyage|propret[ée]/i,'81.21Z'],[/s[ée]curit[ée]|gardiennage/i,'80.10Z'],
+    [/concession|automobile/i,'45.11Z'],[/garage|carross/i,'45.20A'],
+    [/franchise|r[ée]seau de points/i,'47.19B'],[/e.?commerce|vente en ligne/i,'47.91A'],
+    [/coop[ée]rative agricole/i,'46.21Z'],[/viticult|cave|vin/i,'11.02A'],
+    [/h[oô]tel|restauration groupe/i,'55.10Z'],[/[ée]v[ée]nementiel/i,'82.30Z'],
+    [/imprimerie/i,'18.12Z'],[/[ée]nergie|photovolta[iï]que|solaire/i,'43.21A'],
+    [/maintenance industrielle/i,'33.12Z'],[/entreprise g[ée]n[ée]rale/i,'41.20A'],
     [/plomb|chauffagiste|chauffage|clim|sanitaire/i,'43.22B'],[/électric|electric|électrot/i,'43.21A'],
     [/menuis.*(alu|pvc|ext)|fenêtre|fermeture/i,'43.32A'],[/menuis|agenc/i,'43.32B'],
     [/maçon|macon|gros.?œuvre|gros.?oeuvre/i,'43.99C'],[/constructeur|maison individuelle|cmi|promoteur/i,'41.20A'],
@@ -11100,6 +11136,7 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
       const p=new URLSearchParams({per_page:'25',page:String(page)});
       if(naf)p.set('activite_principale',naf);else p.set('q',s||'entreprise');
       if(deps)p.set('departement',deps);
+      if(aiTaille)p.set('tranche_effectif_salarie',aiTaille);
       try{
         const j=await fetch('https://recherche-entreprises.api.gouv.fr/search?'+p.toString()).then(r=>r.json());
         const res=j.results||[];if(!res.length)break;
@@ -11107,6 +11144,9 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
         const prio=(q)=>{q=String(q||'').toLowerCase();return /pr[ée]sident|g[ée]rant/.test(q)?0:/directeur g[ée]n/.test(q)?1:2;};
         res.forEach(e=>{
           if(out.length>=besoin)return;
+          /* Exclusion des entrepreneurs individuels / auto-entrepreneurs (nature 1000)
+             → on ne garde que de vraies sociétés (SARL 5499, SAS 5710, SASU 5720, SA…) */
+          if(String(e.nature_juridique||'').startsWith('1'))return;
           const sg=e.siege||{};
           const fin=e.finances||{},yrs=Object.keys(fin).sort();
           let ca=null,an=null;if(yrs.length){const v=parseFloat(fin[yrs[yrs.length-1]].ca);if(isFinite(v)){ca=v;an=yrs[yrs.length-1];}}
@@ -11136,13 +11176,41 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
         const data=await resp.json();
         rows=(data.entreprises||[]).filter(e=>e.nom);
       }catch(e){console.warn('prospect-search indisponible',e);}
-      /* GARANTIE ≥ 20 entreprises : on complète depuis le registre officiel (Sirene/INPI) */
-      const MIN=20;
+      /* On complète TOUJOURS avec le registre officiel (Sirene/INPI) : Apollo est avare.
+         L'aperçu monte à ~75 fiches — la campagne continue, elle, les traitera TOUTES. */
+      const MIN=75;
       if(rows.length<MIN){
-        const extra=await sireneFallback(aiSector,aiRegion,MIN*2-rows.length);
+        const extra=await sireneFallback(aiSector,aiRegion,MIN-rows.length);
         const vus=new Set(rows.map(r=>String(r.nom||'').toLowerCase().replace(/[^a-z0-9]/g,'')));
         extra.forEach(e=>{const k=String(e.nom||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(k&&!vus.has(k)){vus.add(k);rows.push(e);}});
       }
+      /* Volume TOTAL ciblable (ce que la campagne continue pourra traiter) */
+      try{
+        let naf='';for(const [rx,code] of NAF_SECTEURS){if(rx.test(String(aiSector||''))){naf=code;break;}}
+        let deps='';const reg=String(aiRegion||'').toLowerCase();
+        if(reg&&!/france|toute/i.test(reg)){const m2=reg.match(/\b(\d{2}|2[ab])\b/i);
+          if(m2)deps=m2[1].toUpperCase();else for(const k in REGION_DEPS){if(new RegExp(k,'i').test(reg)){deps=REGION_DEPS[k];break;}}}
+        /* ⚠️ L'API plafonne à 10 000 par requête. Pour la France entière on
+           ÉCHANTILLONNE 6 départements représentatifs et on extrapole aux 101. */
+        const compte=async(dep)=>{
+          const q=new URLSearchParams({per_page:'1'});
+          if(naf)q.set('activite_principale',naf);else q.set('q',String(aiSector||'entreprise'));
+          if(dep)q.set('departement',dep);
+          const j=await fetch('https://recherche-entreprises.api.gouv.fr/search?'+q.toString()).then(r=>r.json());
+          return (j&&j.total_results)||0;
+        };
+        if(deps){
+          setAiTotalDispo(await compte(deps));
+        } else {
+          /* Échantillon Paris/Rhône/BdR/Gironde/Drôme/Morbihan ≈ 13,2 % de la
+             population française → on extrapole par ce poids (et non par 101/6,
+             qui surestimerait : ces départements sont parmi les plus peuplés). */
+          const ech=['75','69','13','33','26','56'];
+          const vals=await Promise.all(ech.map(d=>compte(d)));
+          const somme=vals.reduce((a,b)=>a+b,0);
+          setAiTotalDispo(Math.round(somme/0.132/1000)*1000);
+        }
+      }catch(e){setAiTotalDispo(0);}
       setAiResults(rows);
       setAiLoading(false);
       /* ENRICHISSEMENT AUTOMATIQUE (CA + dirigeant + WhatsApp) — plus aucun bouton à cliquer */
@@ -11276,8 +11344,8 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
       React.createElement(TabBtn,{id:'dashboard',icon:'📊',label:'Dashboard'}),
       React.createElement(TabBtn,{id:'pipeline',icon:'🔄',label:'Pipeline'}),
       React.createElement(TabBtn,{id:'prospection',icon:'🔍',label:'Campagne automatique'}),
-      React.createElement(TabBtn,{id:'campagnes',icon:'D83DDE80',label:'Campagnes'}),
-      React.createElement(TabBtn,{id:'inbox',icon:'D83DDCE5',label:'Inbox'}),
+      React.createElement(TabBtn,{id:'campagnes',icon:'🚀',label:'Campagnes'}),
+      React.createElement(TabBtn,{id:'inbox',icon:'📥',label:'Inbox'}),
       React.createElement(TabBtn,{id:'ressources',icon:'\uD83C\uDFA8',label:'Ressources'}),
       React.createElement(TabBtn,{id:'relances',icon:'🤖',label:'Relances IA'}),
       React.createElement(TabBtn,{id:'mes_commissions',icon:'💰',label:'Mes commissions'}),
@@ -11578,7 +11646,7 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
             React.createElement('label',{style:ls},'Secteur (libre ou suggestion)'),
             React.createElement('input',{type:'text',value:aiSector,onChange:e=>setAiSector(e.target.value),list:'oniq-secteurs-suggest',placeholder:'Ex : Plomberie chauffagiste, Paysagiste, Menuiserie alu…',style:is}),
             React.createElement('datalist',{id:'oniq-secteurs-suggest'},
-              ['Bâtiment','Construction','Maîtrise d\'œuvre','Promotion immobilière','Rénovation','Travaux publics','Architecture','BTP général','Plomberie chauffagiste','Électricité générale','Menuiserie bois','Menuiserie alu / PVC','Couverture / zinguerie','Maçonnerie','Peinture / revêtements','Paysagiste','Carrelage / faïence','Isolation thermique','Cuisiniste','Piscinistes','Serrurerie / métallerie','Terrassement / VRD','Charpente','Plâtrerie / cloisons','Ascensoriste','Domotique'].map(s=>React.createElement('option',{key:s,value:s}))
+              ['Industrie / fabrication','Métallurgie / usinage','Agroalimentaire','Plasturgie','Négoce / distribution','Grossiste','Transport routier','Logistique / entrepôt','Promotion immobilière','Gestion locative / syndic','Bureau d\'études / ingénierie','Architecture','Cabinet comptable','Cabinet d\'avocats','Conseil / audit','Clinique / santé','Laboratoire d\'analyses','EHPAD / médico-social','Organisme de formation','Agence d\'intérim','Nettoyage / propreté','Sécurité / gardiennage','Concession automobile','Garage / carrosserie','Franchise / réseau de points de vente','E-commerce','Négoce de matériaux','Coopérative agricole','Viticulture / cave','Hôtellerie / restauration groupe','Événementiel','Imprimerie','Énergie / photovoltaïque','Maintenance industrielle','Constructeur de maisons','Entreprise générale du bâtiment'].map(s=>React.createElement('option',{key:s,value:s}))
             ),
             React.createElement('div',{style:{fontFamily:SS,fontSize:10,color:C.stone,marginTop:4,lineHeight:1.5}},'Saisissez librement le secteur cible — l\'IA s\'adapte. Les suggestions apparaissent à la frappe.')
           ),
@@ -11591,10 +11659,13 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
           '📱 Numéros mobiles uniquement (06/07)'),
         React.createElement('select',{value:aiCaMin,onChange:e=>setAiCaMin(parseInt(e.target.value,10)),title:'Filtrer par chiffre d’affaires réel (comptes publiés INPI — clique d’abord « Enrichir CA »)',style:{marginLeft:12,border:'1px solid '+(C.linen||'#ECE5D8'),borderRadius:6,padding:'9px 10px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:'pointer',background:'#fff'}},
           React.createElement('option',{value:0},'💶 CA : tous'),
-          React.createElement('option',{value:100000},'CA ≥ 100 k€'),
-          React.createElement('option',{value:500000},'CA ≥ 500 k€'),
+          React.createElement('option',{value:400000},'CA ≥ 400 k€ — recommandé'),
           React.createElement('option',{value:1000000},'CA ≥ 1 M€'),
-          React.createElement('option',{value:5000000},'CA ≥ 5 M€')),
+          React.createElement('option',{value:2000000},'CA ≥ 2 M€'),
+          React.createElement('option',{value:5000000},'CA ≥ 5 M€'),
+          React.createElement('option',{value:10000000},'CA ≥ 10 M€')),
+        React.createElement('select',{value:aiTaille,onChange:e=>setAiTaille(e.target.value),title:'Taille de l’entreprise — une TPE de 3 personnes n’achète pas de logiciel sur mesure, une PME de 20-250 salariés oui',style:{marginLeft:8,border:'1px solid '+(C.linen||'#ECE5D8'),borderRadius:6,padding:'9px 10px',fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:'pointer',background:'#fff'}},
+          TAILLES.map(([v,l])=>React.createElement('option',{key:v,value:v},'👥 '+l))),
         React.createElement('label',{title:'N’afficher que les entreprises joignables sur WhatsApp',style:{display:'inline-flex',alignItems:'center',gap:8,marginLeft:12,fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:'pointer'}},
           React.createElement('input',{type:'checkbox',checked:aiWaOnly,onChange:e=>setAiWaOnly(e.target.checked),style:{accentColor:'#25D366',width:15,height:15,cursor:'pointer'}}),
           '💬 WhatsApp uniquement')
@@ -11608,7 +11679,7 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
             React.createElement('div',{style:{height:'100%',width:Math.round((aiEnrichDone/Math.max(1,aiResults.length))*100)+'%',background:'linear-gradient(90deg,#E8CE93,#25D366)',transition:'width .3s'}})))),
       aiResults&&aiResults.length>0&&React.createElement('div',null,
         React.createElement('div',{style:{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:12}},
-          React.createElement('div',{style:{flex:1,minWidth:200,background:'rgba(74,124,89,0.08)',border:'1px solid rgba(74,124,89,0.3)',borderRadius:8,padding:'10px 14px',fontFamily:SS,fontSize:11,color:'#4A7C59'}},'✅ '+aiResults.length+' entreprise(s) · '+aiResults.filter(r=>oniqIsMobileFR(r.tel)).length+' avec mobile 06/07'+(aiMobileOnly?' · filtre mobiles actif':' — contacts vérifiés Apollo.io')),
+          React.createElement('div',{style:{flex:1,minWidth:200,background:'rgba(74,124,89,0.08)',border:'1px solid rgba(74,124,89,0.3)',borderRadius:8,padding:'10px 14px',fontFamily:SS,fontSize:11,color:'#4A7C59'}},'✅ '+aiFiltered().length+' affichée(s)'+(aiResults.length!==aiFiltered().length?(' sur '+aiResults.length+' trouvée(s)'):'')+(aiTotalDispo>aiResults.length?(' · 🎯 ~'+aiTotalDispo.toLocaleString('fr-FR')+' entreprises ciblables — la campagne les traitera TOUTES en continu, département par département'):'')+(aiWaOnly?' · filtre WhatsApp actif':aiMobileOnly?' · filtre mobiles actif':'')),
           React.createElement('button',{onClick:async()=>{
               const rows=aiFiltered();
               /* Campagne CONTINUE : le serveur pioche ensuite tout seul, sans limite de volume */
@@ -11620,7 +11691,7 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
                 if(supabaseClient){
                   const {data:camp,error}=await supabaseClient.from('oq_campagnes').insert({
                     nom:'Campagne '+(aiSector||'')+' '+(aiRegion||''),secteur:aiSector||'',region:aiRegion||'',
-                    naf:naf||null,departements:deps||null,ca_min:aiCaMin||0,statut:'active',page_courante:1,
+                    naf:naf||null,departements:deps||null,ca_min:aiCaMin||0,effectif:aiTaille||null,statut:'active',page_courante:1,
                     owner_email:(currentUserEmail||'')}).select().maybeSingle();
                   if(error)throw error;
                   alert('🚀 Campagne CONTINUE lancée !\n\nCible : '+(aiSector||'—')+' · '+(aiRegion||'France')+(naf?(' (activité '+naf+')'):'')+'\n\nLe moteur va maintenant prospecter EN CONTINU, 24 h/24 : il pioche de nouvelles entreprises, envoie les emails et WhatsApp, relance, et s\'arrête dès qu\'un prospect répond.\n\nAucune limite de volume — la seule protection est le warm-up (montée en charge progressive pour ne jamais griller vos comptes).\n\nVous n\'avez plus qu\'à répondre dans l\'Inbox.');
