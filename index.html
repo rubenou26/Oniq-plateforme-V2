@@ -7992,6 +7992,252 @@ const Apropos=({onAuth})=>(
 
 // ── Admin ──────────────────────────────────────────────────────────────────
 /* ═══ ADMIN — DEMANDES SUR MESURE (formulaire « Sur mesure » → traitement) ═══ */
+/* ═══════════════════════════════════════════════════════════════════════
+   ONIQ — MOTEUR DE PROSPECTION MULTICANAL (email auto · WhatsApp/LinkedIn assistés)
+   + WARM-UP anti-bannissement + INBOX UNIFIÉE.
+   Stockage : localStorage (immédiat) — le schéma Supabase oq_* prend le relais
+   dès qu'il est déployé (mêmes noms de champs).
+   ═══════════════════════════════════════════════════════════════════════ */
+const OQ_KEY='oniq_campagnes_v1';
+const OQ_WARMUP={
+  email:   [{j:3,max:20},{j:7,max:40},{j:14,max:80},{j:30,max:150},{j:9999,max:200}],
+  whatsapp:[{j:3,max:15},{j:7,max:30},{j:14,max:60},{j:30,max:100},{j:9999,max:150}],
+  linkedin:[{j:7,max:15},{j:14,max:20},{j:9999,max:25}]
+};
+const OQ_CANAUX={
+  email:   {label:'Email',   ico:'📧', col:'#2D5687', auto:true,  note:'Envoi 100 % automatique'},
+  whatsapp:{label:'WhatsApp',ico:'💬', col:'#25D366', auto:false, note:'1 clic — évite le bannissement Meta'},
+  linkedin:{label:'LinkedIn',ico:'💼', col:'#0A66C2', auto:false, note:'1 clic — évite la restriction LinkedIn'}
+};
+function oqLoad(){try{return JSON.parse(localStorage.getItem(OQ_KEY)||'{"campagnes":[],"prospects":[],"touches":[],"messages":[],"quotas":{}}');}catch(e){return {campagnes:[],prospects:[],touches:[],messages:[],quotas:{}};}}
+function oqSave(d){try{localStorage.setItem(OQ_KEY,JSON.stringify(d));}catch(e){}}
+function oqUid(){return 'oq'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function oqToday(){return new Date().toISOString().slice(0,10);}
+/* Plafond du jour selon l'ancienneté du canal (warm-up progressif) */
+function oqPlafond(canal,demarreLe){
+  const grille=OQ_WARMUP[canal]||OQ_WARMUP.email;
+  let jours=1;
+  if(demarreLe){jours=Math.max(1,Math.floor((Date.now()-new Date(demarreLe).getTime())/86400000)+1);}
+  for(const p of grille){if(jours<=p.j)return {max:p.max,jour:jours};}
+  return {max:grille[grille.length-1].max,jour:jours};
+}
+function oqQuota(d,canal){
+  const q=d.quotas[canal]||{demarreLe:null,jour:null,envoyes:0};
+  if(q.jour!==oqToday()){q.jour=oqToday();q.envoyes=0;}
+  const p=oqPlafond(canal,q.demarreLe);
+  return {...q,max:p.max,jourWarm:p.jour,restant:Math.max(0,p.max-q.envoyes)};
+}
+function oqConsomme(d,canal){
+  const q=d.quotas[canal]||{demarreLe:null,jour:oqToday(),envoyes:0};
+  if(!q.demarreLe)q.demarreLe=oqToday();
+  if(q.jour!==oqToday()){q.jour=oqToday();q.envoyes=0;}
+  q.envoyes++;d.quotas[canal]=q;oqSave(d);
+}
+/* Messages personnalisés par canal (ton ONIQ ÷4) */
+function oqMessage(canal,p,etape){
+  const pre=p.dirigeant?String(p.dirigeant).split(' ')[0]:'';
+  const soc=p.entreprise||'votre entreprise';
+  if(canal==='email'){
+    if(etape===1)return {sujet:soc+' — votre logiciel sur mesure, 4× moins cher',
+      corps:'Bonjour'+(pre?' '+pre:'')+',\n\nJe me permets de vous écrire car nous construisons des logiciels sur mesure pour les entreprises — l\'outil exact dont votre activité a besoin (devis, clients, plannings, automatisations).\n\nNotre différence : nos méthodes de développement sont propulsées par l\'IA. Nous divisons par 4 les devis des agences classiques, à qualité égale, et livrons en semaines plutôt qu\'en mois.\n\nNos réalisations en démo : https://oniq.online\n\nSeriez-vous disponible 15 minutes cette semaine ?\n\nBien à vous,\nL\'équipe ONIQ\n\n— Pour ne plus recevoir nos messages, répondez STOP.'};
+    if(etape===2)return {sujet:'Re: '+soc+' — votre logiciel sur mesure',
+      corps:'Bonjour'+(pre?' '+pre:'')+',\n\nJe reviens brièvement vers vous. Beaucoup d\'entreprises de votre secteur gèrent encore des process clés sur Excel — c\'est exactement ce que nous remplaçons.\n\nUn exemple concret : un logiciel de métré qui fait passer 2 jours de travail à 20 minutes (démo sur https://oniq.online).\n\nUn échange rapide vous intéresserait-il ?\n\nBien à vous,\nL\'équipe ONIQ\n\n— Répondez STOP pour ne plus être contacté.'};
+    return {sujet:'Re: '+soc,
+      corps:'Bonjour'+(pre?' '+pre:'')+',\n\nDernier message de ma part — je ne veux pas encombrer votre boîte.\n\nSi un jour vous souhaitez un outil taillé pour votre métier (et 4× moins cher qu\'une agence), nous sommes là : https://oniq.online\n\nExcellente continuation,\nL\'équipe ONIQ'};
+  }
+  if(canal==='whatsapp')return {corps:'Bonjour'+(pre?' '+pre:'')+' 👋\n\nONIQ construit le logiciel sur mesure des entreprises comme '+soc+' — devis divisé par 4 grâce à nos méthodes propulsées par l\'IA.\n\nNos réalisations : https://oniq.online\n\nSeriez-vous dispo pour un échange rapide ?'};
+  return {corps:'Bonjour'+(pre?' '+pre:'')+', je me permets de vous contacter : nous développons des logiciels sur mesure pour les entreprises, avec des méthodes IA qui divisent par 4 le coût d\'une agence classique. Si le sujet vous parle, je serais ravi d\'échanger 15 min. Nos réalisations : oniq.online'};
+}
+/* Crée une campagne depuis des prospects (issus de la Prospection IA) */
+function oqCreerCampagne(nom,secteur,region,prospects){
+  const d=oqLoad();
+  const camp={id:oqUid(),nom:nom||('Campagne '+oqToday()),secteur:secteur||'',region:region||'',statut:'active',created_at:new Date().toISOString()};
+  d.campagnes.unshift(camp);
+  const now=Date.now();
+  prospects.forEach(r=>{
+    const wa=(r.waNums&&r.waNums[0])?r.waNums[0].numero:'';
+    const p={id:oqUid(),campagne_id:camp.id,entreprise:r.nom||'',dirigeant:r.dirigeant||'',fonction:r.dirigeantQualite||'',
+      ville:r.ville||'',ca:isFinite(r.ca)?r.ca:null,email:r.email||'',tel:r.tel||'',whatsapp:wa,
+      linkedin_url:'https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent((r.dirigeant||r.nom||'')),
+      site:r.site||'',statut:'nouveau',created_at:new Date().toISOString()};
+    d.prospects.push(p);
+    /* Séquence : email J+0, J+3, J+7 · WhatsApp J+1 · LinkedIn J+2 */
+    const plan=[];
+    if(p.email){plan.push(['email',1,0],['email',2,3],['email',3,7]);}
+    if(p.whatsapp)plan.push(['whatsapp',1,1]);
+    plan.push(['linkedin',1,2]);
+    plan.forEach(([canal,etape,jours])=>{
+      const m=oqMessage(canal,p,etape);
+      d.touches.push({id:oqUid(),prospect_id:p.id,canal,etape,message:m.corps,sujet:m.sujet||'',
+        statut:'planifie',prevu_le:new Date(now+jours*86400000).toISOString(),created_at:new Date().toISOString()});
+    });
+  });
+  oqSave(d);return camp;
+}
+/* File du jour : ce qui est dû, dans la limite du warm-up */
+function oqFileDuJour(d){
+  const maint=Date.now();
+  const parCanal={};
+  Object.keys(OQ_CANAUX).forEach(c=>{parCanal[c]=oqQuota(d,c).restant;});
+  const file=[];
+  d.touches.filter(t=>t.statut==='planifie'&&new Date(t.prevu_le).getTime()<=maint)
+    .sort((a,b)=>new Date(a.prevu_le)-new Date(b.prevu_le))
+    .forEach(t=>{
+      const p=d.prospects.find(x=>x.id===t.prospect_id);
+      if(!p||['repondu','stop','gagne','perdu'].includes(p.statut))return;
+      if(parCanal[t.canal]<=0)return;
+      parCanal[t.canal]--;
+      file.push({...t,prospect:p});
+    });
+  return file;
+}
+/* ═══ ÉCRAN CAMPAGNES — file du jour + warm-up visible ═══ */
+const OqCampagnes=({mob,C,SS,SF})=>{
+  const [d,setD]=React.useState(oqLoad());
+  const [tick,setTick]=React.useState(0);
+  const refresh=()=>{const n=oqLoad();setD(n);setTick(t=>t+1);};
+  const file=React.useMemo(()=>oqFileDuJour(d),[d,tick]);
+  const stats=React.useMemo(()=>{
+    const ps=d.prospects||[];
+    return {prospects:ps.length,contactes:ps.filter(p=>p.statut!=='nouveau').length,
+      repondu:ps.filter(p=>p.statut==='repondu'||p.statut==='rdv').length,
+      envoyes:(d.touches||[]).filter(t=>t.statut==='envoye').length};
+  },[d,tick]);
+  const envoyer=(t)=>{
+    const dd=oqLoad();
+    const tt=(dd.touches||[]).find(x=>x.id===t.id);if(!tt)return;
+    const p=(dd.prospects||[]).find(x=>x.id===tt.prospect_id);
+    /* Ouvre le canal avec le message pré-rempli */
+    if(t.canal==='whatsapp'&&p&&p.whatsapp){window.open('https://wa.me/'+p.whatsapp+'?text='+encodeURIComponent(tt.message),'_blank');}
+    else if(t.canal==='linkedin'&&p){try{navigator.clipboard.writeText(tt.message);}catch(e){}window.open(p.linkedin_url,'_blank');}
+    else if(t.canal==='email'&&p&&p.email){window.open('mailto:'+p.email+'?subject='+encodeURIComponent(tt.sujet||'')+'&body='+encodeURIComponent(tt.message),'_blank');}
+    tt.statut='envoye';tt.envoye_le=new Date().toISOString();
+    if(p&&p.statut==='nouveau')p.statut='en_cours';
+    (dd.messages=dd.messages||[]).unshift({id:oqUid(),prospect_id:tt.prospect_id,canal:tt.canal,sens:'out',
+      contenu:tt.message,sujet:tt.sujet||'',lu:true,created_at:new Date().toISOString()});
+    oqSave(dd);oqConsomme(dd,t.canal);refresh();
+  };
+  const Q=(c)=>oqQuota(d,c);
+  return React.createElement('div',null,
+    /* Warm-up : 3 jauges */
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(3,1fr)',gap:12,marginBottom:18}},
+      Object.keys(OQ_CANAUX).map(c=>{
+        const q=Q(c),cf=OQ_CANAUX[c],pct=Math.round((q.envoyes/Math.max(1,q.max))*100);
+        return React.createElement('div',{key:c,style:{background:'#fff',border:'1px solid '+C.linen,borderRadius:12,padding:'14px 16px'}},
+          React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}},
+            React.createElement('span',{style:{fontFamily:SS,fontSize:12.5,fontWeight:800,color:C.ink}},cf.ico+' '+cf.label),
+            React.createElement('span',{style:{fontFamily:SS,fontSize:10,fontWeight:700,color:'#fff',background:cf.auto?'#4A7C59':'#B0873A',borderRadius:99,padding:'2px 8px'}},cf.auto?'AUTO':'1 CLIC')),
+          React.createElement('div',{style:{fontFamily:SF,fontSize:20,fontWeight:800,color:C.ink}},q.envoyes+' / '+q.max),
+          React.createElement('div',{style:{height:5,background:'rgba(140,128,112,0.15)',borderRadius:99,overflow:'hidden',margin:'7px 0 6px'}},
+            React.createElement('div',{style:{height:'100%',width:Math.min(100,pct)+'%',background:pct>85?'#C0392B':cf.col,transition:'width .3s'}})),
+          React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,color:C.stone,lineHeight:1.4}},
+            '🔥 Warm-up jour '+q.jourWarm+' · plafond '+q.max+'/j'),
+          React.createElement('div',{style:{fontFamily:SS,fontSize:9,color:C.stone,marginTop:2}},cf.note));
+      })),
+    /* KPIs */
+    React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr 1fr':'repeat(4,1fr)',gap:10,marginBottom:18}},
+      [['Prospects',stats.prospects,'#2D5687'],['Contactés',stats.contactes,'#B0873A'],['Messages envoyés',stats.envoyes,'#8C8070'],['Réponses',stats.repondu,'#4A7C59']].map(([l,v,col],i)=>
+        React.createElement('div',{key:i,style:{background:'#fff',border:'1px solid '+C.linen,borderRadius:10,padding:'12px 14px'}},
+          React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:C.stone}},l),
+          React.createElement('div',{style:{fontFamily:SF,fontSize:24,fontWeight:800,color:col,marginTop:3}},v)))),
+    /* File du jour */
+    React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}},
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink}},'⚡ Envois du jour'),
+        React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone,marginTop:2}},'Emails et WhatsApp partent automatiquement 24 h/24 (relances comprises). Seul LinkedIn demande un clic — sa politique interdit l’automatisation.')),
+      React.createElement('button',{onClick:refresh,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'8px 14px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer'}},'↻ Actualiser')),
+    file.length===0
+      ? React.createElement('div',{style:{background:C.paper,border:'1px solid '+C.linen,borderRadius:12,padding:36,textAlign:'center'}},
+          React.createElement('div',{style:{fontSize:26,marginBottom:8}},'✅'),
+          React.createElement('div',{style:{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink}},(d.prospects||[]).length?'Tout est envoyé pour aujourd\'hui':'Aucune campagne en cours'),
+          React.createElement('div',{style:{fontFamily:SS,fontSize:12,color:C.stone,marginTop:6,lineHeight:1.6}},(d.prospects||[]).length?'Le moteur tourne en continu : les prochains envois et relances sont déjà programmés. Consultez l\'Inbox pour répondre aux prospects.':'Allez dans « Campagne automatique », choisissez votre cible puis cliquez « 🚀 Lancer la campagne » — une seule fois, le reste est automatique.'))
+      : React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+          file.map(t=>{
+            const cf=OQ_CANAUX[t.canal],p=t.prospect;
+            return React.createElement('div',{key:t.id,style:{background:'#fff',border:'1px solid '+C.linen,borderLeft:'3px solid '+cf.col,borderRadius:10,padding:'14px 16px'}},
+              React.createElement('div',{style:{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',alignItems:'flex-start'}},
+                React.createElement('div',{style:{minWidth:0,flex:1}},
+                  React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',marginBottom:3}},
+                    React.createElement('span',{style:{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink}},p.entreprise),
+                    React.createElement('span',{style:{fontFamily:SS,fontSize:9.5,fontWeight:800,color:'#fff',background:cf.col,borderRadius:99,padding:'2px 9px'}},cf.ico+' '+cf.label+(t.etape>1?(' · relance '+(t.etape-1)):''))),
+                  React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone}},
+                    (p.dirigeant?('🎯 '+p.dirigeant+(p.fonction?(' · '+p.fonction):'')):'')+(p.ville?(' · '+p.ville):'')+(isFinite(p.ca)&&p.ca?(' · CA '+(p.ca>=1e6?((Math.round(p.ca/1e5)/10)+' M€'):(Math.round(p.ca/1e3)+' k€'))):''))),
+                React.createElement('button',{onClick:()=>envoyer(t),style:{flexShrink:0,background:cf.col,color:'#fff',border:'none',borderRadius:8,padding:'10px 18px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',boxShadow:'0 3px 10px -3px '+cf.col}},'Envoyer →')),
+              React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.ink,background:C.paper,border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',marginTop:10,whiteSpace:'pre-wrap',maxHeight:96,overflow:'hidden'}},
+                (t.sujet?('Objet : '+t.sujet+'\n'):'')+t.message));
+          }))
+  );
+};
+
+/* ═══ ÉCRAN INBOX UNIFIÉE — toutes les conversations, tous canaux ═══ */
+const OqInbox=({mob,C,SS,SF})=>{
+  const [d,setD]=React.useState(oqLoad());
+  const [sel,setSel]=React.useState(null);
+  const [rep,setRep]=React.useState('');
+  const refresh=()=>setD(oqLoad());
+  const convs=React.useMemo(()=>{
+    const map={};
+    (d.messages||[]).forEach(m=>{
+      if(!map[m.prospect_id])map[m.prospect_id]={prospect_id:m.prospect_id,msgs:[],dernier:m.created_at,nonLus:0};
+      map[m.prospect_id].msgs.push(m);
+      if(m.created_at>map[m.prospect_id].dernier)map[m.prospect_id].dernier=m.created_at;
+      if(m.sens==='in'&&!m.lu)map[m.prospect_id].nonLus++;
+    });
+    return Object.values(map).map(c=>({...c,prospect:(d.prospects||[]).find(p=>p.id===c.prospect_id)}))
+      .filter(c=>c.prospect).sort((a,b)=>(b.nonLus-a.nonLus)||String(b.dernier).localeCompare(String(a.dernier)));
+  },[d]);
+  const cur=convs.find(c=>c.prospect_id===sel)||convs[0];
+  const envoyerRep=()=>{
+    if(!cur||!rep.trim())return;
+    const dd=oqLoad();
+    (dd.messages=dd.messages||[]).unshift({id:oqUid(),prospect_id:cur.prospect_id,canal:(cur.msgs[0]||{}).canal||'email',
+      sens:'out',contenu:rep,sujet:'',lu:true,created_at:new Date().toISOString()});
+    dd.messages.forEach(m=>{if(m.prospect_id===cur.prospect_id&&m.sens==='in')m.lu=true;});
+    oqSave(dd);setRep('');refresh();
+  };
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}},
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink}},'📥 Inbox unifiée'),
+        React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone,marginTop:2}},'Email, WhatsApp et LinkedIn au même endroit — vous n\'avez qu\'à répondre.')),
+      React.createElement('button',{onClick:refresh,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'8px 14px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer'}},'↻ Actualiser')),
+    convs.length===0
+      ? React.createElement('div',{style:{background:C.paper,border:'1px solid '+C.linen,borderRadius:12,padding:36,textAlign:'center',fontFamily:SS,fontSize:13,color:C.stone}},
+          'Aucune conversation. Lancez une campagne depuis « Prospection IA » — dès le premier message envoyé, tout arrive ici.')
+      : React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'340px 1fr',gap:14,alignItems:'start'}},
+          /* Liste */
+          React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:8,maxHeight:560,overflowY:'auto'}},
+            convs.map(c=>{
+              const p=c.prospect,actif=cur&&cur.prospect_id===c.prospect_id;
+              const der=c.msgs.slice().sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0]||{};
+              return React.createElement('div',{key:c.prospect_id,onClick:()=>setSel(c.prospect_id),
+                style:{background:actif?'#fff':C.paper,border:'1px solid '+(actif?C.gold:C.linen),borderRadius:10,padding:'11px 13px',cursor:'pointer'}},
+                React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6}},
+                  React.createElement('span',{style:{fontFamily:SF,fontSize:13,fontWeight:700,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},p.entreprise),
+                  c.nonLus>0&&React.createElement('span',{style:{flexShrink:0,background:'#C0392B',color:'#fff',borderRadius:99,padding:'1px 7px',fontFamily:SS,fontSize:9.5,fontWeight:800}},c.nonLus)),
+                React.createElement('div',{style:{fontFamily:SS,fontSize:10.5,color:C.stone,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                  (OQ_CANAUX[der.canal]||{}).ico+' '+(der.sens==='in'?'':'Vous : ')+String(der.contenu||'').slice(0,42)));
+            })),
+          /* Conversation */
+          cur&&React.createElement('div',{style:{background:'#fff',border:'1px solid '+C.linen,borderRadius:12,padding:'16px 18px'}},
+            React.createElement('div',{style:{borderBottom:'1px solid '+C.linen,paddingBottom:10,marginBottom:12}},
+              React.createElement('div',{style:{fontFamily:SF,fontSize:16,fontWeight:700,color:C.ink}},cur.prospect.entreprise),
+              React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone,marginTop:2}},
+                (cur.prospect.dirigeant?('🎯 '+cur.prospect.dirigeant+' · '):'')+(cur.prospect.email||cur.prospect.tel||''))),
+            React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:9,maxHeight:340,overflowY:'auto',marginBottom:12}},
+              cur.msgs.slice().sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at))).map(m=>
+                React.createElement('div',{key:m.id,style:{alignSelf:m.sens==='out'?'flex-end':'flex-start',maxWidth:'82%',
+                  background:m.sens==='out'?'rgba(198,167,101,0.14)':C.paper,border:'1px solid '+(m.sens==='out'?'rgba(198,167,101,0.4)':C.linen),
+                  borderRadius:10,padding:'9px 12px'}},
+                  React.createElement('div',{style:{fontFamily:SS,fontSize:9,fontWeight:700,color:C.stone,marginBottom:3}},
+                    (OQ_CANAUX[m.canal]||{}).ico+' '+(m.sens==='out'?'Envoyé':'Reçu')+' · '+new Date(m.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})),
+                  React.createElement('div',{style:{fontFamily:SS,fontSize:12,color:C.ink,whiteSpace:'pre-wrap',lineHeight:1.5}},m.contenu)))),
+            React.createElement('textarea',{value:rep,onChange:e=>setRep(e.target.value),rows:3,placeholder:'Votre réponse…',
+              style:{width:'100%',border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',fontFamily:SS,fontSize:12.5,resize:'vertical',boxSizing:'border-box'}}),
+            React.createElement('button',{onClick:envoyerRep,style:{marginTop:8,width:'100%',background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'11px',fontFamily:SS,fontSize:12.5,fontWeight:700,cursor:'pointer'}},'Répondre'))
+        )
+  );
+};
 const AdminDemandes=()=>{
   const [rows,setRows]=React.useState(null);
   const [err,setErr]=React.useState('');
@@ -10564,6 +10810,51 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   const [aiWaScan,setAiWaScan]=useState(false);
   const [aiWaOnly,setAiWaOnly]=useState(false);
   const ONIQ_WA_FINDER='https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniq-whatsapp-finder';
+  /* ═══ ENRICHISSEMENT AUTOMATIQUE — une seule passe, aucun bouton :
+     CA + dirigeant (registre officiel) PUIS WhatsApp publié (site de l'entreprise).
+     Les fiches se mettent à jour au fil de l'eau et se retrient toutes seules. ═══ */
+  const [aiEnrichDone,setAiEnrichDone]=useState(0);
+  const enrichAll=async(rows)=>{
+    if(!rows||!rows.length)return;
+    setAiEnriching(true);setAiWaScan(true);setAiEnrichDone(0);
+    const upd=[...rows];
+    const cap=(s)=>String(s||'').toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g,(m,p,c)=>p+c.toUpperCase());
+    const prio=(q)=>{q=String(q||'').toLowerCase();return /pr[ée]sident|g[ée]rant/.test(q)?0:/directeur g[ée]n/.test(q)?1:2;};
+    for(let i=0;i<upd.length;i++){
+      const r=upd[i];
+      /* ① Registre officiel : CA + dirigeant nommé */
+      if(r.ca===undefined&&r.nom){
+        try{
+          const j=await fetch('https://recherche-entreprises.api.gouv.fr/search?q='+encodeURIComponent(String(r.nom)+(r.ville?(' '+r.ville):''))+'&per_page=1').then(x=>x.json());
+          const e0=(j.results||[])[0];r.ca=null;
+          if(e0){
+            r.siren=e0.siren;r.cat=e0.categorie_entreprise||'';
+            const fin=e0.finances||{},yrs=Object.keys(fin).sort();
+            if(yrs.length){const v=parseFloat(fin[yrs[yrs.length-1]].ca);if(isFinite(v)){r.ca=v;r.caAnnee=yrs[yrs.length-1];}}
+            const dirs=(e0.dirigeants||[]).filter(d=>d&&d.type_dirigeant==='personne physique'&&d.nom).sort((a,b)=>prio(a.qualite)-prio(b.qualite));
+            const d0=dirs[0];
+            if(d0){r.dirigeant=(cap(d0.prenoms||'').split(' ')[0]+' '+String(d0.nom||'').toUpperCase()).trim();r.dirigeantQualite=d0.qualite||'';}
+          }
+        }catch(e){r.ca=null;}
+      }
+      /* ② WhatsApp publié par l'entreprise */
+      if(r.waNums===undefined){
+        const base=[];
+        if(oniqIsMobileFR(r.tel)){const n=String(r.tel).replace(/\D/g,'').replace(/^0033/,'').replace(/^33/,'').replace(/^0/,'');base.push({numero:'33'+n,affichage:r.tel,mobile:true,source:'mobile de la fiche',confiance:'probable',wa_link:'https://wa.me/33'+n});}
+        if(r.site){
+          try{
+            const j2=await fetch(ONIQ_WA_FINDER+'?site='+encodeURIComponent(r.site)).then(x=>x.json());
+            if(j2&&j2.ok&&Array.isArray(j2.numeros))j2.numeros.forEach(n=>{if(!base.some(b=>b.numero===n.numero))base.push(n);});
+          }catch(e){}
+        }
+        const rk=(c)=>c==='certaine'?0:c==='élevée'?1:2;
+        r.waNums=base.sort((a,b)=>rk(a.confiance)-rk(b.confiance));
+      }
+      setAiResults(upd.slice());setAiEnrichDone(i+1);
+      await new Promise(rs=>setTimeout(rs,120));
+    }
+    setAiEnriching(false);setAiWaScan(false);
+  };
   const scanWhatsApp=async()=>{
     if(!aiResults||!aiResults.length||aiWaScan)return;
     setAiWaScan(true);
@@ -10764,15 +11055,99 @@ const AdminCommercial=({software,users=[],currentUserId,currentUserRole,currentU
   };
 
   // ══ AI PROSPECTION — Tavily web search ══
+  /* ═══ SOURCE GARANTIE — registre officiel des entreprises (Sirene/INPI) ═══
+     La prospection IA peut être avare ; ici on puise dans la base officielle :
+     ex. 676 plombiers en Drôme, 10 000 au national. Toujours ≥ 10 résultats. */
+  const NAF_SECTEURS=[
+    [/plomb|chauffagiste|chauffage|clim|sanitaire/i,'43.22B'],[/électric|electric|électrot/i,'43.21A'],
+    [/menuis.*(alu|pvc|ext)|fenêtre|fermeture/i,'43.32A'],[/menuis|agenc/i,'43.32B'],
+    [/maçon|macon|gros.?œuvre|gros.?oeuvre/i,'43.99C'],[/constructeur|maison individuelle|cmi|promoteur/i,'41.20A'],
+    [/paysag|espaces verts|jardin/i,'81.30Z'],[/peinture|peintre|vitrer/i,'43.34Z'],
+    [/couvreur|couvert|toiture|zingu/i,'43.91B'],[/charpent/i,'43.91A'],
+    [/terrassement|vrd|démolition|demolition/i,'43.12A'],[/carrel|sol souple|revêtement/i,'43.33Z'],
+    [/plâtr|platr|plaquiste|cloison/i,'43.31Z'],[/isolation/i,'43.29A'],
+    [/serrur|métall|metall/i,'25.12Z'],[/piscine/i,'43.99D'],
+    [/architect/i,'71.11Z'],[/bureau d.étude|ingénier|ingenier|bet/i,'71.12B'],
+    [/agence immo|immobilier/i,'68.31Z'],[/expert.?comptable|comptab/i,'69.20Z'],
+    [/avocat|juridique/i,'69.10Z'],[/garage|automobile|carross/i,'45.20A'],
+    [/restaur|brasserie/i,'56.10A'],[/boulang|pâtiss|patiss/i,'10.71C'],
+    [/coiff/i,'96.02A'],[/transport|logistique|messagerie/i,'49.41A'],
+    [/nettoyage|propreté|proprete/i,'81.21Z'],[/sécurité|securite|gardiennage/i,'80.10Z'],
+    [/hôtel|hotel|camping/i,'55.10Z'],[/pharmac/i,'47.73Z'],
+    [/agricole|agriculteur|viticult/i,'01.11Z'],[/menuiserie bois|scierie|bois/i,'16.23Z'],
+    [/informatique|logiciel|digital|web/i,'62.01Z'],[/marketing|communication|publicité|publicite/i,'73.11Z']
+  ];
+  const REGION_DEPS={
+    'auvergne':'01,03,07,15,26,38,42,43,63,69,73,74','rhône':'01,07,26,38,42,69,73,74','rhone':'01,07,26,38,42,69,73,74',
+    'provence':'04,05,06,13,83,84','paca':'04,05,06,13,83,84','occitanie':'09,11,12,30,31,32,34,46,48,65,66,81,82',
+    'nouvelle.?aquitaine':'16,17,19,23,24,33,40,47,64,79,86,87','bretagne':'22,29,35,56',
+    'pays de la loire':'44,49,53,72,85','normandie':'14,27,50,61,76','hauts.?de.?france':'02,59,60,62,80',
+    'grand est':'08,10,51,52,54,55,57,67,68,88','bourgogne':'21,25,39,58,70,71,89,90',
+    'centre':'18,28,36,37,41,45','île.?de.?france|ile.?de.?france|paris':'75,77,78,91,92,93,94,95',
+    'corse':'2A,2B','drôme|drome':'26','ardèche|ardeche':'07','isère|isere':'38','rhône|lyon':'69'
+  };
+  const sireneFallback=async(secteur,region,besoin)=>{
+    const s=String(secteur||'');const reg=String(region||'').toLowerCase();
+    let naf='';for(const [rx,code] of NAF_SECTEURS){if(rx.test(s)){naf=code;break;}}
+    let deps='';
+    if(reg&&!/france|toute/i.test(reg)){
+      const m2=reg.match(/\b(\d{2}|2[ab])\b/i);
+      if(m2)deps=m2[1].toUpperCase();
+      else for(const k in REGION_DEPS){if(new RegExp(k,'i').test(reg)){deps=REGION_DEPS[k];break;}}
+    }
+    const out=[];
+    for(let page=1;page<=3&&out.length<besoin;page++){
+      const p=new URLSearchParams({per_page:'25',page:String(page)});
+      if(naf)p.set('activite_principale',naf);else p.set('q',s||'entreprise');
+      if(deps)p.set('departement',deps);
+      try{
+        const j=await fetch('https://recherche-entreprises.api.gouv.fr/search?'+p.toString()).then(r=>r.json());
+        const res=j.results||[];if(!res.length)break;
+        const cap=(x)=>String(x||'').toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g,(m,q,c)=>q+c.toUpperCase());
+        const prio=(q)=>{q=String(q||'').toLowerCase();return /pr[ée]sident|g[ée]rant/.test(q)?0:/directeur g[ée]n/.test(q)?1:2;};
+        res.forEach(e=>{
+          if(out.length>=besoin)return;
+          const sg=e.siege||{};
+          const fin=e.finances||{},yrs=Object.keys(fin).sort();
+          let ca=null,an=null;if(yrs.length){const v=parseFloat(fin[yrs[yrs.length-1]].ca);if(isFinite(v)){ca=v;an=yrs[yrs.length-1];}}
+          const dirs=(e.dirigeants||[]).filter(d=>d&&d.type_dirigeant==='personne physique'&&d.nom).sort((a,b)=>prio(a.qualite)-prio(b.qualite));
+          const d0=dirs[0];
+          out.push({nom:(e.nom_complet||'').replace(/\s*\([^)]*\)\s*$/,''),secteur:s||'—',ville:sg.libelle_commune||'',
+            tel:'',email:'',site:'',contact:'',poste:'',
+            ca:ca,caAnnee:an,cat:e.categorie_entreprise||'',siren:e.siren,
+            dirigeant:d0?((cap(d0.prenoms||'').split(' ')[0]+' '+String(d0.nom||'').toUpperCase()).trim()):'',
+            dirigeantQualite:d0?(d0.qualite||''):'',
+            raison:'Registre officiel'+(deps?(' · dép. '+deps.split(',')[0]):'')+(e.categorie_entreprise?(' · '+e.categorie_entreprise):''),
+            _sirene:true});
+        });
+      }catch(e){break;}
+    }
+    return out;
+  };
   const runAiProspect=async()=>{
     setAiLoading(true);setAiResults(null);
     try{
       const headers={'Content-Type':'application/json','apikey':supabaseKey,'Authorization':`Bearer ${supabaseKey}`};
       try{const {data:s}=await supabaseClient.auth.getSession();if(s?.session?.access_token)headers['Authorization']=`Bearer ${s.session.access_token}`;}catch(e){}
       headers['x-slugs']=software.map(s=>s.slug).join(',');
-      const resp=await fetch(`${SUPABASE_FUNCTIONS_BASE}/prospect-search`,{method:'POST',headers,body:JSON.stringify({secteur:aiSector,region:aiRegion,nb:10})});
-      const data=await resp.json();
-      setAiResults((data.entreprises||[]).filter(e=>e.nom));
+      let rows=[];
+      try{
+        const resp=await fetch(`${SUPABASE_FUNCTIONS_BASE}/prospect-search`,{method:'POST',headers,body:JSON.stringify({secteur:aiSector,region:aiRegion,nb:40})});
+        const data=await resp.json();
+        rows=(data.entreprises||[]).filter(e=>e.nom);
+      }catch(e){console.warn('prospect-search indisponible',e);}
+      /* GARANTIE ≥ 20 entreprises : on complète depuis le registre officiel (Sirene/INPI) */
+      const MIN=20;
+      if(rows.length<MIN){
+        const extra=await sireneFallback(aiSector,aiRegion,MIN*2-rows.length);
+        const vus=new Set(rows.map(r=>String(r.nom||'').toLowerCase().replace(/[^a-z0-9]/g,'')));
+        extra.forEach(e=>{const k=String(e.nom||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(k&&!vus.has(k)){vus.add(k);rows.push(e);}});
+      }
+      setAiResults(rows);
+      setAiLoading(false);
+      /* ENRICHISSEMENT AUTOMATIQUE (CA + dirigeant + WhatsApp) — plus aucun bouton à cliquer */
+      if(rows.length)setTimeout(()=>{enrichAll(rows);},60);
+      return;
     }catch(e){console.error('Prospection IA:',e);setAiResults([]);}
     setAiLoading(false);
   };
@@ -10900,7 +11275,9 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
     React.createElement('div',{style:{display:'flex',gap:6,marginBottom:20,flexWrap:'wrap'}},
       React.createElement(TabBtn,{id:'dashboard',icon:'📊',label:'Dashboard'}),
       React.createElement(TabBtn,{id:'pipeline',icon:'🔄',label:'Pipeline'}),
-      React.createElement(TabBtn,{id:'prospection',icon:'🔍',label:'Prospection IA'}),
+      React.createElement(TabBtn,{id:'prospection',icon:'🔍',label:'Campagne automatique'}),
+      React.createElement(TabBtn,{id:'campagnes',icon:'D83DDE80',label:'Campagnes'}),
+      React.createElement(TabBtn,{id:'inbox',icon:'D83DDCE5',label:'Inbox'}),
       React.createElement(TabBtn,{id:'ressources',icon:'\uD83C\uDFA8',label:'Ressources'}),
       React.createElement(TabBtn,{id:'relances',icon:'🤖',label:'Relances IA'}),
       React.createElement(TabBtn,{id:'mes_commissions',icon:'💰',label:'Mes commissions'}),
@@ -11038,6 +11415,8 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
     ),
 
     // ═══ TAB PIPELINE (personnelle — admin & commercial voient uniquement LEURS leads) ═══
+    tab==='campagnes'&&React.createElement(OqCampagnes,{mob:mob,C:C,SS:SS,SF:SF}),
+    tab==='inbox'&&React.createElement(OqInbox,{mob:mob,C:C,SS:SS,SF:SF}),
     tab==='ressources'&&React.createElement(RessourcesCommercial,{mob:mob}),
     tab==='pipeline'&&React.createElement('div',null,
       React.createElement('div',{style:{background:'rgba(184,154,90,0.08)',border:'1px solid rgba(184,154,90,0.25)',borderRadius:6,padding:'8px 14px',marginBottom:12,fontFamily:SS,fontSize:11,color:C.stone}},
@@ -11192,7 +11571,8 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
     // ═══ TAB PROSPECTION IA ═══
     tab==='prospection'&&React.createElement('div',null,
       React.createElement('div',{style:{background:C.paper,border:`1px solid ${C.linen}`,borderRadius:10,padding:'20px 24px',marginBottom:20}},
-        React.createElement('div',{style:{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:14}},'🔍 Prospection IA'),
+        React.createElement('div',{style:{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ink,marginBottom:4}},'🚀 Campagne automatique'),
+        React.createElement('div',{style:{fontFamily:SS,fontSize:12,color:C.stone,marginBottom:14,lineHeight:1.55}},'Choisissez une cible, cliquez une fois sur « Lancer la campagne ». Ensuite ',React.createElement('b',{style:{color:C.ink}},'tout part tout seul'),' — emails et WhatsApp, relances comprises, 24 h/24. Vous n’avez plus qu’à répondre dans l’Inbox.'),
         React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'1fr 1fr 1fr',gap:14,marginBottom:16}},
           React.createElement('div',null,
             React.createElement('label',{style:ls},'Secteur (libre ou suggestion)'),
@@ -11215,15 +11595,44 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
           React.createElement('option',{value:500000},'CA ≥ 500 k€'),
           React.createElement('option',{value:1000000},'CA ≥ 1 M€'),
           React.createElement('option',{value:5000000},'CA ≥ 5 M€')),
-        React.createElement('button',{onClick:enrichCA,disabled:aiEnriching||!(aiResults&&aiResults.length),title:'Récupère le CA réel ET le nom du dirigeant de chaque entreprise (registre officiel Sirene/INPI, gratuit) — puis trie les plus joignables en premier',style:{marginLeft:8,background:'transparent',border:'1px solid '+(C.gold||'#C6A765'),color:(C.gold||'#C6A765'),borderRadius:6,padding:'9px 12px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer',opacity:(aiEnriching||!(aiResults&&aiResults.length))?0.55:1}},aiEnriching?'🎯 Enrichissement en cours…':'🎯 Enrichir : CA + dirigeant'),
-        React.createElement('button',{onClick:scanWhatsApp,disabled:aiWaScan||!(aiResults&&aiResults.length),title:'Analyse le site public de chaque entreprise et récupère le WhatsApp qu’elle a elle-même publié (lien wa.me, numéro à côté de « WhatsApp », mobiles 06/07)',style:{marginLeft:8,background:'#25D366',border:'none',color:'#fff',borderRadius:6,padding:'9px 13px',fontFamily:SS,fontSize:11,fontWeight:800,cursor:'pointer',opacity:(aiWaScan||!(aiResults&&aiResults.length))?0.55:1,boxShadow:'0 3px 10px -3px rgba(37,211,102,0.5)'}},aiWaScan?'💬 Recherche WhatsApp…':'💬 Trouver les WhatsApp'),
         React.createElement('label',{title:'N’afficher que les entreprises joignables sur WhatsApp',style:{display:'inline-flex',alignItems:'center',gap:8,marginLeft:12,fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,cursor:'pointer'}},
           React.createElement('input',{type:'checkbox',checked:aiWaOnly,onChange:e=>setAiWaOnly(e.target.checked),style:{accentColor:'#25D366',width:15,height:15,cursor:'pointer'}}),
           '💬 WhatsApp uniquement')
       ),
+      /* Progression de l'enrichissement automatique (CA + dirigeant + WhatsApp) */
+      (aiEnriching||aiWaScan)&&aiResults&&aiResults.length>0&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10,background:'rgba(198,167,101,0.10)',border:'1px solid rgba(198,167,101,0.35)',borderRadius:8,padding:'9px 14px',marginBottom:12}},
+        React.createElement('span',{style:{fontSize:13}},'🔎'),
+        React.createElement('div',{style:{flex:1,minWidth:120}},
+          React.createElement('div',{style:{fontFamily:SS,fontSize:11,fontWeight:700,color:C.ink,marginBottom:5}},'Enrichissement automatique — CA, dirigeant et WhatsApp · '+aiEnrichDone+'/'+aiResults.length),
+          React.createElement('div',{style:{height:5,background:'rgba(140,128,112,0.18)',borderRadius:99,overflow:'hidden'}},
+            React.createElement('div',{style:{height:'100%',width:Math.round((aiEnrichDone/Math.max(1,aiResults.length))*100)+'%',background:'linear-gradient(90deg,#E8CE93,#25D366)',transition:'width .3s'}})))),
       aiResults&&aiResults.length>0&&React.createElement('div',null,
         React.createElement('div',{style:{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap',marginBottom:12}},
           React.createElement('div',{style:{flex:1,minWidth:200,background:'rgba(74,124,89,0.08)',border:'1px solid rgba(74,124,89,0.3)',borderRadius:8,padding:'10px 14px',fontFamily:SS,fontSize:11,color:'#4A7C59'}},'✅ '+aiResults.length+' entreprise(s) · '+aiResults.filter(r=>oniqIsMobileFR(r.tel)).length+' avec mobile 06/07'+(aiMobileOnly?' · filtre mobiles actif':' — contacts vérifiés Apollo.io')),
+          React.createElement('button',{onClick:async()=>{
+              const rows=aiFiltered();
+              /* Campagne CONTINUE : le serveur pioche ensuite tout seul, sans limite de volume */
+              let naf='';for(const [rx,code] of NAF_SECTEURS){if(rx.test(String(aiSector||''))){naf=code;break;}}
+              let deps='';const reg=String(aiRegion||'').toLowerCase();
+              if(reg&&!/france|toute/i.test(reg)){const m2=reg.match(/\b(\d{2}|2[ab])\b/i);
+                if(m2)deps=m2[1].toUpperCase();else for(const k in REGION_DEPS){if(new RegExp(k,'i').test(reg)){deps=REGION_DEPS[k];break;}}}
+              try{
+                if(supabaseClient){
+                  const {data:camp,error}=await supabaseClient.from('oq_campagnes').insert({
+                    nom:'Campagne '+(aiSector||'')+' '+(aiRegion||''),secteur:aiSector||'',region:aiRegion||'',
+                    naf:naf||null,departements:deps||null,ca_min:aiCaMin||0,statut:'active',page_courante:1,
+                    owner_email:(currentUserEmail||'')}).select().maybeSingle();
+                  if(error)throw error;
+                  alert('🚀 Campagne CONTINUE lancée !\n\nCible : '+(aiSector||'—')+' · '+(aiRegion||'France')+(naf?(' (activité '+naf+')'):'')+'\n\nLe moteur va maintenant prospecter EN CONTINU, 24 h/24 : il pioche de nouvelles entreprises, envoie les emails et WhatsApp, relance, et s\'arrête dès qu\'un prospect répond.\n\nAucune limite de volume — la seule protection est le warm-up (montée en charge progressive pour ne jamais griller vos comptes).\n\nVous n\'avez plus qu\'à répondre dans l\'Inbox.');
+                } else throw new Error('hors ligne');
+              }catch(e){
+                if(rows.length){oqCreerCampagne('Campagne '+(aiSector||'')+' '+(aiRegion||''),aiSector,aiRegion,rows);
+                  alert('🚀 Campagne lancée en local ('+rows.length+' prospects).\n\n⚠️ Pour la prospection CONTINUE et illimitée 24 h/24, exécutez oniq-campagnes-schema.sql + oniq-campagne-continue.sql et déployez le worker.');}
+                else{alert('⚠️ Base non configurée. Exécutez oniq-campagnes-schema.sql puis oniq-campagne-continue.sql dans Supabase.');return;}
+              }
+              try{setTab&&setTab('campagnes');}catch(e){}
+            },title:'Lance une campagne CONTINUE : le moteur pioche sans limite dans le registre, envoie et relance tout seul. Seul frein : le warm-up.',
+            style:{background:'linear-gradient(135deg,#E8CE93,#A9863F)',color:'#14110D',border:'none',borderRadius:8,padding:'10px 18px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer',boxShadow:'0 4px 14px -4px rgba(212,162,76,0.6)'}},'🚀 Lancer la campagne'),
           React.createElement('button',{onClick:exportAiExcel,title:'Télécharger la liste (Entreprise, Téléphone, Contact…) — s’ouvre dans Excel, prête à imprimer',style:{background:'#14110D',color:'#F4E9D5',border:'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}},'⬇ Exporter (Excel)')
         ),
         React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(auto-fill,minmax(300px,1fr))',gap:12}},
