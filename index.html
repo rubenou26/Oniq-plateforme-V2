@@ -11626,9 +11626,11 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
                   alert('🚀 Campagne CONTINUE lancée !\n\nCible : '+(aiSector||'—')+' · '+(aiRegion||'France')+(naf?(' (activité '+naf+')'):'')+'\n\nLe moteur va maintenant prospecter EN CONTINU, 24 h/24 : il pioche de nouvelles entreprises, envoie les emails et WhatsApp, relance, et s\'arrête dès qu\'un prospect répond.\n\nAucune limite de volume — la seule protection est le warm-up (montée en charge progressive pour ne jamais griller vos comptes).\n\nVous n\'avez plus qu\'à répondre dans l\'Inbox.');
                 } else throw new Error('hors ligne');
               }catch(e){
+                const msg=String((e&&(e.message||e.details||e.hint))||e);
+                console.error('Campagne — échec Supabase :',e);
                 if(rows.length){oqCreerCampagne('Campagne '+(aiSector||'')+' '+(aiRegion||''),aiSector,aiRegion,rows);
-                  alert('🚀 Campagne lancée en local ('+rows.length+' prospects).\n\n⚠️ Pour la prospection CONTINUE et illimitée 24 h/24, exécutez oniq-campagnes-schema.sql + oniq-campagne-continue.sql et déployez le worker.');}
-                else{alert('⚠️ Base non configurée. Exécutez oniq-campagnes-schema.sql puis oniq-campagne-continue.sql dans Supabase.');return;}
+                  alert('🚀 Campagne lancée en LOCAL ('+rows.length+' prospects) — mais pas en base.\n\n⚠️ Détail : '+msg+'\n\nSi le message parle de « row-level security », exécutez oniq-campagne-fix-rls.sql dans Supabase : la campagne partira alors en continu 24 h/24.');}
+                else{alert('⚠️ Impossible de créer la campagne.\n\nDétail : '+msg+'\n\n→ Exécutez oniq-campagnes-schema.sql, oniq-campagne-continue.sql puis oniq-campagne-fix-rls.sql dans Supabase.');return;}
               }
               try{setTab&&setTab('campagnes');}catch(e){}
             },title:'Lance une campagne CONTINUE : le moteur pioche sans limite dans le registre, envoie et relance tout seul. Seul frein : le warm-up.',
