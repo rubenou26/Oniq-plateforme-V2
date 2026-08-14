@@ -8252,6 +8252,13 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
       if(p.statut==='nouveau')await supabaseClient.from('oq_prospects')
         .update({statut:'en_cours',contacte_le:new Date().toISOString()}).eq('id',t.prospect_id);
     }catch(e){alert('⚠️ Le message est parti, mais le suivi n’a pas pu être enregistré : '+String(e&&e.message||e));}
+    /* Compteur : la jauge doit bouger AU CLIC, pas dans une minute. On
+       incrémente l'affichage tout de suite, puis le serveur derrière — c'est
+       lui qui fait foi au prochain rafraîchissement. */
+    setSrv(s=>s?{...s,envoyes:(s.envoyes||0)+1,
+      quotas:{...(s.quotas||{}),[t.canal]:((s.quotas||{})[t.canal]||0)+1}}:s);
+    setSrvFile(f=>Array.isArray(f)?f.filter(x=>x.id!==t.id):f);
+    try{await supabaseClient.rpc('oq_quota_inc',{p_email:moiId||'crm',p_canal:t.canal});}catch(e){}
     chargeFile();chargeServeur();
   };
   const envoyer=(t)=>{
