@@ -8392,18 +8392,40 @@ const OqInbox=({mob,C,SS,SF,userEmail})=>{
   const [d,setD]=React.useState(oqLoad());
   const [sel,setSel]=React.useState(null);
   const [rep,setRep]=React.useState('');
-  const refresh=()=>setD(oqLoad());
+  /* ── Les conversations vivent sur le SERVEUR : c'est le worker qui y range
+     les envois et les réponses entrantes. Lire le localStorage afficherait une
+     Inbox vide en permanence, même avec des réponses réelles en base. ────── */
+  const [srv,setSrv]=React.useState(null);
+  const chargeInbox=React.useCallback(async()=>{
+    if(!supabaseClient)return;
+    try{
+      const {data:msgs}=await supabaseClient.from('oq_messages')
+        .select('id,prospect_id,canal,sens,sujet,contenu,lu,created_at')
+        .order('created_at',{ascending:false}).limit(400);
+      const ids=[...new Set((msgs||[]).map(m=>m.prospect_id).filter(Boolean))];
+      if(!ids.length){setSrv({msgs:[],prospects:[]});return;}
+      const {data:ps}=await supabaseClient.from('oq_prospects')
+        .select('id,entreprise,dirigeant,fonction,ville,email,whatsapp,statut,signaux,score_chaud,linkedin_url')
+        .in('id',ids);
+      setSrv({msgs:msgs||[],prospects:ps||[]});
+    }catch(e){/* hors-ligne : on garde l'affichage local */}
+  },[]);
+  React.useEffect(()=>{chargeInbox();
+    const t=setInterval(chargeInbox,45000);
+    return()=>clearInterval(t);},[chargeInbox]);
+  const refresh=()=>{setD(oqLoad());chargeInbox();};
   const convs=React.useMemo(()=>{
+    const source=srv?srv:{msgs:d.messages||[],prospects:d.prospects||[]};
     const map={};
-    (d.messages||[]).forEach(m=>{
+    (source.msgs||[]).forEach(m=>{
       if(!map[m.prospect_id])map[m.prospect_id]={prospect_id:m.prospect_id,msgs:[],dernier:m.created_at,nonLus:0};
       map[m.prospect_id].msgs.push(m);
       if(m.created_at>map[m.prospect_id].dernier)map[m.prospect_id].dernier=m.created_at;
       if(m.sens==='in'&&!m.lu)map[m.prospect_id].nonLus++;
     });
-    return Object.values(map).map(c=>({...c,prospect:(d.prospects||[]).find(p=>p.id===c.prospect_id)}))
+    return Object.values(map).map(c=>({...c,prospect:(source.prospects||[]).find(p=>p.id===c.prospect_id)}))
       .filter(c=>c.prospect).sort((a,b)=>(b.nonLus-a.nonLus)||String(b.dernier).localeCompare(String(a.dernier)));
-  },[d]);
+  },[d,srv]);
   const cur=convs.find(c=>c.prospect_id===sel)||convs[0];
   /* Répondre SANS quitter le CRM : part par le bon canal, depuis le compte
      du commercial, dans le fil d'origine (Gmail) ou son WhatsApp Business. */
