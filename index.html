@@ -8185,15 +8185,77 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
   };
   const [d,setD]=React.useState(oqLoad());
   const [tick,setTick]=React.useState(0);
-  const refresh=()=>{const n=oqLoad();setD(n);setTick(t=>t+1);};
+  const refresh=()=>{const n=oqLoad();setD(n);setTick(t=>t+1);chargeServeur();};
   const file=React.useMemo(()=>oqFileDuJour(d),[d,tick]);
+  /* ── Chiffres RÉELS : le moteur tourne dans Supabase, pas dans ce navigateur.
+     Sans cette lecture, l'écran afficherait des zéros pendant que la campagne
+     envoie — c'est le serveur qui fait foi, le localStorage n'est qu'un cache
+     pour le mode hors-ligne. ─────────────────────────────────────────────── */
+  const [srv,setSrv]=React.useState(null);
+  const chargeServeur=React.useCallback(async()=>{
+    if(!supabaseClient)return;
+    try{
+      const cpt=async(tbl,f)=>{let q=supabaseClient.from(tbl).select('id',{count:'exact',head:true});
+        if(f)q=f(q);const{count}=await q;return count||0;};
+      const [prospects,contactes,repondu,envoyes,recus]=await Promise.all([
+        cpt('oq_prospects'),
+        cpt('oq_prospects',q=>q.neq('statut','nouveau')),
+        cpt('oq_prospects',q=>q.in('statut',['repondu','rdv','gagne'])),
+        cpt('oq_messages',q=>q.eq('sens','out')),
+        cpt('oq_messages',q=>q.eq('sens','in')),
+      ]);
+      const jour=new Date().toISOString().slice(0,10);
+      const {data:qs}=await supabaseClient.from('oq_quotas').select('canal,envoyes,demarre_le').eq('jour',jour);
+      const parCanal={};(qs||[]).forEach(r=>{parCanal[r.canal]=(parCanal[r.canal]||0)+(r.envoyes||0);});
+      setSrv({prospects,contactes,repondu,envoyes,recus,quotas:parCanal});
+    }catch(e){/* hors-ligne : on garde l'affichage local */}
+  },[]);
+  React.useEffect(()=>{chargeServeur();
+    const t=setInterval(chargeServeur,60000);   // rafraîchi tout seul chaque minute
+    return()=>clearInterval(t);},[chargeServeur]);
   const stats=React.useMemo(()=>{
+    if(srv)return {prospects:srv.prospects,contactes:srv.contactes,repondu:srv.recus||srv.repondu,envoyes:srv.envoyes};
     const ps=d.prospects||[];
     return {prospects:ps.length,contactes:ps.filter(p=>p.statut!=='nouveau').length,
       repondu:ps.filter(p=>p.statut==='repondu'||p.statut==='rdv').length,
       envoyes:(d.touches||[]).filter(t=>t.statut==='envoye').length};
-  },[d,tick]);
+  },[d,tick,srv]);
+  /* ── File « 1 clic » : LinkedIn, formulaires de contact et WhatsApp non
+     automatisé. Ces touches vivent sur le SERVEUR (oq_touches, statut
+     « a_envoyer ») — le moteur les y dépose quand leur date arrive. On les lit
+     donc dans Supabase, et le clic met à jour le serveur, pas le navigateur. */
+  const [srvFile,setSrvFile]=React.useState(null);
+  const chargeFile=React.useCallback(async()=>{
+    if(!supabaseClient)return;
+    try{
+      const {data}=await supabaseClient.from('oq_touches')
+        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects(id,entreprise,dirigeant,ville,email,whatsapp,form_url,linkedin_url,statut)')
+        .eq('statut','a_envoyer').order('prevu_le').limit(60);
+      setSrvFile((data||[]).map(t=>({...t,prospect:t.oq_prospects||null})));
+    }catch(e){/* hors-ligne : on garde la file locale */}
+  },[]);
+  React.useEffect(()=>{chargeFile();
+    const t=setInterval(chargeFile,60000);
+    return()=>clearInterval(t);},[chargeFile]);
+  const fileAff=srvFile!==null?srvFile:file;
+  const envoyerServeur=async(t)=>{
+    const p=t.prospect||{};
+    /* Ouvre le canal, message déjà copié dans le presse-papier */
+    if(t.canal==='whatsapp'&&p.whatsapp){window.open('https://wa.me/'+p.whatsapp+'?text='+encodeURIComponent(t.message||''),'_blank');}
+    else if(t.canal==='linkedin'){try{await navigator.clipboard.writeText(t.message||'');}catch(e){}window.open(p.linkedin_url||'https://www.linkedin.com','_blank');}
+    else if(t.canal==='formulaire'&&p.form_url){try{await navigator.clipboard.writeText(t.message||'');}catch(e){}window.open(p.form_url,'_blank');}
+    else if(t.canal==='email'&&p.email){window.open('mailto:'+p.email+'?subject='+encodeURIComponent(t.sujet||'')+'&body='+encodeURIComponent(t.message||''),'_blank');}
+    try{
+      await supabaseClient.from('oq_touches').update({statut:'envoye',envoye_le:new Date().toISOString()}).eq('id',t.id);
+      await supabaseClient.from('oq_messages').insert({prospect_id:t.prospect_id,canal:t.canal,sens:'out',
+        sujet:t.sujet||'',contenu:t.message||'',lu:true,owner_email:moiId||null});
+      if(p.statut==='nouveau')await supabaseClient.from('oq_prospects')
+        .update({statut:'en_cours',contacte_le:new Date().toISOString()}).eq('id',t.prospect_id);
+    }catch(e){alert('⚠️ Le message est parti, mais le suivi n’a pas pu être enregistré : '+String(e&&e.message||e));}
+    chargeFile();chargeServeur();
+  };
   const envoyer=(t)=>{
+    if(srvFile!==null)return envoyerServeur(t);
     const dd=oqLoad();
     const tt=(dd.touches||[]).find(x=>x.id===t.id);if(!tt)return;
     const p=(dd.prospects||[]).find(x=>x.id===tt.prospect_id);
@@ -8208,7 +8270,11 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
       contenu:tt.message,sujet:tt.sujet||'',lu:true,created_at:new Date().toISOString()});
     oqSave(dd);oqConsomme(dd,t.canal);refresh();
   };
-  const Q=(c)=>oqQuota(d,c);
+  /* Jauges de warm-up : le compteur du SERVEUR fait foi (c'est lui qui bride
+     reellement les envois). Le local ne sert que si Supabase est injoignable. */
+  const Q=(c)=>{const q=oqQuota(d,c);
+    if(srv&&srv.quotas&&srv.quotas[c]!=null)return {...q,envoyes:srv.quotas[c]};
+    return q;};
   return React.createElement('div',null,
     /* Mon adresse d’expédition — une seule boîte partagée pour toute l’équipe :
        toutes les adresses @oniq.online sont routées vers elle, et l’envoi passe
@@ -8267,13 +8333,13 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
         React.createElement('div',{style:{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink}},'⚡ Envois du jour'),
         React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone,marginTop:2}},'Emails et WhatsApp partent automatiquement 24 h/24 (relances comprises). Seul LinkedIn demande un clic — sa politique interdit l’automatisation.')),
       React.createElement('button',{onClick:refresh,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'8px 14px',fontFamily:SS,fontSize:11,fontWeight:700,cursor:'pointer'}},'↻ Actualiser')),
-    file.length===0
+    fileAff.length===0
       ? React.createElement('div',{style:{background:C.paper,border:'1px solid '+C.linen,borderRadius:12,padding:36,textAlign:'center'}},
           React.createElement('div',{style:{fontSize:26,marginBottom:8}},'✅'),
-          React.createElement('div',{style:{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink}},(d.prospects||[]).length?'Tout est envoyé pour aujourd\'hui':'Aucune campagne en cours'),
-          React.createElement('div',{style:{fontFamily:SS,fontSize:12,color:C.stone,marginTop:6,lineHeight:1.6}},(d.prospects||[]).length?'Le moteur tourne en continu : les prochains envois et relances sont déjà programmés. Consultez l\'Inbox pour répondre aux prospects.':'Allez dans « Campagne automatique », choisissez votre cible puis cliquez « 🚀 Lancer la campagne » — une seule fois, le reste est automatique.'))
+          React.createElement('div',{style:{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink}},(stats.prospects||0)?'Tout est envoyé pour aujourd\'hui':'Aucune campagne en cours'),
+          React.createElement('div',{style:{fontFamily:SS,fontSize:12,color:C.stone,marginTop:6,lineHeight:1.6}},(stats.prospects||0)?'Le moteur tourne en continu : les prochains envois et relances sont déjà programmés. Consultez l\'Inbox pour répondre aux prospects.':'Allez dans « Campagne automatique », choisissez votre cible puis cliquez « 🚀 Lancer la campagne » — une seule fois, le reste est automatique.'))
       : React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
-          file.map(t=>{
+          fileAff.map(t=>{
             const cf=OQ_CANAUX[t.canal],p=t.prospect;
             return React.createElement('div',{key:t.id,style:{background:'#fff',border:'1px solid '+C.linen,borderLeft:'3px solid '+cf.col,borderRadius:10,padding:'14px 16px'}},
               React.createElement('div',{style:{display:'flex',justifyContent:'space-between',gap:12,flexWrap:'wrap',alignItems:'flex-start'}},
