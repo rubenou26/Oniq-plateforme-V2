@@ -8261,6 +8261,18 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
     try{await supabaseClient.rpc('oq_quota_inc',{p_email:moiId||'crm',p_canal:t.canal});}catch(e){}
     chargeFile();chargeServeur();
   };
+  /* Le numéro n'est pas (ou plus) sur WhatsApp : on le retire de la fiche et
+     on annule toutes les touches WhatsApp du prospect. Les autres canaux
+     (email, LinkedIn, formulaire) continuent normalement. */
+  const pasSurWhatsApp=async(t)=>{
+    try{
+      await supabaseClient.from('oq_prospects').update({whatsapp:null}).eq('id',t.prospect_id);
+      await supabaseClient.from('oq_touches').update({statut:'invalide'})
+        .eq('prospect_id',t.prospect_id).eq('canal','whatsapp').in('statut',['a_envoyer','planifie']);
+    }catch(e){alert('⚠️ '+String(e&&e.message||e));}
+    setSrvFile(f=>Array.isArray(f)?f.filter(x=>!(x.prospect_id===t.prospect_id&&x.canal==='whatsapp')):f);
+    chargeFile();
+  };
   const envoyer=(t)=>{
     if(srvFile!==null)return envoyerServeur(t);
     const dd=oqLoad();
@@ -8363,7 +8375,12 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
                     p.signaux.slice(0,2).map((s,k)=>React.createElement('span',{key:k,style:{background:'rgba(198,167,101,0.13)',border:'1px solid rgba(198,167,101,0.35)',borderRadius:99,padding:'2px 9px',fontFamily:SS,fontSize:9.5,fontWeight:700,color:'#8a6a1a'}},s))),
                   /* ③ autres décideurs joignables */
                   (Array.isArray(p.contacts)&&p.contacts.length>1)&&React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,color:C.stone,marginTop:4}},'👥 Autres décideurs : '+p.contacts.slice(1).map(c=>c.nom+' ('+c.fonction+')').join(' · '))),
-                React.createElement('button',{onClick:()=>envoyer(t),style:{flexShrink:0,background:cf.col,color:'#fff',border:'none',borderRadius:8,padding:'10px 18px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',boxShadow:'0 3px 10px -3px '+cf.col}},'Envoyer →')),
+                React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:6,alignItems:'flex-end',flexShrink:0}},
+                  React.createElement('button',{onClick:()=>envoyer(t),style:{background:cf.col,color:'#fff',border:'none',borderRadius:8,padding:'10px 18px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',boxShadow:'0 3px 10px -3px '+cf.col}},'Envoyer →'),
+                  /* Le numéro affiché vient du site de l'entreprise : il arrive
+                     qu'il ne soit plus inscrit sur WhatsApp. Un clic le retire,
+                     annule les relances de ce canal, et la carte disparaît. */
+                  (t.canal==='whatsapp')&&React.createElement('button',{onClick:()=>pasSurWhatsApp(t),style:{background:'transparent',color:C.stone,border:'none',fontFamily:SS,fontSize:10.5,cursor:'pointer',textDecoration:'underline'}},'Pas sur WhatsApp'))),
               React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.ink,background:C.paper,border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',marginTop:10,whiteSpace:'pre-wrap',maxHeight:96,overflow:'hidden'}},
                 (t.sujet?('Objet : '+t.sujet+'\n'):'')+t.message));
           }))
