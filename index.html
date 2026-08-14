@@ -8111,10 +8111,17 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
     let vivant=true;
     (async()=>{
       try{
-        if(!supabaseClient||!userEmail){setMaBoite('');return;}
-        const {data}=await supabaseClient.from('ob_accounts').select('email_address,status').eq('provider','gmail').neq('secret_ref','');
+        if(!supabaseClient){setMaBoite('');return;}
+        const {data}=await supabaseClient.from('ob_accounts').select('email_address,status,company,owner_user_id').eq('provider','gmail').neq('secret_ref','');
         if(!vivant)return;
-        const mienne=(data||[]).find(a=>String(a.email_address).toLowerCase()===String(userEmail).toLowerCase());
+        const moi=String(userEmail||'').toLowerCase();
+        /* Le lien commercial ↔ boîte est posé à l'OAuth (owner) : il arrive dans
+           `company`. On accepte aussi l'égalité d'adresse. Et s'il n'y a qu'une
+           seule boîte connectée, c'est forcément la sienne. */
+        const mienne=(data||[]).find(a=>
+          String(a.email_address||'').toLowerCase()===moi ||
+          String(a.company||'').toLowerCase()===moi
+        )||((data||[]).length===1?data[0]:null);
         setMaBoite(mienne?mienne.email_address:((data||[]).length?('__autre__'+data[0].email_address):''));
       }catch(e){setMaBoite('');}
     })();
@@ -8124,28 +8131,50 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
     const url='https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniboost-oauth?action=connect&owner='+encodeURIComponent(userEmail||'pilote');
     window.open(url,'oniq_oauth','width=520,height=660');
   };
-  /* Adresse d'expédition : on se connecte avec la boîte Gmail, mais les emails
-     peuvent partir depuis l'alias pro (ex contact@oniq.online) déjà vérifié
-     dans Gmail → Paramètres → « Envoyer des e-mails en tant que ». */
+  /* Adresse d’expédition du commercial. Une seule boîte Gmail sert toute
+     l’équipe (Cloudflare y route tout), donc ce qui distingue les commerciaux
+     n’est pas la boîte mais LEUR adresse pro : elle est stockée dans
+     oq_expediteurs et sert aussi à trier les réponses entrantes vers la bonne
+     Inbox. Le commercial la saisit lui-même à sa première connexion. */
   const [alias,setAlias]=React.useState({from_alias:'',from_nom:''});
   const [aliasEdit,setAliasEdit]=React.useState(false);
+  const [aliasPret,setAliasPret]=React.useState(false);
+  const moiId=String(userEmail||'').toLowerCase();
+  /* Proposition par défaut : prenom@oniq.online, déduite de l’identifiant. */
+  const aliasPropose=React.useMemo(()=>{
+    const base=(moiId.split('@')[0]||'').replace(/[^a-z0-9.]/g,'');
+    return base?base+'@oniq.online':'';
+  },[moiId]);
   React.useEffect(()=>{
+    let vivant=true;
     (async()=>{
+      if(!supabaseClient||!moiId){setAliasPret(true);return;}
       try{
-        if(!supabaseClient||!maBoite||maBoite.indexOf('__autre__')===0)return;
-        const {data}=await supabaseClient.from('ob_accounts').select('from_alias,from_nom').eq('email_address',maBoite).maybeSingle();
-        if(data)setAlias({from_alias:data.from_alias||'',from_nom:data.from_nom||''});
+        const {data}=await supabaseClient.from('oq_expediteurs')
+          .select('from_alias,from_nom').ilike('owner_email',moiId).maybeSingle();
+        if(!vivant)return;
+        if(data&&data.from_alias){setAlias({from_alias:data.from_alias,from_nom:data.from_nom||''});}
+        else{
+          /* Première connexion : on pré-remplit et on ouvre le formulaire. */
+          setAlias({from_alias:aliasPropose,from_nom:''});
+          setAliasEdit(true);
+        }
       }catch(e){}
+      if(vivant)setAliasPret(true);
     })();
-  },[maBoite]);
+    return()=>{vivant=false;};
+  },[moiId,aliasPropose]);
   const sauverAlias=async()=>{
+    const adr=String(alias.from_alias||'').trim().toLowerCase();
+    if(!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(adr)){alert('⚠️ Adresse invalide.\n\nExemple : joey@oniq.online');return;}
     try{
-      const {error}=await supabaseClient.from('ob_accounts')
-        .update({from_alias:alias.from_alias||null,from_nom:alias.from_nom||null}).eq('email_address',maBoite);
+      const {error}=await supabaseClient.from('oq_expediteurs')
+        .upsert({owner_email:moiId,from_alias:adr,from_nom:String(alias.from_nom||'').trim()||'ONIQ'},{onConflict:'owner_email'});
       if(error)throw error;
+      setAlias(a=>({...a,from_alias:adr}));
       setAliasEdit(false);
-      alert('✅ Vos emails partiront désormais de : '+(alias.from_alias||maBoite)+'\n\n⚠️ Cette adresse doit être vérifiée dans Gmail (Paramètres → Comptes → « Envoyer des e-mails en tant que »).');
-    }catch(e){alert('⚠️ Enregistrement impossible : '+String(e&&e.message||e)+'\n\nAvez-vous exécuté oniq-alias-schema.sql ?');}
+      alert('✅ C’est enregistré.\n\nVos emails partiront de : '+adr+'\nEt tout ce qui arrive à cette adresse tombera dans VOTRE Inbox ONIQ.');
+    }catch(e){alert('⚠️ Enregistrement impossible : '+String(e&&e.message||e)+'\n\nAvez-vous exécuté oniq-expediteurs.sql ?');}
   };
   const [d,setD]=React.useState(oqLoad());
   const [tick,setTick]=React.useState(0);
@@ -8174,27 +8203,31 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
   };
   const Q=(c)=>oqQuota(d,c);
   return React.createElement('div',null,
-    /* Ma boîte d'envoi — 1 clic, une par commercial */
-    React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',background:maBoite&&maBoite.indexOf('__autre__')!==0?'rgba(74,124,89,0.08)':'rgba(224,162,60,0.10)',border:'1px solid '+(maBoite&&maBoite.indexOf('__autre__')!==0?'rgba(74,124,89,0.35)':'rgba(224,162,60,0.4)'),borderRadius:10,padding:'11px 15px',marginBottom:16}},
-      React.createElement('span',{style:{fontSize:15}},maBoite&&maBoite.indexOf('__autre__')!==0?'✅':'📧'),
+    /* Mon adresse d’expédition — une seule boîte partagée pour toute l’équipe :
+       toutes les adresses @oniq.online sont routées vers elle, et l’envoi passe
+       par le domaine vérifié. Le commercial n’a donc rien à connecter : il
+       déclare simplement l’adresse depuis laquelle il écrit. */
+    React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',background:alias.from_alias?'rgba(74,124,89,0.08)':'rgba(224,162,60,0.10)',border:'1px solid '+(alias.from_alias?'rgba(74,124,89,0.35)':'rgba(224,162,60,0.4)'),borderRadius:10,padding:'11px 15px',marginBottom:16}},
+      React.createElement('span',{style:{fontSize:15}},alias.from_alias?'✉️':'⚙️'),
       React.createElement('div',{style:{flex:1,minWidth:200}},
         React.createElement('div',{style:{fontFamily:SS,fontSize:12,fontWeight:800,color:C.ink}},
-          maBoite===null?'Vérification de votre boîte d\'envoi…'
-          :maBoite&&maBoite.indexOf('__autre__')!==0?('Vos emails partent de '+maBoite)
-          :'Connectez votre boîte Gmail pour que VOS emails partent de VOTRE adresse'),
+          alias.from_alias
+            ?('Vous écrivez depuis '+(alias.from_nom?alias.from_nom+' <'+alias.from_alias+'>':alias.from_alias))
+            :'Choisissez votre adresse d’expédition'),
         React.createElement('div',{style:{fontFamily:SS,fontSize:10.5,color:C.stone,marginTop:2,lineHeight:1.45}},
-          maBoite&&maBoite.indexOf('__autre__')!==0
-            ?(alias.from_alias?('Expéditeur affiché : '+(alias.from_nom?alias.from_nom+' <'+alias.from_alias+'>':alias.from_alias)+' · les réponses arrivent dans votre boîte.'):'Quota de warm-up dédié · les réponses arrivent directement dans votre boîte.')
-            :'1 clic, 30 secondes. WhatsApp et LinkedIn ne demandent aucune connexion.')),
-      /* Choix de l'adresse d'expédition (alias pro vérifié dans Gmail) */
-      (maBoite&&maBoite.indexOf('__autre__')!==0)&&(aliasEdit
+          alias.from_alias
+            ?'Quota de warm-up dédié · les réponses reviennent dans l’Inbox du CRM.'
+            :'Ex : prenom@oniq.online — créée par l’admin, rien d’autre à configurer.')),
+      aliasEdit
         ? React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',flexBasis:'100%',marginTop:8}},
-            React.createElement('input',{value:alias.from_nom,onChange:e=>setAlias(a=>({...a,from_nom:e.target.value})),placeholder:'Nom affiché (ex ONIQ)',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:150}}),
-            React.createElement('input',{value:alias.from_alias,onChange:e=>setAlias(a=>({...a,from_alias:e.target.value})),placeholder:'contact@oniq.online',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,flex:1,minWidth:190}}),
+            React.createElement('input',{value:alias.from_nom,onChange:e=>setAlias(a=>({...a,from_nom:e.target.value})),placeholder:'Joey Vacance',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:170}}),
+            React.createElement('input',{value:alias.from_alias,onChange:e=>setAlias(a=>({...a,from_alias:e.target.value})),placeholder:'joey@oniq.online',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,flex:1,minWidth:190}}),
             React.createElement('button',{onClick:sauverAlias,style:{background:'#1A1715',color:'#fff',border:'none',borderRadius:7,padding:'8px 14px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'Enregistrer'),
             React.createElement('button',{onClick:()=>setAliasEdit(false),style:{background:'transparent',color:C.stone,border:'1px solid '+C.linen,borderRadius:7,padding:'8px 12px',fontFamily:SS,fontSize:11.5,cursor:'pointer'}},'Annuler'))
-        : React.createElement('button',{onClick:()=>setAliasEdit(true),title:'Envoyer depuis votre adresse pro (alias vérifié dans Gmail) plutôt que depuis l’adresse Gmail de connexion',style:{flexShrink:0,background:'transparent',color:C.ink,border:'1px solid '+C.linen,borderRadius:8,padding:'8px 13px',fontFamily:SS,fontSize:11.5,fontWeight:700,cursor:'pointer'}},alias.from_alias?'✏️ Changer l’adresse d’envoi':'✉️ Choisir l’adresse d’envoi')),
-      (!maBoite||maBoite.indexOf('__autre__')===0)&&React.createElement('button',{onClick:connecterBoite,style:{flexShrink:0,background:'#1A1715',color:'#fff',border:'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'📧 Connecter ma boîte Gmail')),
+        : React.createElement('button',{onClick:()=>setAliasEdit(true),style:{flexShrink:0,background:alias.from_alias?'transparent':'#1A1715',color:alias.from_alias?C.stone:'#fff',border:alias.from_alias?('1px solid '+C.linen):'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},alias.from_alias?'Modifier':'Définir mon adresse'),
+      /* Connexion de la boîte : réservée à l’admin, et seulement si aucune
+         boîte n’est encore reliée. Les commerciaux ne la voient jamais. */
+      (!maBoite||maBoite.indexOf('__autre__')===0)&&React.createElement('button',{onClick:connecterBoite,style:{flexShrink:0,background:'transparent',color:C.stone,border:'1px solid '+C.linen,borderRadius:8,padding:'9px 13px',fontFamily:SS,fontSize:11,cursor:'pointer'}},'Relier la boîte de réception')),
     /* Warm-up : 3 jauges */
     React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(3,1fr)',gap:12,marginBottom:18}},
       Object.keys(OQ_CANAUX).map(c=>{
