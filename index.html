@@ -8002,12 +8002,17 @@ const OQ_KEY='oniq_campagnes_v1';
 const OQ_WARMUP={
   email:   [{j:3,max:20},{j:7,max:40},{j:14,max:80},{j:30,max:150},{j:9999,max:200}],
   whatsapp:[{j:3,max:15},{j:7,max:30},{j:14,max:60},{j:30,max:100},{j:9999,max:150}],
-  linkedin:[{j:7,max:15},{j:14,max:20},{j:9999,max:25}]
+  linkedin:[{j:7,max:15},{j:14,max:20},{j:9999,max:25}],
+  formulaire:[{j:9999,max:100}]
 };
+/* 3 canaux, tous GRATUITS : email illimité, WhatsApp 1 000 conv./mois offertes
+   par Meta, LinkedIn en 1 clic. (Le SMS existe dans le moteur mais reste
+   désactivé : il est payant.) */
 const OQ_CANAUX={
-  email:   {label:'Email',   ico:'📧', col:'#2D5687', auto:true,  note:'Envoi 100 % automatique'},
-  whatsapp:{label:'WhatsApp',ico:'💬', col:'#25D366', auto:false, note:'1 clic — évite le bannissement Meta'},
-  linkedin:{label:'LinkedIn',ico:'💼', col:'#0A66C2', auto:false, note:'1 clic — évite la restriction LinkedIn'}
+  email:   {label:'Email',   ico:'📧', col:'#2D5687', auto:true,  note:'100 % automatique · gratuit et illimité'},
+  whatsapp:{label:'WhatsApp',ico:'💬', col:'#25D366', auto:true,  note:'Automatique · 1 000 conv./mois offertes'},
+  linkedin:{label:'LinkedIn',ico:'💼', col:'#0A66C2', auto:false, note:'1 clic — aucune API, protège le compte'},
+  formulaire:{label:'Formulaire',ico:'📝', col:'#B0873A', auto:false, note:'1 clic — leur formulaire de contact, toujours lu'}
 };
 function oqLoad(){try{return JSON.parse(localStorage.getItem(OQ_KEY)||'{"campagnes":[],"prospects":[],"touches":[],"messages":[],"quotas":{}}');}catch(e){return {campagnes:[],prospects:[],touches:[],messages:[],quotas:{}};}}
 function oqSave(d){try{localStorage.setItem(OQ_KEY,JSON.stringify(d));}catch(e){}}
@@ -8066,6 +8071,7 @@ function oqCreerCampagne(nom,secteur,region,prospects){
     if(p.email){plan.push(['email',1,0],['email',2,3],['email',3,7]);}
     if(p.whatsapp)plan.push(['whatsapp',1,1]);
     plan.push(['linkedin',1,2]);
+    /* SMS retiré : payant. On reste sur les 3 canaux gratuits. */
     plan.forEach(([canal,etape,jours])=>{
       const m=oqMessage(canal,p,etape);
       d.touches.push({id:oqUid(),prospect_id:p.id,canal,etape,message:m.corps,sujet:m.sujet||'',
@@ -8089,10 +8095,35 @@ function oqFileDuJour(d){
       parCanal[t.canal]--;
       file.push({...t,prospect:p});
     });
-  return file;
+  /* Priorité aux prospects CHAUDS : ceux qui ont ouvert vos emails (④) puis
+     ceux qui portent un signal fort (②) — le commercial traite le meilleur d'abord. */
+  return file.sort((a,b)=>{
+    const sc=(x)=>((x.prospect.ouvertures||0)*10)+(x.prospect.score_chaud||0);
+    return sc(b)-sc(a);
+  });
 }
 /* ═══ ÉCRAN CAMPAGNES — file du jour + warm-up visible ═══ */
-const OqCampagnes=({mob,C,SS,SF})=>{
+const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
+  /* Boîte d'envoi du commercial : chacun connecte la sienne (1 clic OAuth) →
+     quota de warm-up dédié + les réponses arrivent dans SA boîte. */
+  const [maBoite,setMaBoite]=React.useState(null);
+  React.useEffect(()=>{
+    let vivant=true;
+    (async()=>{
+      try{
+        if(!supabaseClient||!userEmail){setMaBoite('');return;}
+        const {data}=await supabaseClient.from('ob_accounts').select('email_address,status').eq('provider','gmail').neq('secret_ref','');
+        if(!vivant)return;
+        const mienne=(data||[]).find(a=>String(a.email_address).toLowerCase()===String(userEmail).toLowerCase());
+        setMaBoite(mienne?mienne.email_address:((data||[]).length?('__autre__'+data[0].email_address):''));
+      }catch(e){setMaBoite('');}
+    })();
+    return()=>{vivant=false;};
+  },[userEmail]);
+  const connecterBoite=()=>{
+    const url='https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniboost-oauth?action=connect&owner='+encodeURIComponent(userEmail||'pilote');
+    window.open(url,'oniq_oauth','width=520,height=660');
+  };
   const [d,setD]=React.useState(oqLoad());
   const [tick,setTick]=React.useState(0);
   const refresh=()=>{const n=oqLoad();setD(n);setTick(t=>t+1);};
@@ -8110,6 +8141,7 @@ const OqCampagnes=({mob,C,SS,SF})=>{
     /* Ouvre le canal avec le message pré-rempli */
     if(t.canal==='whatsapp'&&p&&p.whatsapp){window.open('https://wa.me/'+p.whatsapp+'?text='+encodeURIComponent(tt.message),'_blank');}
     else if(t.canal==='linkedin'&&p){try{navigator.clipboard.writeText(tt.message);}catch(e){}window.open(p.linkedin_url,'_blank');}
+    else if(t.canal==='formulaire'&&p&&p.form_url){try{navigator.clipboard.writeText(tt.message);}catch(e){}window.open(p.form_url,'_blank');}
     else if(t.canal==='email'&&p&&p.email){window.open('mailto:'+p.email+'?subject='+encodeURIComponent(tt.sujet||'')+'&body='+encodeURIComponent(tt.message),'_blank');}
     tt.statut='envoye';tt.envoye_le=new Date().toISOString();
     if(p&&p.statut==='nouveau')p.statut='en_cours';
@@ -8119,6 +8151,19 @@ const OqCampagnes=({mob,C,SS,SF})=>{
   };
   const Q=(c)=>oqQuota(d,c);
   return React.createElement('div',null,
+    /* Ma boîte d'envoi — 1 clic, une par commercial */
+    React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',background:maBoite&&maBoite.indexOf('__autre__')!==0?'rgba(74,124,89,0.08)':'rgba(224,162,60,0.10)',border:'1px solid '+(maBoite&&maBoite.indexOf('__autre__')!==0?'rgba(74,124,89,0.35)':'rgba(224,162,60,0.4)'),borderRadius:10,padding:'11px 15px',marginBottom:16}},
+      React.createElement('span',{style:{fontSize:15}},maBoite&&maBoite.indexOf('__autre__')!==0?'✅':'📧'),
+      React.createElement('div',{style:{flex:1,minWidth:200}},
+        React.createElement('div',{style:{fontFamily:SS,fontSize:12,fontWeight:800,color:C.ink}},
+          maBoite===null?'Vérification de votre boîte d\'envoi…'
+          :maBoite&&maBoite.indexOf('__autre__')!==0?('Vos emails partent de '+maBoite)
+          :'Connectez votre boîte Gmail pour que VOS emails partent de VOTRE adresse'),
+        React.createElement('div',{style:{fontFamily:SS,fontSize:10.5,color:C.stone,marginTop:2,lineHeight:1.45}},
+          maBoite&&maBoite.indexOf('__autre__')!==0
+            ?'Quota de warm-up dédié · les réponses arrivent directement dans votre boîte.'
+            :'1 clic, 30 secondes. WhatsApp et LinkedIn ne demandent aucune connexion.')),
+      (!maBoite||maBoite.indexOf('__autre__')===0)&&React.createElement('button',{onClick:connecterBoite,style:{flexShrink:0,background:'#1A1715',color:'#fff',border:'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'📧 Connecter ma boîte Gmail')),
     /* Warm-up : 3 jauges */
     React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(3,1fr)',gap:12,marginBottom:18}},
       Object.keys(OQ_CANAUX).map(c=>{
@@ -8161,7 +8206,14 @@ const OqCampagnes=({mob,C,SS,SF})=>{
                     React.createElement('span',{style:{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink}},p.entreprise),
                     React.createElement('span',{style:{fontFamily:SS,fontSize:9.5,fontWeight:800,color:'#fff',background:cf.col,borderRadius:99,padding:'2px 9px'}},cf.ico+' '+cf.label+(t.etape>1?(' · relance '+(t.etape-1)):''))),
                   React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone}},
-                    (p.dirigeant?('🎯 '+p.dirigeant+(p.fonction?(' · '+p.fonction):'')):'')+(p.ville?(' · '+p.ville):'')+(isFinite(p.ca)&&p.ca?(' · CA '+(p.ca>=1e6?((Math.round(p.ca/1e5)/10)+' M€'):(Math.round(p.ca/1e3)+' k€'))):''))),
+                    (p.dirigeant?('🎯 '+p.dirigeant+(p.fonction?(' · '+p.fonction):'')):'')+(p.ville?(' · '+p.ville):'')+(isFinite(p.ca)&&p.ca?(' · CA '+(p.ca>=1e6?((Math.round(p.ca/1e5)/10)+' M€'):(Math.round(p.ca/1e3)+' k€'))):'')),
+                  /* ④ prospect chaud : il a ouvert vos emails sans répondre */
+                  (p.ouvertures>0)&&React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:5,marginTop:5,background:'rgba(192,57,43,0.10)',border:'1px solid rgba(192,57,43,0.35)',borderRadius:99,padding:'2px 9px',fontFamily:SS,fontSize:10,fontWeight:800,color:'#C0392B'}},'🔥 A ouvert '+p.ouvertures+' fois — prospect chaud'),
+                  /* ② signaux détectés sur le registre */
+                  (Array.isArray(p.signaux)&&p.signaux.length>0)&&React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:5,marginTop:5}},
+                    p.signaux.slice(0,2).map((s,k)=>React.createElement('span',{key:k,style:{background:'rgba(198,167,101,0.13)',border:'1px solid rgba(198,167,101,0.35)',borderRadius:99,padding:'2px 9px',fontFamily:SS,fontSize:9.5,fontWeight:700,color:'#8a6a1a'}},s))),
+                  /* ③ autres décideurs joignables */
+                  (Array.isArray(p.contacts)&&p.contacts.length>1)&&React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,color:C.stone,marginTop:4}},'👥 Autres décideurs : '+p.contacts.slice(1).map(c=>c.nom+' ('+c.fonction+')').join(' · '))),
                 React.createElement('button',{onClick:()=>envoyer(t),style:{flexShrink:0,background:cf.col,color:'#fff',border:'none',borderRadius:8,padding:'10px 18px',fontFamily:SS,fontSize:12,fontWeight:800,cursor:'pointer',boxShadow:'0 3px 10px -3px '+cf.col}},'Envoyer →')),
               React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.ink,background:C.paper,border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',marginTop:10,whiteSpace:'pre-wrap',maxHeight:96,overflow:'hidden'}},
                 (t.sujet?('Objet : '+t.sujet+'\n'):'')+t.message));
@@ -8170,7 +8222,7 @@ const OqCampagnes=({mob,C,SS,SF})=>{
 };
 
 /* ═══ ÉCRAN INBOX UNIFIÉE — toutes les conversations, tous canaux ═══ */
-const OqInbox=({mob,C,SS,SF})=>{
+const OqInbox=({mob,C,SS,SF,userEmail})=>{
   const [d,setD]=React.useState(oqLoad());
   const [sel,setSel]=React.useState(null);
   const [rep,setRep]=React.useState('');
@@ -8187,13 +8239,33 @@ const OqInbox=({mob,C,SS,SF})=>{
       .filter(c=>c.prospect).sort((a,b)=>(b.nonLus-a.nonLus)||String(b.dernier).localeCompare(String(a.dernier)));
   },[d]);
   const cur=convs.find(c=>c.prospect_id===sel)||convs[0];
-  const envoyerRep=()=>{
-    if(!cur||!rep.trim())return;
+  /* Répondre SANS quitter le CRM : part par le bon canal, depuis le compte
+     du commercial, dans le fil d'origine (Gmail) ou son WhatsApp Business. */
+  const [envoi,setEnvoi]=React.useState(false);
+  const envoyerRep=async()=>{
+    if(!cur||!rep.trim()||envoi)return;
+    const canalCourant=(cur.msgs.slice().sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0]||{}).canal||'email';
+    if(canalCourant==='linkedin'){
+      try{navigator.clipboard.writeText(rep);}catch(e){}
+      alert('💼 LinkedIn ne permet aucun envoi automatisé (leur politique interdit l\'API de messagerie).\n\nVotre réponse est copiée : collez-la dans LinkedIn. La conversation reste tracée ici.');
+    }
+    setEnvoi(true);
+    let envoyeServeur=false;
+    try{
+      const r=await fetch('https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniq-inbox?action=repondre',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prospect_id:cur.prospect_id,texte:rep,owner_email:userEmail||'',canal:canalCourant==='linkedin'?'linkedin':undefined})});
+      const j=await r.json();
+      if(j&&j.ok)envoyeServeur=true;
+      else if(canalCourant!=='linkedin')console.warn('Inbox — envoi serveur :',j&&j.error);
+    }catch(e){console.warn('Inbox — serveur injoignable',e);}
+    /* trace locale (l'écran reste à jour même hors ligne) */
     const dd=oqLoad();
-    (dd.messages=dd.messages||[]).unshift({id:oqUid(),prospect_id:cur.prospect_id,canal:(cur.msgs[0]||{}).canal||'email',
+    (dd.messages=dd.messages||[]).unshift({id:oqUid(),prospect_id:cur.prospect_id,canal:canalCourant,
       sens:'out',contenu:rep,sujet:'',lu:true,created_at:new Date().toISOString()});
     dd.messages.forEach(m=>{if(m.prospect_id===cur.prospect_id&&m.sens==='in')m.lu=true;});
-    oqSave(dd);setRep('');refresh();
+    oqSave(dd);setRep('');setEnvoi(false);refresh();
+    if(!envoyeServeur&&canalCourant!=='linkedin')alert('⚠️ Réponse enregistrée localement mais NON envoyée.\n\nVérifiez que la fonction oniq-inbox est déployée et que votre boîte Gmail est connectée.');
   };
   return React.createElement('div',null,
     React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}},
@@ -8234,7 +8306,10 @@ const OqInbox=({mob,C,SS,SF})=>{
                   React.createElement('div',{style:{fontFamily:SS,fontSize:12,color:C.ink,whiteSpace:'pre-wrap',lineHeight:1.5}},m.contenu)))),
             React.createElement('textarea',{value:rep,onChange:e=>setRep(e.target.value),rows:3,placeholder:'Votre réponse…',
               style:{width:'100%',border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',fontFamily:SS,fontSize:12.5,resize:'vertical',boxSizing:'border-box'}}),
-            React.createElement('button',{onClick:envoyerRep,style:{marginTop:8,width:'100%',background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'11px',fontFamily:SS,fontSize:12.5,fontWeight:700,cursor:'pointer'}},'Répondre'))
+            (()=>{const dr=(cur.msgs.slice().sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0]||{}).canal||'email';
+              const cf=OQ_CANAUX[dr]||OQ_CANAUX.email;
+              return React.createElement('button',{onClick:envoyerRep,disabled:envoi,style:{marginTop:8,width:'100%',background:envoi?C.stone:cf.col,color:'#fff',border:'none',borderRadius:8,padding:'11px',fontFamily:SS,fontSize:12.5,fontWeight:700,cursor:envoi?'wait':'pointer'}},
+                envoi?'Envoi en cours…':('Répondre par '+cf.ico+' '+cf.label+(dr==='linkedin'?' (copie + LinkedIn)':' — depuis votre compte')));})())
         )
   );
 };
@@ -11483,8 +11558,8 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
     ),
 
     // ═══ TAB PIPELINE (personnelle — admin & commercial voient uniquement LEURS leads) ═══
-    tab==='campagnes'&&React.createElement(OqCampagnes,{mob:mob,C:C,SS:SS,SF:SF}),
-    tab==='inbox'&&React.createElement(OqInbox,{mob:mob,C:C,SS:SS,SF:SF}),
+    tab==='campagnes'&&React.createElement(OqCampagnes,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
+    tab==='inbox'&&React.createElement(OqInbox,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
     tab==='ressources'&&React.createElement(RessourcesCommercial,{mob:mob}),
     tab==='pipeline'&&React.createElement('div',null,
       React.createElement('div',{style:{background:'rgba(184,154,90,0.08)',border:'1px solid rgba(184,154,90,0.25)',borderRadius:6,padding:'8px 14px',marginBottom:12,fontFamily:SS,fontSize:11,color:C.stone}},
