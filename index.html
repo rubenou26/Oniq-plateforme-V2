@@ -8124,6 +8124,29 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
     const url='https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniboost-oauth?action=connect&owner='+encodeURIComponent(userEmail||'pilote');
     window.open(url,'oniq_oauth','width=520,height=660');
   };
+  /* Adresse d'expédition : on se connecte avec la boîte Gmail, mais les emails
+     peuvent partir depuis l'alias pro (ex contact@oniq.online) déjà vérifié
+     dans Gmail → Paramètres → « Envoyer des e-mails en tant que ». */
+  const [alias,setAlias]=React.useState({from_alias:'',from_nom:''});
+  const [aliasEdit,setAliasEdit]=React.useState(false);
+  React.useEffect(()=>{
+    (async()=>{
+      try{
+        if(!supabaseClient||!maBoite||maBoite.indexOf('__autre__')===0)return;
+        const {data}=await supabaseClient.from('ob_accounts').select('from_alias,from_nom').eq('email_address',maBoite).maybeSingle();
+        if(data)setAlias({from_alias:data.from_alias||'',from_nom:data.from_nom||''});
+      }catch(e){}
+    })();
+  },[maBoite]);
+  const sauverAlias=async()=>{
+    try{
+      const {error}=await supabaseClient.from('ob_accounts')
+        .update({from_alias:alias.from_alias||null,from_nom:alias.from_nom||null}).eq('email_address',maBoite);
+      if(error)throw error;
+      setAliasEdit(false);
+      alert('✅ Vos emails partiront désormais de : '+(alias.from_alias||maBoite)+'\n\n⚠️ Cette adresse doit être vérifiée dans Gmail (Paramètres → Comptes → « Envoyer des e-mails en tant que »).');
+    }catch(e){alert('⚠️ Enregistrement impossible : '+String(e&&e.message||e)+'\n\nAvez-vous exécuté oniq-alias-schema.sql ?');}
+  };
   const [d,setD]=React.useState(oqLoad());
   const [tick,setTick]=React.useState(0);
   const refresh=()=>{const n=oqLoad();setD(n);setTick(t=>t+1);};
@@ -8161,8 +8184,16 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
           :'Connectez votre boîte Gmail pour que VOS emails partent de VOTRE adresse'),
         React.createElement('div',{style:{fontFamily:SS,fontSize:10.5,color:C.stone,marginTop:2,lineHeight:1.45}},
           maBoite&&maBoite.indexOf('__autre__')!==0
-            ?'Quota de warm-up dédié · les réponses arrivent directement dans votre boîte.'
+            ?(alias.from_alias?('Expéditeur affiché : '+(alias.from_nom?alias.from_nom+' <'+alias.from_alias+'>':alias.from_alias)+' · les réponses arrivent dans votre boîte.'):'Quota de warm-up dédié · les réponses arrivent directement dans votre boîte.')
             :'1 clic, 30 secondes. WhatsApp et LinkedIn ne demandent aucune connexion.')),
+      /* Choix de l'adresse d'expédition (alias pro vérifié dans Gmail) */
+      (maBoite&&maBoite.indexOf('__autre__')!==0)&&(aliasEdit
+        ? React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',flexBasis:'100%',marginTop:8}},
+            React.createElement('input',{value:alias.from_nom,onChange:e=>setAlias(a=>({...a,from_nom:e.target.value})),placeholder:'Nom affiché (ex ONIQ)',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:150}}),
+            React.createElement('input',{value:alias.from_alias,onChange:e=>setAlias(a=>({...a,from_alias:e.target.value})),placeholder:'contact@oniq.online',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,flex:1,minWidth:190}}),
+            React.createElement('button',{onClick:sauverAlias,style:{background:'#1A1715',color:'#fff',border:'none',borderRadius:7,padding:'8px 14px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'Enregistrer'),
+            React.createElement('button',{onClick:()=>setAliasEdit(false),style:{background:'transparent',color:C.stone,border:'1px solid '+C.linen,borderRadius:7,padding:'8px 12px',fontFamily:SS,fontSize:11.5,cursor:'pointer'}},'Annuler'))
+        : React.createElement('button',{onClick:()=>setAliasEdit(true),title:'Envoyer depuis votre adresse pro (alias vérifié dans Gmail) plutôt que depuis l’adresse Gmail de connexion',style:{flexShrink:0,background:'transparent',color:C.ink,border:'1px solid '+C.linen,borderRadius:8,padding:'8px 13px',fontFamily:SS,fontSize:11.5,fontWeight:700,cursor:'pointer'}},alias.from_alias?'✏️ Changer l’adresse d’envoi':'✉️ Choisir l’adresse d’envoi')),
       (!maBoite||maBoite.indexOf('__autre__')===0)&&React.createElement('button',{onClick:connecterBoite,style:{flexShrink:0,background:'#1A1715',color:'#fff',border:'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'📧 Connecter ma boîte Gmail')),
     /* Warm-up : 3 jauges */
     React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'repeat(3,1fr)',gap:12,marginBottom:18}},
