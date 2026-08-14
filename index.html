@@ -8136,7 +8136,7 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
      n’est pas la boîte mais LEUR adresse pro : elle est stockée dans
      oq_expediteurs et sert aussi à trier les réponses entrantes vers la bonne
      Inbox. Le commercial la saisit lui-même à sa première connexion. */
-  const [alias,setAlias]=React.useState({from_alias:'',from_nom:''});
+  const [alias,setAlias]=React.useState({from_alias:'',from_nom:'',poste:'',telephone:'',whatsapp:'',linkedin_url:''});
   const [aliasEdit,setAliasEdit]=React.useState(false);
   const [aliasPret,setAliasPret]=React.useState(false);
   const moiId=String(userEmail||'').toLowerCase();
@@ -8151,12 +8151,12 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
       if(!supabaseClient||!moiId){setAliasPret(true);return;}
       try{
         const {data}=await supabaseClient.from('oq_expediteurs')
-          .select('from_alias,from_nom').ilike('owner_email',moiId).maybeSingle();
+          .select('from_alias,from_nom,poste,telephone,whatsapp,linkedin_url').ilike('owner_email',moiId).maybeSingle();
         if(!vivant)return;
-        if(data&&data.from_alias){setAlias({from_alias:data.from_alias,from_nom:data.from_nom||''});}
+        if(data&&data.from_alias){setAlias({from_alias:data.from_alias,from_nom:data.from_nom||'',poste:data.poste||'',telephone:data.telephone||'',whatsapp:data.whatsapp||'',linkedin_url:data.linkedin_url||''});}
         else{
           /* Première connexion : on pré-remplit et on ouvre le formulaire. */
-          setAlias({from_alias:aliasPropose,from_nom:''});
+          setAlias(a=>({...a,from_alias:aliasPropose}));
           setAliasEdit(true);
         }
       }catch(e){}
@@ -8167,13 +8167,20 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
   const sauverAlias=async()=>{
     const adr=String(alias.from_alias||'').trim().toLowerCase();
     if(!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(adr)){alert('⚠️ Adresse invalide.\n\nExemple : joey@oniq.online');return;}
+    if(!String(alias.from_nom||'').trim()){alert('⚠️ Indiquez votre nom : il apparaît dans la signature de chaque email.');return;}
+    /* Le numero saisi sert AUSSI de WhatsApp : c'est le meme. Format international
+       sans espaces : 06 24 08 19 10 → 33624081910 */
+    let wa=String(alias.telephone||'').replace(/\D/g,'');
+    if(wa){ if(wa.length===10&&wa[0]==='0')wa='33'+wa.slice(1); else if(wa.length===9)wa='33'+wa; }
     try{
       const {error}=await supabaseClient.from('oq_expediteurs')
-        .upsert({owner_email:moiId,from_alias:adr,from_nom:String(alias.from_nom||'').trim()||'ONIQ'},{onConflict:'owner_email'});
+        .upsert({owner_email:moiId,from_alias:adr,from_nom:String(alias.from_nom||'').trim(),
+                 poste:String(alias.poste||'').trim()||null,telephone:String(alias.telephone||'').trim()||null,
+                 whatsapp:wa||null,linkedin_url:String(alias.linkedin_url||'').trim()||null},{onConflict:'owner_email'});
       if(error)throw error;
-      setAlias(a=>({...a,from_alias:adr}));
+      setAlias(a=>({...a,from_alias:adr,whatsapp:wa}));
       setAliasEdit(false);
-      alert('✅ C’est enregistré.\n\nVos emails partiront de : '+adr+'\nEt tout ce qui arrive à cette adresse tombera dans VOTRE Inbox ONIQ.');
+      alert('✅ C’est enregistré.\n\nVos emails partiront de : '+adr+'\nVotre signature (nom, téléphone, WhatsApp, LinkedIn) apparaîtra en bas de chaque message.\nEt tout ce qui arrive à cette adresse tombera dans VOTRE Inbox ONIQ.');
     }catch(e){alert('⚠️ Enregistrement impossible : '+String(e&&e.message||e)+'\n\nAvez-vous exécuté oniq-expediteurs.sql ?');}
   };
   const [d,setD]=React.useState(oqLoad());
@@ -8220,8 +8227,13 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
             :'Ex : prenom@oniq.online — créée par l’admin, rien d’autre à configurer.')),
       aliasEdit
         ? React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',flexBasis:'100%',marginTop:8}},
-            React.createElement('input',{value:alias.from_nom,onChange:e=>setAlias(a=>({...a,from_nom:e.target.value})),placeholder:'Joey Vacance',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:170}}),
+            React.createElement('div',{style:{flexBasis:'100%',fontFamily:SS,fontSize:10.5,color:C.stone,marginBottom:2,lineHeight:1.45}},
+              'Ces informations composent la signature affichée au bas de chaque email. Laisser le prospect choisir son canal de réponse (téléphone, WhatsApp, LinkedIn) augmente nettement les retours.'),
+            React.createElement('input',{value:alias.from_nom,onChange:e=>setAlias(a=>({...a,from_nom:e.target.value})),placeholder:'Joey Vacance',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:160}}),
+            React.createElement('input',{value:alias.poste,onChange:e=>setAlias(a=>({...a,poste:e.target.value})),placeholder:'Responsable commercial',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:180}}),
             React.createElement('input',{value:alias.from_alias,onChange:e=>setAlias(a=>({...a,from_alias:e.target.value})),placeholder:'joey@oniq.online',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,flex:1,minWidth:190}}),
+            React.createElement('input',{value:alias.telephone,onChange:e=>setAlias(a=>({...a,telephone:e.target.value})),placeholder:'06 24 08 19 10 (= WhatsApp)',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,width:150}}),
+            React.createElement('input',{value:alias.linkedin_url,onChange:e=>setAlias(a=>({...a,linkedin_url:e.target.value})),placeholder:'https://linkedin.com/in/…',style:{border:'1px solid '+C.linen,borderRadius:7,padding:'8px 10px',fontFamily:SS,fontSize:12,flex:1,minWidth:200}}),
             React.createElement('button',{onClick:sauverAlias,style:{background:'#1A1715',color:'#fff',border:'none',borderRadius:7,padding:'8px 14px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'Enregistrer'),
             React.createElement('button',{onClick:()=>setAliasEdit(false),style:{background:'transparent',color:C.stone,border:'1px solid '+C.linen,borderRadius:7,padding:'8px 12px',fontFamily:SS,fontSize:11.5,cursor:'pointer'}},'Annuler'))
         : React.createElement('button',{onClick:()=>setAliasEdit(true),style:{flexShrink:0,background:alias.from_alias?'transparent':'#1A1715',color:alias.from_alias?C.stone:'#fff',border:alias.from_alias?('1px solid '+C.linen):'none',borderRadius:8,padding:'10px 16px',fontFamily:SS,fontSize:11.5,fontWeight:800,cursor:'pointer'}},alias.from_alias?'Modifier':'Définir mon adresse'),
@@ -8376,6 +8388,100 @@ const OqInbox=({mob,C,SS,SF,userEmail})=>{
                 envoi?'Envoi en cours…':('Répondre par '+cf.ico+' '+cf.label+(dr==='linkedin'?' (copie + LinkedIn)':' — depuis votre compte')));})())
         )
   );
+};
+/* ══ ADMIN → MESSAGES ══════════════════════════════════════════════════
+   Édition des textes de campagne (table oq_modeles). Le worker les relit à
+   chaque passage : une modification est donc active en moins de 5 minutes,
+   sans redéploiement. L'aperçu montre le rendu réel, variables remplacées. */
+const OQ_CANAUX_MOD=[
+  {canal:'email',      etape:1, titre:'Email — 1er contact',   aide:'Part immédiatement quand le prospect est trouvé.'},
+  {canal:'email',      etape:2, titre:'Email — relance J+3',   aide:'Uniquement si le prospect n’a pas répondu.'},
+  {canal:'email',      etape:3, titre:'Email — relance J+7',   aide:'Dernier message, ton « je vous laisse tranquille ».'},
+  {canal:'whatsapp',   etape:1, titre:'WhatsApp — J+1',        aide:'Court et direct. Les emojis passent bien ici.'},
+  {canal:'linkedin',   etape:1, titre:'LinkedIn — J+2',        aide:'Copié dans le presse-papier au clic du commercial.'},
+  {canal:'formulaire', etape:1, titre:'Formulaire de contact', aide:'Envoyé via le formulaire du site du prospect.'},
+  {canal:'sms',        etape:1, titre:'SMS (désactivé)',       aide:'Payant — inactif tant que sms_actif = false.'},
+];
+const OQ_VARS=[
+  {k:'{prenom}',     d:'Prénom du dirigeant — vide si inconnu'},
+  {k:'{entreprise}', d:'Raison sociale'},
+  {k:'{ville}',      d:'Commune du siège'},
+  {k:'{accroche}',   d:'Phrase personnalisée sur le signal détecté'},
+];
+const AdminMessages=()=>{
+  const [mods,setMods]=React.useState({});
+  const [etat,setEtat]=React.useState('chargement');
+  const [ouvert,setOuvert]=React.useState('email:1');
+  const [enreg,setEnreg]=React.useState('');
+  React.useEffect(()=>{
+    (async()=>{
+      if(!supabaseClient){setEtat('hors-ligne');return;}
+      try{
+        const {data,error}=await supabaseClient.from('oq_modeles').select('canal,etape,sujet,corps,actif');
+        if(error)throw error;
+        const m={};(data||[]).forEach(r=>{m[r.canal+':'+r.etape]={sujet:r.sujet||'',corps:r.corps||'',actif:r.actif!==false};});
+        setMods(m);setEtat((data||[]).length?'ok':'vide');
+      }catch(e){setEtat('erreur:'+String(e&&e.message||e));}
+    })();
+  },[]);
+  const maj=(k,champ,v)=>setMods(m=>({...m,[k]:{...(m[k]||{sujet:'',corps:'',actif:true}),[champ]:v}}));
+  const sauver=async(c)=>{
+    const k=c.canal+':'+c.etape,m=mods[k]||{sujet:'',corps:'',actif:true};
+    if(!String(m.corps||'').trim()){alert('⚠️ Le corps du message ne peut pas être vide.');return;}
+    setEnreg(k);
+    try{
+      const {error}=await supabaseClient.from('oq_modeles').upsert({
+        canal:c.canal,etape:c.etape,sujet:m.sujet||'',corps:m.corps,actif:m.actif!==false,
+        maj_le:new Date().toISOString()
+      },{onConflict:'canal,etape'});
+      if(error)throw error;
+      setEnreg('');
+      alert('✅ Modèle enregistré.\n\nIl sera utilisé par le moteur au prochain passage (moins de 5 minutes). Les messages déjà programmés gardent leur ancien texte.');
+    }catch(e){setEnreg('');alert('⚠️ Enregistrement impossible : '+String(e&&e.message||e)+'\n\nAvez-vous exécuté oniq-modeles.sql ?');}
+  };
+  /* Aperçu : mêmes règles que le worker (variables + ponctuation recollée) */
+  const apercu=(txt)=>String(txt||'')
+    .replace(/\{prenom\}/g,'Marie').replace(/\{entreprise\}/g,'Dupont & Fils')
+    .replace(/\{ville\}/g,'Valence')
+    .replace(/\{accroche\}/g,'J’ai vu que Dupont & Fils est en forte croissance — c’est souvent là que les process manuels commencent à coincer.\n\n')
+    .replace(/[ \t]+([,.!?])/g,'$1').replace(/[ \t]{2,}/g,' ');
+  const S={fontFamily:"'DM Sans',system-ui,sans-serif"};
+  return React.createElement('div',{style:{padding:'0 0 40px'}},
+    React.createElement('h1',{style:{...S,fontSize:26,fontWeight:800,margin:'0 0 6px',color:'#1A1715'}},'Messages de campagne'),
+    React.createElement('p',{style:{...S,fontSize:13,color:'#7A6E63',margin:'0 0 20px',lineHeight:1.55,maxWidth:720}},
+      'Ce sont les textes réellement envoyés à vos prospects. Modifiez-les, enregistrez : le moteur les reprend au passage suivant, sans redéploiement. Testez sur le 1er email — c’est lui qui décide de tout.'),
+    etat==='chargement'&&React.createElement('div',{style:{...S,fontSize:13,color:'#7A6E63'}},'Chargement…'),
+    etat==='vide'&&React.createElement('div',{style:{...S,fontSize:12.5,background:'rgba(224,162,60,0.12)',border:'1px solid rgba(224,162,60,0.4)',borderRadius:10,padding:'12px 15px',marginBottom:18,lineHeight:1.5}},
+      '⚠️ Aucun modèle en base. Exécutez oniq-modeles.sql dans Supabase → SQL Editor. En attendant, le moteur utilise les textes de secours inscrits dans son code — rien n’est bloqué.'),
+    String(etat).indexOf('erreur')===0&&React.createElement('div',{style:{...S,fontSize:12.5,background:'rgba(180,60,60,0.10)',border:'1px solid rgba(180,60,60,0.35)',borderRadius:10,padding:'12px 15px',marginBottom:18}},'⚠️ '+etat),
+    /* Variables disponibles */
+    React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:20}},
+      OQ_VARS.map(v=>React.createElement('span',{key:v.k,title:v.d,style:{...S,fontSize:11,background:'#F4EFE8',border:'1px solid #E4DCD1',borderRadius:20,padding:'5px 11px',color:'#5A5048'}},
+        React.createElement('code',{style:{fontWeight:700}},v.k),' — ',v.d))),
+    OQ_CANAUX_MOD.map(c=>{
+      const k=c.canal+':'+c.etape,m=mods[k]||{sujet:'',corps:'',actif:true},open=ouvert===k;
+      return React.createElement('div',{key:k,style:{border:'1px solid #E4DCD1',borderRadius:12,marginBottom:10,background:'#fff',overflow:'hidden'}},
+        React.createElement('button',{onClick:()=>setOuvert(open?'':k),style:{...S,width:'100%',textAlign:'left',background:open?'#FBF8F4':'transparent',border:'none',padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:10}},
+          React.createElement('span',{style:{fontSize:13,fontWeight:800,color:'#1A1715',flex:1}},c.titre),
+          m.actif===false&&React.createElement('span',{style:{fontSize:10,background:'#EEE',borderRadius:6,padding:'3px 7px',color:'#777'}},'inactif'),
+          React.createElement('span',{style:{fontSize:11,color:'#9A8F84'}},open?'▲':'▼')),
+        open&&React.createElement('div',{style:{padding:'0 16px 16px'}},
+          React.createElement('div',{style:{...S,fontSize:11.5,color:'#7A6E63',marginBottom:12}},c.aide),
+          c.canal==='email'||c.canal==='formulaire'?React.createElement('div',{style:{marginBottom:10}},
+            React.createElement('label',{style:{...S,fontSize:11,fontWeight:700,color:'#5A5048',display:'block',marginBottom:4}},'Objet'),
+            React.createElement('input',{value:m.sujet,onChange:e=>maj(k,'sujet',e.target.value),style:{...S,width:'100%',border:'1px solid #E4DCD1',borderRadius:8,padding:'9px 11px',fontSize:12.5,boxSizing:'border-box'}})):null,
+          React.createElement('label',{style:{...S,fontSize:11,fontWeight:700,color:'#5A5048',display:'block',marginBottom:4}},'Message'),
+          React.createElement('textarea',{value:m.corps,onChange:e=>maj(k,'corps',e.target.value),rows:c.canal==='email'?14:7,
+            style:{...S,width:'100%',border:'1px solid #E4DCD1',borderRadius:8,padding:'10px 12px',fontSize:12.5,lineHeight:1.55,resize:'vertical',boxSizing:'border-box',fontFamily:'ui-monospace,Menlo,monospace'}}),
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',marginTop:10}},
+            React.createElement('button',{onClick:()=>sauver(c),disabled:enreg===k,style:{...S,background:'#1A1715',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:12,fontWeight:800,cursor:'pointer',opacity:enreg===k?0.5:1}},enreg===k?'Enregistrement…':'Enregistrer'),
+            React.createElement('label',{style:{...S,fontSize:11.5,color:'#5A5048',display:'flex',alignItems:'center',gap:6,cursor:'pointer'}},
+              React.createElement('input',{type:'checkbox',checked:m.actif!==false,onChange:e=>maj(k,'actif',e.target.checked)}),'Actif')),
+          React.createElement('div',{style:{marginTop:14,background:'#FBF8F4',border:'1px solid #EFE7DC',borderRadius:8,padding:'12px 14px'}},
+            React.createElement('div',{style:{...S,fontSize:10.5,fontWeight:800,color:'#9A8F84',letterSpacing:'0.06em',marginBottom:6}},'APERÇU RÉEL'),
+            (c.canal==='email'||c.canal==='formulaire')&&React.createElement('div',{style:{...S,fontSize:12,fontWeight:700,color:'#1A1715',marginBottom:6}},'Objet : '+apercu(m.sujet)),
+            React.createElement('div',{style:{...S,fontSize:12,color:'#3A342E',whiteSpace:'pre-wrap',lineHeight:1.55}},apercu(m.corps)))));
+    }));
 };
 const AdminDemandes=()=>{
   const [rows,setRows]=React.useState(null);
@@ -10083,6 +10189,7 @@ function getNavs(t){
     ADMIN:[
       {id:"a-dashboard",  label:t('dashboard'),    g:"layout"},
       {id:"a-demandes",   label:'Demandes sur mesure', g:"keys"},
+      {id:"a-messages",   label:'Messages campagne', g:"chat"},
       {id:"a-clients",    label:t('clients'),      g:"users"},
       {id:"a-software",   label:t('software'),     g:"apps"},
       {id:"a-devis",      label:t('quotes'),       g:"doc"},
@@ -10109,7 +10216,7 @@ const COMMERCIAL_NAV=[{id:"c-market",label:"Marketplace",g:"store"},{id:"co-crm"
 const SUPPORT_NAV=[{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
 const CLIENT_PRO_NAV=[{id:'c-espace',label:'Mon espace',g:'user'},{id:'c-parrainage',label:'Parrainage',g:'gift'}];
 const CLIENT_HUB_NAV=[{id:'c-hub',label:'Nos logiciels',g:'cube'}];
-const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-demandes",label:"Demandes sur mesure",g:"keys"},{id:"a-clients",label:"Clients",g:"users"},{id:"a-software",label:"Logiciels",g:"apps"},{id:"a-devis",label:"Devis",g:"doc"},{id:"a-factures",label:"Factures",g:"receipt"},{id:"a-referrals",label:"Parrainage",g:"gift"},{id:"a-codes",label:"Codes d'essai",g:"keys"},{id:"a-commercial",label:"Commercial",g:"crm"},{id:"a-validations",label:"Validations",g:"check"},{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
+const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-demandes",label:"Demandes sur mesure",g:"keys"},{id:"a-messages",label:"Messages campagne",g:"chat"},{id:"a-clients",label:"Clients",g:"users"},{id:"a-software",label:"Logiciels",g:"apps"},{id:"a-devis",label:"Devis",g:"doc"},{id:"a-factures",label:"Factures",g:"receipt"},{id:"a-referrals",label:"Parrainage",g:"gift"},{id:"a-codes",label:"Codes d'essai",g:"keys"},{id:"a-commercial",label:"Commercial",g:"crm"},{id:"a-validations",label:"Validations",g:"check"},{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
 const LOCKED_PRO=[{id:'c-espace',label:'Mon espace',g:'user',desc:'Gérez vos abonnements'},{id:'c-parrainage',label:'Parrainage',g:'gift',desc:'20% 1er mois'}];
 const LOCKED_HUB=[{id:'c-hub',label:'Nos logiciels',g:'cube',desc:"Accédez aux logiciels"}];
 
@@ -13423,6 +13530,7 @@ if(view==='landing'){
               <div style={{maxWidth:"100%",margin:"0 auto"}}>
                 {view==="a-dashboard"&&<AdminDash users={users} software={software} devis={devis} setView={setView}/>}
                 {view==="a-demandes"&&<AdminDemandes/>}
+                {view==="a-messages"&&<AdminMessages/>}
                 {view==="a-clients"&&<AdminClients users={users} setUsers={setUsers} software={software} setView={setView} setSelClient={setSelClient}/>}
                 {view==="a-client-detail"&&<AdminClientDetail client={selClient} setClient={setSelClient} users={users} setUsers={setUsers} software={software} setView={setView}/>}
                 {view==="a-software"&&<AdminSoftware software={software} setSoftware={setSoftware}/>}
