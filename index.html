@@ -8204,9 +8204,20 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
         cpt('oq_messages',q=>q.eq('sens','out')),
         cpt('oq_messages',q=>q.eq('sens','in')),
       ]);
+      /* Warm-up : le palier dépend du PREMIER jour d'envoi, pas de ce que
+         contient ce navigateur. On lit donc tout l'historique des quotas pour
+         retrouver la vraie date de démarrage de chaque canal — sinon l'écran
+         affiche « jour 1 » indéfiniment alors que le moteur est déjà plus haut. */
       const jour=new Date().toISOString().slice(0,10);
-      const {data:qs}=await supabaseClient.from('oq_quotas').select('canal,envoyes,demarre_le').eq('jour',jour);
-      const parCanal={};(qs||[]).forEach(r=>{parCanal[r.canal]=(parCanal[r.canal]||0)+(r.envoyes||0);});
+      const {data:qs}=await supabaseClient.from('oq_quotas')
+        .select('canal,jour,envoyes,demarre_le').order('jour',{ascending:true}).limit(600);
+      const parCanal={},debut={};
+      (qs||[]).forEach(r=>{
+        if(r.jour===jour)parCanal[r.canal]=(parCanal[r.canal]||0)+(r.envoyes||0);
+        const d0=r.demarre_le||r.jour;
+        if(d0&&(!debut[r.canal]||String(d0)<String(debut[r.canal])))debut[r.canal]=d0;
+      });
+      setSrv({prospects,contactes,repondu,envoyes,recus,quotas:parCanal,debut:debut});
       setSrv({prospects,contactes,repondu,envoyes,recus,quotas:parCanal});
     }catch(e){/* hors-ligne : on garde l'affichage local */}
   },[]);
@@ -8292,8 +8303,11 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
   /* Jauges de warm-up : le compteur du SERVEUR fait foi (c'est lui qui bride
      reellement les envois). Le local ne sert que si Supabase est injoignable. */
   const Q=(c)=>{const q=oqQuota(d,c);
-    if(srv&&srv.quotas&&srv.quotas[c]!=null)return {...q,envoyes:srv.quotas[c]};
-    return q;};
+    if(!srv)return q;
+    const envoyes=srv.quotas&&srv.quotas[c]!=null?srv.quotas[c]:q.envoyes;
+    const d0=srv.debut&&srv.debut[c];
+    const p=d0?oqPlafond(c,d0):{max:q.max,jour:q.jourWarm};
+    return {...q,envoyes:envoyes,max:p.max,jourWarm:p.jour,restant:Math.max(0,p.max-envoyes)};};
   return React.createElement('div',null,
     /* Mon adresse d’expédition — une seule boîte partagée pour toute l’équipe :
        toutes les adresses @oniq.online sont routées vers elle, et l’envoi passe
@@ -8388,6 +8402,101 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
 };
 
 /* ═══ ÉCRAN INBOX UNIFIÉE — toutes les conversations, tous canaux ═══ */
+/* ══ ONGLET MAIL ═══════════════════════════════════════════════════════
+   Vue manuelle, façon messagerie : TOUS les messages, sortants compris,
+   avec filtres Reçus / Envoyés. L'Inbox, elle, ne garde que ce qui appelle
+   une réponse. Séparer les deux évite de noyer les vraies réponses sous
+   des centaines d'envois automatiques. */
+const OqMail=({mob,C,SS,SF,userEmail})=>{
+  const [msgs,setMsgs]=React.useState(null);
+  const [prospects,setProspects]=React.useState([]);
+  const [filtre,setFiltre]=React.useState('tous');
+  const [sel,setSel]=React.useState(null);
+  const [rep,setRep]=React.useState('');
+  const [envoi,setEnvoi]=React.useState(false);
+  const charge=React.useCallback(async()=>{
+    if(!supabaseClient){setMsgs([]);return;}
+    try{
+      const {data:ms}=await supabaseClient.from('oq_messages')
+        .select('id,prospect_id,canal,sens,sujet,contenu,lu,created_at')
+        .order('created_at',{ascending:false}).limit(500);
+      const ids=[...new Set((ms||[]).map(m=>m.prospect_id).filter(Boolean))];
+      let ps=[];
+      if(ids.length){const {data}=await supabaseClient.from('oq_prospects')
+        .select('id,entreprise,dirigeant,email,whatsapp,statut').in('id',ids);ps=data||[];}
+      setMsgs(ms||[]);setProspects(ps);
+    }catch(e){setMsgs([]);}
+  },[]);
+  React.useEffect(()=>{charge();const t=setInterval(charge,60000);return()=>clearInterval(t);},[charge]);
+  const pById=React.useMemo(()=>{const m={};prospects.forEach(p=>{m[p.id]=p;});return m;},[prospects]);
+  const liste=React.useMemo(()=>(msgs||[]).filter(m=>
+    filtre==='tous'?true:filtre==='recus'?m.sens==='in':m.sens==='out'),[msgs,filtre]);
+  const cur=liste.find(m=>m.id===sel)||liste[0]||null;
+  const curP=cur?pById[cur.prospect_id]:null;
+  /* Fil complet de l'échange avec ce prospect, du plus ancien au plus récent */
+  const fil=React.useMemo(()=>!cur?[]:(msgs||[])
+    .filter(m=>m.prospect_id===cur.prospect_id)
+    .sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at))),[msgs,cur]);
+  const repondre=async()=>{
+    if(!cur||!rep.trim()||envoi)return;
+    setEnvoi(true);
+    try{
+      const r=await fetch('https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniq-inbox?action=repondre',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prospect_id:cur.prospect_id,texte:rep,owner_email:userEmail||''})});
+      const j=await r.json();
+      if(!j.ok)throw new Error(j.error||'envoi impossible');
+      setRep('');await charge();
+    }catch(e){alert('⚠️ '+String(e&&e.message||e));}
+    setEnvoi(false);
+  };
+  const S={fontFamily:SS};
+  const dte=(s)=>{try{return new Date(s).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}};
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12,marginBottom:14}},
+      React.createElement('div',null,
+        React.createElement('div',{style:{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink}},'✉️ Mail'),
+        React.createElement('div',{style:{...S,fontSize:11.5,color:C.stone,marginTop:2}},
+          'Tous vos messages, envoyés comme reçus. Les réponses à traiter sont dans l’Inbox.')),
+      React.createElement('button',{onClick:charge,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 15px',...S,fontSize:11.5,fontWeight:700,cursor:'pointer'}},'↻ Actualiser')),
+    React.createElement('div',{style:{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}},
+      [['tous','Tous'],['recus','📥 Reçus'],['envoyes','📤 Envoyés']].map(([id,lab])=>
+        React.createElement('button',{key:id,onClick:()=>{setFiltre(id);setSel(null);},style:{background:filtre===id?C.ink:'transparent',color:filtre===id?'#fff':C.stone,border:'1px solid '+(filtre===id?C.ink:C.linen),borderRadius:20,padding:'6px 14px',...S,fontSize:11.5,fontWeight:700,cursor:'pointer'}},
+          lab+((msgs||[]).filter(m=>id==='tous'?true:id==='recus'?m.sens==='in':m.sens==='out').length?' ('+(msgs||[]).filter(m=>id==='tous'?true:id==='recus'?m.sens==='in':m.sens==='out').length+')':'')))),
+    msgs===null
+      ? React.createElement('div',{style:{...S,fontSize:12.5,color:C.stone,padding:30,textAlign:'center'}},'Chargement…')
+      : liste.length===0
+      ? React.createElement('div',{style:{background:C.paper,border:'1px solid '+C.linen,borderRadius:12,padding:34,textAlign:'center',...S,fontSize:12.5,color:C.stone}},'Aucun message dans cette vue.')
+      : React.createElement('div',{style:{display:'grid',gridTemplateColumns:mob?'1fr':'330px 1fr',gap:14,alignItems:'start'}},
+          /* Liste */
+          React.createElement('div',{style:{border:'1px solid '+C.linen,borderRadius:12,overflow:'hidden',background:'#fff',maxHeight:560,overflowY:'auto'}},
+            liste.slice(0,200).map(m=>{
+              const p=pById[m.prospect_id]||{},actif=cur&&cur.id===m.id;
+              return React.createElement('div',{key:m.id,onClick:()=>setSel(m.id),style:{padding:'11px 13px',borderBottom:'1px solid '+C.linen,cursor:'pointer',background:actif?'#FBF8F4':'transparent'}},
+                React.createElement('div',{style:{display:'flex',justifyContent:'space-between',gap:8,alignItems:'baseline'}},
+                  React.createElement('span',{style:{...S,fontSize:12.5,fontWeight:m.sens==='in'&&!m.lu?800:600,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                    (m.sens==='in'?'↩ ':'→ ')+(p.entreprise||'—')),
+                  React.createElement('span',{style:{...S,fontSize:9.5,color:C.stone,flexShrink:0}},dte(m.created_at))),
+                React.createElement('div',{style:{...S,fontSize:10.5,color:C.stone,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},
+                  (m.sujet||m.canal)+' · '+String(m.contenu||'').slice(0,60)));
+            })),
+          /* Fil de la conversation */
+          React.createElement('div',{style:{border:'1px solid '+C.linen,borderRadius:12,background:'#fff',padding:16}},
+            curP&&React.createElement('div',{style:{borderBottom:'1px solid '+C.linen,paddingBottom:10,marginBottom:12}},
+              React.createElement('div',{style:{fontFamily:SF,fontSize:16,fontWeight:700,color:C.ink}},curP.entreprise),
+              React.createElement('div',{style:{...S,fontSize:11,color:C.stone,marginTop:2}},
+                (curP.dirigeant?curP.dirigeant+' · ':'')+(curP.email||curP.whatsapp||''))),
+            React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10,maxHeight:380,overflowY:'auto'}},
+              fil.map(m=>React.createElement('div',{key:m.id,style:{alignSelf:m.sens==='in'?'flex-start':'flex-end',maxWidth:'85%',background:m.sens==='in'?'#F4EFE8':C.ink,color:m.sens==='in'?C.ink:'#fff',borderRadius:10,padding:'9px 12px'}},
+                m.sujet&&React.createElement('div',{style:{...S,fontSize:10.5,fontWeight:800,opacity:0.75,marginBottom:3}},m.sujet),
+                React.createElement('div',{style:{...S,fontSize:12,whiteSpace:'pre-wrap',lineHeight:1.5}},m.contenu||''),
+                React.createElement('div',{style:{...S,fontSize:9,opacity:0.6,marginTop:4}},m.canal+' · '+dte(m.created_at))))),
+            React.createElement('div',{style:{marginTop:12,borderTop:'1px solid '+C.linen,paddingTop:12}},
+              React.createElement('textarea',{value:rep,onChange:e=>setRep(e.target.value),rows:4,placeholder:'Votre réponse…',
+                style:{width:'100%',border:'1px solid '+C.linen,borderRadius:8,padding:'9px 11px',...S,fontSize:12.5,resize:'vertical',boxSizing:'border-box'}}),
+              React.createElement('button',{onClick:repondre,disabled:envoi||!rep.trim(),style:{marginTop:8,background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',...S,fontSize:12,fontWeight:800,cursor:'pointer',opacity:(envoi||!rep.trim())?0.45:1}},envoi?'Envoi…':'Envoyer'),
+              React.createElement('span',{style:{...S,fontSize:10.5,color:C.stone,marginLeft:10}},'Part depuis votre adresse pro, dans le fil d’origine.')))));
+};
 const OqInbox=({mob,C,SS,SF,userEmail})=>{
   const [d,setD]=React.useState(oqLoad());
   const [sel,setSel]=React.useState(null);
@@ -8424,7 +8533,12 @@ const OqInbox=({mob,C,SS,SF,userEmail})=>{
       if(m.sens==='in'&&!m.lu)map[m.prospect_id].nonLus++;
     });
     return Object.values(map).map(c=>({...c,prospect:(source.prospects||[]).find(p=>p.id===c.prospect_id)}))
-      .filter(c=>c.prospect).sort((a,b)=>(b.nonLus-a.nonLus)||String(b.dernier).localeCompare(String(a.dernier)));
+      .filter(c=>c.prospect)
+      /* L'Inbox ne montre QUE les prospects qui ont repondu. Nos propres envois
+         ne sont pas des conversations : ils vivent dans l'onglet Mail. Ici,
+         chaque ligne appelle une reponse du commercial. */
+      .filter(c=>c.msgs.some(m=>m.sens==='in'))
+      .sort((a,b)=>(b.nonLus-a.nonLus)||String(b.dernier).localeCompare(String(a.dernier)));
   },[d,srv]);
   const cur=convs.find(c=>c.prospect_id===sel)||convs[0];
   /* Répondre SANS quitter le CRM : part par le bon canal, depuis le compte
@@ -11704,8 +11818,8 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
       React.createElement(TabBtn,{id:'prospection',icon:'🔍',label:'Campagne automatique'}),
       React.createElement(TabBtn,{id:'campagnes',icon:'🚀',label:'Campagnes'}),
       React.createElement(TabBtn,{id:'inbox',icon:'📥',label:'Inbox'}),
+      React.createElement(TabBtn,{id:'mail',icon:'✉️',label:'Mail'}),
       React.createElement(TabBtn,{id:'ressources',icon:'\uD83C\uDFA8',label:'Ressources'}),
-      React.createElement(TabBtn,{id:'relances',icon:'🤖',label:'Relances IA'}),
       React.createElement(TabBtn,{id:'mes_commissions',icon:'💰',label:'Mes commissions'}),
       React.createElement(TabBtn,{id:'leaderboard',icon:'🏆',label:'Leaderboard'}),
       React.createElement(TabBtn,{id:'commerciaux',icon:'👥',label:'Équipe'}),
@@ -11843,6 +11957,7 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
     // ═══ TAB PIPELINE (personnelle — admin & commercial voient uniquement LEURS leads) ═══
     tab==='campagnes'&&React.createElement(OqCampagnes,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
     tab==='inbox'&&React.createElement(OqInbox,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
+    tab==='mail'&&React.createElement(OqMail,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
     tab==='ressources'&&React.createElement(RessourcesCommercial,{mob:mob}),
     tab==='pipeline'&&React.createElement('div',null,
       React.createElement('div',{style:{background:'rgba(184,154,90,0.08)',border:'1px solid rgba(184,154,90,0.25)',borderRadius:6,padding:'8px 14px',marginBottom:12,fontFamily:SS,fontSize:11,color:C.stone}},
