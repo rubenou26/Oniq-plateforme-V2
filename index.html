@@ -8271,12 +8271,25 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
   const chargeFile=React.useCallback(async()=>{
     if(!supabaseClient)return;
     try{
-      const {data}=await supabaseClient.from('oq_touches')
-        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects(id,entreprise,dirigeant,ville,email,whatsapp,form_url,linkedin_url,statut)')
+      /* La file « 1 clic » appartient au commercial : ce sont les prospects de
+         SES campagnes. Sans ce filtre, un commercial traite les cartes d'un
+         autre — le travail et le crédit atterrissent au mauvais endroit, et
+         deux personnes peuvent démarcher la même entreprise le même jour. */
+      const moi=String(userEmail||'').toLowerCase();
+      let ids=null;
+      if(!admin&&moi){
+        const {data:cs}=await supabaseClient.from('oq_campagnes').select('id').ilike('owner_email',moi);
+        ids=(cs||[]).map(c=>c.id);
+        if(!ids.length){setSrvFile([]);return;}
+      }
+      let q=supabaseClient.from('oq_touches')
+        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects!inner(id,entreprise,dirigeant,ville,email,whatsapp,form_url,linkedin_url,statut,signaux,score_chaud,ouvertures,fonction,campagne_id)')
         .eq('statut','a_envoyer').order('prevu_le').limit(60);
+      if(ids)q=q.in('oq_prospects.campagne_id',ids);
+      const {data}=await q;
       setSrvFile((data||[]).map(t=>({...t,prospect:t.oq_prospects||null})));
     }catch(e){/* hors-ligne : on garde la file locale */}
-  },[]);
+  },[userEmail,admin]);
   React.useEffect(()=>{chargeFile();
     const t=setInterval(chargeFile,60000);
     return()=>clearInterval(t);},[chargeFile]);
@@ -8713,6 +8726,152 @@ const OQ_VARS=[
   {k:'{ville}',      d:'Commune du siège'},
   {k:'{accroche}',   d:'Phrase personnalisée sur le signal détecté'},
 ];
+/* ══ ADMIN → PILOTAGE PROSPECTION ══════════════════════════════════════
+   Vue d'ensemble de l'équipe : qui prospecte quoi, avec quels résultats.
+   Les commerciaux sont cloisonnés (chacun ne voit que ses campagnes) — c'est
+   ici, et seulement ici, qu'on recoud le tout pour piloter.
+   Les agrégats sont faits côté client : à quelques milliers de lignes c'est
+   instantané, et ça évite d'exposer des vues SQL supplémentaires. */
+const PLAFOND_LIGNES = 8000;
+const AdminProspection = () => {
+  const [etat, setEtat] = React.useState('chargement');
+  const [camps, setCamps] = React.useState([]);
+  const [pros, setPros] = React.useState([]);
+  const [msgs, setMsgs] = React.useState([]);
+  const [tronque, setTronque] = React.useState(false);
+
+  const charge = React.useCallback(async () => {
+    if (!supabaseClient) { setEtat('hors-ligne'); return; }
+    try {
+      const [c, p, m] = await Promise.all([
+        supabaseClient.from('oq_campagnes').select('id,nom,secteur,region,statut,owner_email,created_at,total_ajoutes,epuisee').order('created_at', { ascending: false }),
+        supabaseClient.from('oq_prospects').select('id,campagne_id,statut,email,whatsapp,linkedin_url,contacte_le').limit(PLAFOND_LIGNES),
+        supabaseClient.from('oq_messages').select('id,owner_email,sens,auto,canal,created_at').limit(PLAFOND_LIGNES),
+      ]);
+      setCamps(c.data || []); setPros(p.data || []); setMsgs(m.data || []);
+      setTronque((p.data || []).length >= PLAFOND_LIGNES || (m.data || []).length >= PLAFOND_LIGNES);
+      setEtat('ok');
+    } catch (e) { setEtat('erreur : ' + String(e && e.message || e)); }
+  }, []);
+  React.useEffect(() => { charge(); }, [charge]);
+
+  /* Un prospect appartient au commercial via sa campagne ; un message via son
+     owner_email. On croise les deux pour obtenir la ligne de chaque vendeur. */
+  const parCampagne = React.useMemo(() => {
+    const m = {}; camps.forEach(c => { m[c.id] = c; }); return m;
+  }, [camps]);
+
+  const lignes = React.useMemo(() => {
+    const t = {};
+    const ligne = (k) => (t[k] = t[k] || { owner: k, campagnes: 0, actives: 0, prospects: 0, contactes: 0, repondu: 0, envoyes: 0, recus: 0 });
+    camps.forEach(c => { const l = ligne(c.owner_email || '—'); l.campagnes++; if (c.statut === 'active' && !c.epuisee) l.actives++; });
+    pros.forEach(p => {
+      const c = parCampagne[p.campagne_id]; if (!c) return;
+      const l = ligne(c.owner_email || '—');
+      l.prospects++;
+      if (p.statut !== 'nouveau') l.contactes++;
+      if (['repondu', 'rdv', 'gagne'].includes(p.statut)) l.repondu++;
+    });
+    msgs.forEach(m => {
+      const l = ligne(m.owner_email || '—');
+      if (m.sens === 'out') l.envoyes++; else if (!m.auto) l.recus++;
+    });
+    return Object.values(t).sort((a, b) => b.envoyes - a.envoyes);
+  }, [camps, pros, msgs, parCampagne]);
+
+  const total = React.useMemo(() => lignes.reduce((a, l) => ({
+    campagnes: a.campagnes + l.campagnes, actives: a.actives + l.actives, prospects: a.prospects + l.prospects,
+    contactes: a.contactes + l.contactes, envoyes: a.envoyes + l.envoyes, recus: a.recus + l.recus,
+  }), { campagnes: 0, actives: 0, prospects: 0, contactes: 0, envoyes: 0, recus: 0 }), [lignes]);
+
+  const basculer = async (c) => {
+    const neuf = c.statut === 'active' ? 'pause' : 'active';
+    try {
+      const { error } = await supabaseClient.from('oq_campagnes').update({ statut: neuf }).eq('id', c.id);
+      if (error) throw error;
+      setCamps(cs => cs.map(x => x.id === c.id ? { ...x, statut: neuf } : x));
+    } catch (e) { alert('⚠️ ' + String(e && e.message || e)); }
+  };
+
+  const S = { fontFamily: "'DM Sans',system-ui,sans-serif" };
+  const pct = (n, d) => d ? Math.round(1000 * n / d) / 10 : 0;
+  const dte = (s) => { try { return new Date(s).toLocaleDateString('fr-FR'); } catch (e) { return ''; } };
+  const cell = { padding: '9px 11px', borderBottom: '1px solid #EDE6DC', fontSize: 12.5, ...S };
+  const head = { ...cell, fontSize: 10, fontWeight: 800, letterSpacing: '0.07em', color: '#9A8F84', textTransform: 'uppercase', borderBottom: '1px solid #E4DCD1' };
+
+  return React.createElement('div', { style: { padding: '0 0 40px' } },
+    React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 6 } },
+      React.createElement('div', null,
+        React.createElement('h1', { style: { ...S, fontSize: 26, fontWeight: 800, margin: 0, color: '#1A1715' } }, 'Pilotage prospection'),
+        React.createElement('p', { style: { ...S, fontSize: 13, color: '#7A6E63', margin: '6px 0 0', maxWidth: 720, lineHeight: 1.55 } },
+          'Chaque commercial ne voit que ses propres campagnes. Cette page est la seule vue d’ensemble de l’équipe.')),
+      React.createElement('button', { onClick: charge, style: { ...S, background: '#1A1715', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' } }, '↻ Actualiser')),
+
+    etat === 'chargement' && React.createElement('div', { style: { ...S, fontSize: 13, color: '#7A6E63', padding: 24 } }, 'Chargement…'),
+    String(etat).indexOf('erreur') === 0 && React.createElement('div', { style: { ...S, fontSize: 12.5, background: 'rgba(180,60,60,0.10)', border: '1px solid rgba(180,60,60,0.35)', borderRadius: 10, padding: '12px 15px', margin: '16px 0' } }, '⚠️ ' + etat),
+    tronque && React.createElement('div', { style: { ...S, fontSize: 11.5, background: 'rgba(224,162,60,0.12)', border: '1px solid rgba(224,162,60,0.4)', borderRadius: 10, padding: '10px 14px', margin: '16px 0' } },
+      '⚠️ Plus de ' + PLAFOND_LIGNES.toLocaleString('fr-FR') + ' lignes : les totaux ci-dessous sont partiels.'),
+
+    etat === 'ok' && React.createElement('div', null,
+      /* Bandeau global */
+      React.createElement('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, margin: '20px 0 24px' } },
+        [['Campagnes actives', total.actives + ' / ' + total.campagnes, '#2D5687'],
+        ['Prospects', total.prospects, '#5A5048'],
+        ['Contactés', total.contactes, '#B0873A'],
+        ['Messages envoyés', total.envoyes, '#8C8070'],
+        ['Réponses', total.recus, '#4A7C59'],
+        ['Taux de réponse', pct(total.recus, total.contactes) + ' %', '#4A7C59']].map(([l, v, col], i) =>
+          React.createElement('div', { key: i, style: { background: '#fff', border: '1px solid #E4DCD1', borderRadius: 10, padding: '13px 15px' } },
+            React.createElement('div', { style: { ...S, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: '#9A8F84' } }, l),
+            React.createElement('div', { style: { ...S, fontSize: 23, fontWeight: 800, color: col, marginTop: 3 } }, v)))),
+
+      /* Par commercial */
+      React.createElement('h2', { style: { ...S, fontSize: 16, fontWeight: 800, color: '#1A1715', margin: '0 0 10px' } }, 'Par commercial'),
+      React.createElement('div', { style: { overflowX: 'auto', border: '1px solid #E4DCD1', borderRadius: 12, background: '#fff', marginBottom: 28 } },
+        React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', minWidth: 700 } },
+          React.createElement('thead', null, React.createElement('tr', null,
+            ['Commercial', 'Campagnes', 'Prospects', 'Contactés', 'Envoyés', 'Réponses', 'Taux'].map((h, i) =>
+              React.createElement('th', { key: i, style: { ...head, textAlign: i ? 'right' : 'left' } }, h)))),
+          React.createElement('tbody', null,
+            lignes.length === 0
+              ? React.createElement('tr', null, React.createElement('td', { colSpan: 7, style: { ...cell, textAlign: 'center', color: '#9A8F84' } }, 'Aucune campagne pour le moment.'))
+              : lignes.map((l, i) => React.createElement('tr', { key: i },
+                React.createElement('td', { style: { ...cell, fontWeight: 700 } }, l.owner),
+                React.createElement('td', { style: { ...cell, textAlign: 'right' } }, l.actives + ' / ' + l.campagnes),
+                React.createElement('td', { style: { ...cell, textAlign: 'right' } }, l.prospects),
+                React.createElement('td', { style: { ...cell, textAlign: 'right' } }, l.contactes),
+                React.createElement('td', { style: { ...cell, textAlign: 'right' } }, l.envoyes),
+                React.createElement('td', { style: { ...cell, textAlign: 'right', fontWeight: 700, color: l.recus ? '#4A7C59' : '#9A8F84' } }, l.recus),
+                React.createElement('td', { style: { ...cell, textAlign: 'right' } }, pct(l.recus, l.contactes) + ' %')))))),
+
+      /* Campagnes */
+      React.createElement('h2', { style: { ...S, fontSize: 16, fontWeight: 800, color: '#1A1715', margin: '0 0 10px' } }, 'Toutes les campagnes'),
+      React.createElement('div', { style: { overflowX: 'auto', border: '1px solid #E4DCD1', borderRadius: 12, background: '#fff' } },
+        React.createElement('table', { style: { width: '100%', borderCollapse: 'collapse', minWidth: 820 } },
+          React.createElement('thead', null, React.createElement('tr', null,
+            ['Campagne', 'Commercial', 'Créée', 'Prospects', 'Contactés', 'Statut', ''].map((h, i) =>
+              React.createElement('th', { key: i, style: { ...head, textAlign: (i >= 3 && i <= 4) ? 'right' : 'left' } }, h)))),
+          React.createElement('tbody', null,
+            camps.length === 0
+              ? React.createElement('tr', null, React.createElement('td', { colSpan: 7, style: { ...cell, textAlign: 'center', color: '#9A8F84' } }, 'Aucune campagne.'))
+              : camps.map(c => {
+                const mesP = pros.filter(p => p.campagne_id === c.id);
+                const actif = c.statut === 'active' && !c.epuisee;
+                return React.createElement('tr', { key: c.id },
+                  React.createElement('td', { style: { ...cell, fontWeight: 700 } }, c.nom || '—',
+                    React.createElement('div', { style: { ...S, fontSize: 10.5, fontWeight: 400, color: '#9A8F84', marginTop: 2 } }, (c.secteur || 'tous secteurs') + ' · ' + (c.region || 'France'))),
+                  React.createElement('td', { style: cell }, c.owner_email || '—'),
+                  React.createElement('td', { style: cell }, dte(c.created_at)),
+                  React.createElement('td', { style: { ...cell, textAlign: 'right' } }, mesP.length),
+                  React.createElement('td', { style: { ...cell, textAlign: 'right' } }, mesP.filter(p => p.statut !== 'nouveau').length),
+                  React.createElement('td', { style: cell },
+                    React.createElement('span', { style: { ...S, fontSize: 10, fontWeight: 800, borderRadius: 20, padding: '3px 9px', background: actif ? 'rgba(74,124,89,0.14)' : '#F0EBE4', color: actif ? '#3A6347' : '#7A6E63' } },
+                      c.epuisee ? 'épuisée' : actif ? 'active' : 'en pause')),
+                  React.createElement('td', { style: { ...cell, textAlign: 'right' } },
+                    React.createElement('button', { onClick: () => basculer(c), style: { ...S, background: 'transparent', border: '1px solid #E4DCD1', borderRadius: 7, padding: '5px 11px', fontSize: 11, cursor: 'pointer', color: '#5A5048' } },
+                      c.statut === 'active' ? '⏸ Pause' : '▶ Reprendre')));
+              }))))));
+};
 const AdminMessages=()=>{
   const [mods,setMods]=React.useState({});
   const [etat,setEtat]=React.useState('chargement');
@@ -10495,6 +10654,7 @@ function getNavs(t){
       {id:"a-dashboard",  label:t('dashboard'),    g:"layout"},
       {id:"a-demandes",   label:'Demandes sur mesure', g:"keys"},
       {id:"a-messages",   label:'Messages campagne', g:"chat"},
+      {id:"a-pilotage",   label:'Pilotage prospection', g:"crm"},
       {id:"a-clients",    label:t('clients'),      g:"users"},
       {id:"a-software",   label:t('software'),     g:"apps"},
       {id:"a-devis",      label:t('quotes'),       g:"doc"},
@@ -10521,7 +10681,7 @@ const COMMERCIAL_NAV=[{id:"c-market",label:"Marketplace",g:"store"},{id:"co-crm"
 const SUPPORT_NAV=[{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
 const CLIENT_PRO_NAV=[{id:'c-espace',label:'Mon espace',g:'user'},{id:'c-parrainage',label:'Parrainage',g:'gift'}];
 const CLIENT_HUB_NAV=[{id:'c-hub',label:'Nos logiciels',g:'cube'}];
-const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-demandes",label:"Demandes sur mesure",g:"keys"},{id:"a-messages",label:"Messages campagne",g:"chat"},{id:"a-clients",label:"Clients",g:"users"},{id:"a-software",label:"Logiciels",g:"apps"},{id:"a-devis",label:"Devis",g:"doc"},{id:"a-factures",label:"Factures",g:"receipt"},{id:"a-referrals",label:"Parrainage",g:"gift"},{id:"a-codes",label:"Codes d'essai",g:"keys"},{id:"a-commercial",label:"Commercial",g:"crm"},{id:"a-validations",label:"Validations",g:"check"},{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
+const ADMIN_NAV=[{id:"a-dashboard",label:"Dashboard",g:"layout"},{id:"a-demandes",label:"Demandes sur mesure",g:"keys"},{id:"a-messages",label:"Messages campagne",g:"chat"},{id:"a-pilotage",label:"Pilotage prospection",g:"crm"},{id:"a-clients",label:"Clients",g:"users"},{id:"a-software",label:"Logiciels",g:"apps"},{id:"a-devis",label:"Devis",g:"doc"},{id:"a-factures",label:"Factures",g:"receipt"},{id:"a-referrals",label:"Parrainage",g:"gift"},{id:"a-codes",label:"Codes d'essai",g:"keys"},{id:"a-commercial",label:"Commercial",g:"crm"},{id:"a-validations",label:"Validations",g:"check"},{id:"a-support",label:"Support live",g:"chat"},{id:"c-market",label:"Marketplace",g:"store"}];
 const LOCKED_PRO=[{id:'c-espace',label:'Mon espace',g:'user',desc:'Gérez vos abonnements'},{id:'c-parrainage',label:'Parrainage',g:'gift',desc:'20% 1er mois'}];
 const LOCKED_HUB=[{id:'c-hub',label:'Nos logiciels',g:'cube',desc:"Accédez aux logiciels"}];
 
@@ -13837,6 +13997,7 @@ if(view==='landing'){
                 {view==="a-dashboard"&&<AdminDash users={users} software={software} devis={devis} setView={setView}/>}
                 {view==="a-demandes"&&<AdminDemandes/>}
                 {view==="a-messages"&&<AdminMessages/>}
+                {view==="a-pilotage"&&<AdminProspection/>}
                 {view==="a-clients"&&<AdminClients users={users} setUsers={setUsers} software={software} setView={setView} setSelClient={setSelClient}/>}
                 {view==="a-client-detail"&&<AdminClientDetail client={selClient} setClient={setSelClient} users={users} setUsers={setUsers} software={software} setView={setView}/>}
                 {view==="a-software"&&<AdminSoftware software={software} setSoftware={setSoftware}/>}
