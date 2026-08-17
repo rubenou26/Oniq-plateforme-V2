@@ -8103,7 +8103,7 @@ function oqFileDuJour(d){
   });
 }
 /* ═══ ÉCRAN CAMPAGNES — file du jour + warm-up visible ═══ */
-const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
+const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
   /* Boîte d'envoi du commercial : chacun connecte la sienne (1 clic OAuth) →
      quota de warm-up dédié + les réponses arrivent dans SA boîte. */
   const [maBoite,setMaBoite]=React.useState(null);
@@ -8167,6 +8167,19 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
   const sauverAlias=async()=>{
     const adr=String(alias.from_alias||'').trim().toLowerCase();
     if(!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(adr)){alert('⚠️ Adresse invalide.\n\nExemple : joey@oniq.online');return;}
+    /* L'adresse DOIT être @oniq.online : c'est le seul domaine authentifié
+       chez notre routeur d'envoi. Une adresse Gmail ou d'un autre domaine
+       serait refusée au moment de l'envoi — le commercial croirait écrire
+       alors que rien ne partirait. Le préfixe, lui, est libre : le catch-all
+       Cloudflare fait tomber n'importe quelle adresse du domaine dans la
+       boîte, donc il n'y a rien à créer au préalable. */
+    if(!/@oniq\.online$/.test(adr)){
+      alert('⚠️ Votre adresse d’expédition doit se terminer par @oniq.online.\n\n'
+        +'Vous avez saisi : '+adr+'\n\n'
+        +'C’est le seul domaine authentifié pour l’envoi — une autre adresse serait rejetée '
+        +'et vos emails ne partiraient jamais.\n\nExemple : '+(adr.split('@')[0]||'prenom')+'@oniq.online');
+      return;
+    }
     if(!String(alias.from_nom||'').trim()){alert('⚠️ Indiquez votre nom : il apparaît dans la signature de chaque email.');return;}
     /* Le numero saisi sert AUSSI de WhatsApp : c'est le meme. Format international
        sans espaces : 06 24 08 19 10 → 33624081910 */
@@ -8197,12 +8210,23 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
     try{
       const cpt=async(tbl,f)=>{let q=supabaseClient.from(tbl).select('id',{count:'exact',head:true});
         if(f)q=f(q);const{count}=await q;return count||0;};
+      /* Chiffres du commercial, pas de l'équipe : ses prospects sont ceux de
+         SES campagnes, ses messages ceux qu'il possède. L'admin voit tout. */
+      const moi=String(userEmail||'').toLowerCase();
+      let mesCamps=null;
+      if(!admin&&moi){
+        const {data:cs}=await supabaseClient.from('oq_campagnes').select('id').ilike('owner_email',moi);
+        mesCamps=(cs||[]).map(c=>c.id);
+        if(!mesCamps.length)mesCamps=['00000000-0000-0000-0000-000000000000'];  // aucun = zéro résultat
+      }
+      const pf=(q)=>mesCamps?q.in('campagne_id',mesCamps):q;
+      const mf=(q)=>(!admin&&moi)?q.ilike('owner_email',moi):q;
       const [prospects,contactes,repondu,envoyes,recus]=await Promise.all([
-        cpt('oq_prospects'),
-        cpt('oq_prospects',q=>q.neq('statut','nouveau')),
-        cpt('oq_prospects',q=>q.in('statut',['repondu','rdv','gagne'])),
-        cpt('oq_messages',q=>q.eq('sens','out')),
-        cpt('oq_messages',q=>q.eq('sens','in')),
+        cpt('oq_prospects',q=>pf(q)),
+        cpt('oq_prospects',q=>pf(q).neq('statut','nouveau')),
+        cpt('oq_prospects',q=>pf(q).in('statut',['repondu','rdv','gagne'])),
+        cpt('oq_messages',q=>mf(q).eq('sens','out')),
+        cpt('oq_messages',q=>mf(q).eq('sens','in').not('auto','is',true)),
       ]);
       /* Warm-up : le palier dépend du PREMIER jour d'envoi, pas de ce que
          contient ce navigateur. On lit donc tout l'historique des quotas pour
@@ -8217,8 +8241,16 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
         const d0=r.demarre_le||r.jour;
         if(d0&&(!debut[r.canal]||String(d0)<String(debut[r.canal])))debut[r.canal]=d0;
       });
+      /* Filet : si la RLS de oq_quotas masque les lignes du worker (elles
+         appartiennent à la boîte technique), on retrouve la date de démarrage
+         par le PREMIER message sortant de chaque canal — toujours lisible. */
+      if(!Object.keys(debut).length){
+        const {data:prem}=await supabaseClient.from('oq_messages')
+          .select('canal,created_at').eq('sens','out')
+          .order('created_at',{ascending:true}).limit(300);
+        (prem||[]).forEach(m=>{if(!debut[m.canal])debut[m.canal]=String(m.created_at).slice(0,10);});
+      }
       setSrv({prospects,contactes,repondu,envoyes,recus,quotas:parCanal,debut:debut});
-      setSrv({prospects,contactes,repondu,envoyes,recus,quotas:parCanal});
     }catch(e){/* hors-ligne : on garde l'affichage local */}
   },[]);
   React.useEffect(()=>{chargeServeur();
@@ -8407,7 +8439,8 @@ const OqCampagnes=({mob,C,SS,SF,userEmail})=>{
    avec filtres Reçus / Envoyés. L'Inbox, elle, ne garde que ce qui appelle
    une réponse. Séparer les deux évite de noyer les vraies réponses sous
    des centaines d'envois automatiques. */
-const OqMail=({mob,C,SS,SF,userEmail})=>{
+const OqMail=({mob,C,SS,SF,userEmail,admin})=>{
+  const moiMail=String(userEmail||'').toLowerCase();
   const [msgs,setMsgs]=React.useState(null);
   const [prospects,setProspects]=React.useState([]);
   const [filtre,setFiltre]=React.useState('tous');
@@ -8417,9 +8450,13 @@ const OqMail=({mob,C,SS,SF,userEmail})=>{
   const charge=React.useCallback(async()=>{
     if(!supabaseClient){setMsgs([]);return;}
     try{
-      const {data:ms}=await supabaseClient.from('oq_messages')
-        .select('id,prospect_id,canal,sens,sujet,contenu,lu,created_at')
+      /* Chacun son courrier : un commercial ne voit que les messages de SES
+         campagnes. L'admin garde la vue d'ensemble sur toute l'equipe. */
+      let qm=supabaseClient.from('oq_messages')
+        .select('id,prospect_id,canal,sens,sujet,contenu,lu,auto,created_at')
         .order('created_at',{ascending:false}).limit(500);
+      if(!admin&&moiMail)qm=qm.ilike('owner_email',moiMail);
+      const {data:ms}=await qm;
       const ids=[...new Set((ms||[]).map(m=>m.prospect_id).filter(Boolean))];
       let ps=[];
       if(ids.length){const {data}=await supabaseClient.from('oq_prospects')
@@ -8437,6 +8474,25 @@ const OqMail=({mob,C,SS,SF,userEmail})=>{
   const fil=React.useMemo(()=>!cur?[]:(msgs||[])
     .filter(m=>m.prospect_id===cur.prospect_id)
     .sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at))),[msgs,cur]);
+  /* Écrire à quelqu'un hors campagne : un contact rencontré, une
+     recommandation. La conversation rejoint le CRM comme les autres. */
+  const [neuf,setNeuf]=React.useState(null);   // null = fermé
+  const envoyerNeuf=async()=>{
+    if(!neuf||envoi)return;
+    if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(String(neuf.to||'').trim())){alert('⚠️ Adresse destinataire invalide.');return;}
+    if(!String(neuf.texte||'').trim()){alert('⚠️ Le message est vide.');return;}
+    setEnvoi(true);
+    try{
+      const r=await fetch('https://kxdxxhepewziazfnfnkq.supabase.co/functions/v1/oniq-inbox?action=nouveau',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({to:neuf.to,sujet:neuf.sujet,texte:neuf.texte,entreprise:neuf.entreprise,owner_email:userEmail||''})});
+      const j=await r.json();
+      if(!j.ok)throw new Error(j.error||'envoi impossible');
+      setNeuf(null);await charge();
+      alert('✅ Message envoyé à '+neuf.to+'\n\nLa conversation est maintenant dans votre Mail — la réponse y reviendra.');
+    }catch(e){alert('⚠️ '+String(e&&e.message||e));}
+    setEnvoi(false);
+  };
   const repondre=async()=>{
     if(!cur||!rep.trim()||envoi)return;
     setEnvoi(true);
@@ -8458,7 +8514,26 @@ const OqMail=({mob,C,SS,SF,userEmail})=>{
         React.createElement('div',{style:{fontFamily:SF,fontSize:19,fontWeight:700,color:C.ink}},'✉️ Mail'),
         React.createElement('div',{style:{...S,fontSize:11.5,color:C.stone,marginTop:2}},
           'Tous vos messages, envoyés comme reçus. Les réponses à traiter sont dans l’Inbox.')),
-      React.createElement('button',{onClick:charge,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 15px',...S,fontSize:11.5,fontWeight:700,cursor:'pointer'}},'↻ Actualiser')),
+      React.createElement('div',{style:{display:'flex',gap:8,flexShrink:0}},
+        React.createElement('button',{onClick:()=>setNeuf({to:'',sujet:'',texte:'',entreprise:''}),style:{background:'#B0873A',color:'#fff',border:'none',borderRadius:8,padding:'9px 16px',...S,fontSize:11.5,fontWeight:800,cursor:'pointer'}},'✏️ Nouveau message'),
+        React.createElement('button',{onClick:charge,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 15px',...S,fontSize:11.5,fontWeight:700,cursor:'pointer'}},'↻ Actualiser'))),
+    /* Fenêtre de rédaction — volontairement minimale : destinataire, objet,
+       message. L'expéditeur est déjà celui du commercial, rien à choisir. */
+    neuf&&React.createElement('div',{style:{border:'1px solid '+C.linen,borderRadius:12,background:'#fff',padding:16,marginBottom:14}},
+      React.createElement('div',{style:{fontFamily:SF,fontSize:15,fontWeight:700,color:C.ink,marginBottom:10}},'Nouveau message'),
+      React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}},
+        React.createElement('input',{value:neuf.to,onChange:e=>setNeuf(n=>({...n,to:e.target.value})),placeholder:'destinataire@entreprise.fr',
+          style:{flex:1,minWidth:220,border:'1px solid '+C.linen,borderRadius:8,padding:'9px 11px',...S,fontSize:12.5}}),
+        React.createElement('input',{value:neuf.entreprise,onChange:e=>setNeuf(n=>({...n,entreprise:e.target.value})),placeholder:'Entreprise (facultatif)',
+          style:{width:200,border:'1px solid '+C.linen,borderRadius:8,padding:'9px 11px',...S,fontSize:12.5}})),
+      React.createElement('input',{value:neuf.sujet,onChange:e=>setNeuf(n=>({...n,sujet:e.target.value})),placeholder:'Objet',
+        style:{width:'100%',border:'1px solid '+C.linen,borderRadius:8,padding:'9px 11px',...S,fontSize:12.5,boxSizing:'border-box',marginBottom:8}}),
+      React.createElement('textarea',{value:neuf.texte,onChange:e=>setNeuf(n=>({...n,texte:e.target.value})),rows:8,placeholder:'Votre message…',
+        style:{width:'100%',border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',...S,fontSize:12.5,lineHeight:1.55,resize:'vertical',boxSizing:'border-box'}}),
+      React.createElement('div',{style:{display:'flex',gap:8,alignItems:'center',marginTop:10,flexWrap:'wrap'}},
+        React.createElement('button',{onClick:envoyerNeuf,disabled:envoi,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',...S,fontSize:12,fontWeight:800,cursor:'pointer',opacity:envoi?0.45:1}},envoi?'Envoi…':'Envoyer'),
+        React.createElement('button',{onClick:()=>setNeuf(null),style:{background:'transparent',color:C.stone,border:'1px solid '+C.linen,borderRadius:8,padding:'9px 14px',...S,fontSize:12,cursor:'pointer'}},'Annuler'),
+        React.createElement('span',{style:{...S,fontSize:10.5,color:C.stone}},'Part de votre adresse pro · la réponse revient ici.'))),
     React.createElement('div',{style:{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}},
       [['tous','Tous'],['recus','📥 Reçus'],['envoyes','📤 Envoyés']].map(([id,lab])=>
         React.createElement('button',{key:id,onClick:()=>{setFiltre(id);setSel(null);},style:{background:filtre===id?C.ink:'transparent',color:filtre===id?'#fff':C.stone,border:'1px solid '+(filtre===id?C.ink:C.linen),borderRadius:20,padding:'6px 14px',...S,fontSize:11.5,fontWeight:700,cursor:'pointer'}},
@@ -8497,7 +8572,8 @@ const OqMail=({mob,C,SS,SF,userEmail})=>{
               React.createElement('button',{onClick:repondre,disabled:envoi||!rep.trim(),style:{marginTop:8,background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',...S,fontSize:12,fontWeight:800,cursor:'pointer',opacity:(envoi||!rep.trim())?0.45:1}},envoi?'Envoi…':'Envoyer'),
               React.createElement('span',{style:{...S,fontSize:10.5,color:C.stone,marginLeft:10}},'Part depuis votre adresse pro, dans le fil d’origine.')))));
 };
-const OqInbox=({mob,C,SS,SF,userEmail})=>{
+const OqInbox=({mob,C,SS,SF,userEmail,admin})=>{
+  const moiInbox=String(userEmail||'').toLowerCase();
   const [d,setD]=React.useState(oqLoad());
   const [sel,setSel]=React.useState(null);
   const [rep,setRep]=React.useState('');
@@ -8508,9 +8584,12 @@ const OqInbox=({mob,C,SS,SF,userEmail})=>{
   const chargeInbox=React.useCallback(async()=>{
     if(!supabaseClient)return;
     try{
-      const {data:msgs}=await supabaseClient.from('oq_messages')
-        .select('id,prospect_id,canal,sens,sujet,contenu,lu,created_at')
+      /* Chacun son Inbox : seules les reponses aux campagnes du commercial. */
+      let qi=supabaseClient.from('oq_messages')
+        .select('id,prospect_id,canal,sens,sujet,contenu,lu,auto,created_at')
         .order('created_at',{ascending:false}).limit(400);
+      if(!admin&&moiInbox)qi=qi.ilike('owner_email',moiInbox);
+      const {data:msgs}=await qi;
       const ids=[...new Set((msgs||[]).map(m=>m.prospect_id).filter(Boolean))];
       if(!ids.length){setSrv({msgs:[],prospects:[]});return;}
       const {data:ps}=await supabaseClient.from('oq_prospects')
@@ -8537,7 +8616,7 @@ const OqInbox=({mob,C,SS,SF,userEmail})=>{
       /* L'Inbox ne montre QUE les prospects qui ont repondu. Nos propres envois
          ne sont pas des conversations : ils vivent dans l'onglet Mail. Ici,
          chaque ligne appelle une reponse du commercial. */
-      .filter(c=>c.msgs.some(m=>m.sens==='in'))
+      .filter(c=>c.msgs.some(m=>m.sens==='in'&&!m.auto))
       .sort((a,b)=>(b.nonLus-a.nonLus)||String(b.dernier).localeCompare(String(a.dernier)));
   },[d,srv]);
   const cur=convs.find(c=>c.prospect_id===sel)||convs[0];
@@ -11955,9 +12034,9 @@ const logPub=(lead,canal)=>{try{const d={...crm};const l=(d.leads||[]).find(x=>x
     ),
 
     // ═══ TAB PIPELINE (personnelle — admin & commercial voient uniquement LEURS leads) ═══
-    tab==='campagnes'&&React.createElement(OqCampagnes,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
-    tab==='inbox'&&React.createElement(OqInbox,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
-    tab==='mail'&&React.createElement(OqMail,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail}),
+    tab==='campagnes'&&React.createElement(OqCampagnes,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail,admin:currentUserRole==='admin'}),
+    tab==='inbox'&&React.createElement(OqInbox,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail,admin:currentUserRole==='admin'}),
+    tab==='mail'&&React.createElement(OqMail,{mob:mob,C:C,SS:SS,SF:SF,userEmail:currentUserEmail,admin:currentUserRole==='admin'}),
     tab==='ressources'&&React.createElement(RessourcesCommercial,{mob:mob}),
     tab==='pipeline'&&React.createElement('div',null,
       React.createElement('div',{style:{background:'rgba(184,154,90,0.08)',border:'1px solid rgba(184,154,90,0.25)',borderRadius:6,padding:'8px 14px',marginBottom:12,fontFamily:SS,fontSize:11,color:C.stone}},
