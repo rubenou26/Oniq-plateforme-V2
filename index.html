@@ -8367,7 +8367,7 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
             :'Choisissez votre adresse d’expédition'),
         React.createElement('div',{style:{fontFamily:SS,fontSize:10.5,color:C.stone,marginTop:2,lineHeight:1.45}},
           alias.from_alias
-            ?'Quota de warm-up dédié · les réponses reviennent dans l’Inbox du CRM.'
+            ?'Les réponses reviennent dans votre Inbox · le plafond d’envoi est commun à l’équipe.'
             :'Ex : prenom@oniq.online — créée par l’admin, rien d’autre à configurer.')),
       aliasEdit
         ? React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',flexBasis:'100%',marginTop:8}},
@@ -8396,7 +8396,7 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
           React.createElement('div',{style:{height:5,background:'rgba(140,128,112,0.15)',borderRadius:99,overflow:'hidden',margin:'7px 0 6px'}},
             React.createElement('div',{style:{height:'100%',width:Math.min(100,pct)+'%',background:pct>85?'#C0392B':cf.col,transition:'width .3s'}})),
           React.createElement('div',{style:{fontFamily:SS,fontSize:9.5,color:C.stone,lineHeight:1.4}},
-            '🔥 Warm-up jour '+q.jourWarm+' · plafond '+q.max+'/j'),
+            '🔥 Warm-up jour '+q.jourWarm+' · plafond '+q.max+'/j — partagé par l’équipe'),
           React.createElement('div',{style:{fontFamily:SS,fontSize:9,color:C.stone,marginTop:2}},cf.note));
       })),
     /* KPIs */
@@ -8457,6 +8457,10 @@ const OqMail=({mob,C,SS,SF,userEmail,admin})=>{
   const [msgs,setMsgs]=React.useState(null);
   const [prospects,setProspects]=React.useState([]);
   const [filtre,setFiltre]=React.useState('tous');
+  /* Meme l'admin voit d'abord SON courrier : la vue d'equipe a sa place dans
+     Admin -> Pilotage prospection. Sans ca, sa boite melange les echanges de
+     tout le monde et il ne retrouve plus les siens. */
+  const [vue,setVue]=React.useState('moi');
   const [sel,setSel]=React.useState(null);
   const [rep,setRep]=React.useState('');
   const [envoi,setEnvoi]=React.useState(false);
@@ -8468,7 +8472,7 @@ const OqMail=({mob,C,SS,SF,userEmail,admin})=>{
       let qm=supabaseClient.from('oq_messages')
         .select('id,prospect_id,canal,sens,sujet,contenu,lu,auto,created_at')
         .order('created_at',{ascending:false}).limit(500);
-      if(!admin&&moiMail)qm=qm.ilike('owner_email',moiMail);
+      if((!admin||vue==='moi')&&moiMail)qm=qm.ilike('owner_email',moiMail);
       const {data:ms}=await qm;
       const ids=[...new Set((ms||[]).map(m=>m.prospect_id).filter(Boolean))];
       let ps=[];
@@ -8476,7 +8480,7 @@ const OqMail=({mob,C,SS,SF,userEmail,admin})=>{
         .select('id,entreprise,dirigeant,email,whatsapp,statut').in('id',ids);ps=data||[];}
       setMsgs(ms||[]);setProspects(ps);
     }catch(e){setMsgs([]);}
-  },[]);
+  },[moiMail,admin,vue]);
   React.useEffect(()=>{charge();const t=setInterval(charge,60000);return()=>clearInterval(t);},[charge]);
   const pById=React.useMemo(()=>{const m={};prospects.forEach(p=>{m[p.id]=p;});return m;},[prospects]);
   const liste=React.useMemo(()=>(msgs||[]).filter(m=>
@@ -8547,6 +8551,12 @@ const OqMail=({mob,C,SS,SF,userEmail,admin})=>{
         React.createElement('button',{onClick:envoyerNeuf,disabled:envoi,style:{background:C.ink,color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',...S,fontSize:12,fontWeight:800,cursor:'pointer',opacity:envoi?0.45:1}},envoi?'Envoi…':'Envoyer'),
         React.createElement('button',{onClick:()=>setNeuf(null),style:{background:'transparent',color:C.stone,border:'1px solid '+C.linen,borderRadius:8,padding:'9px 14px',...S,fontSize:12,cursor:'pointer'}},'Annuler'),
         React.createElement('span',{style:{...S,fontSize:10.5,color:C.stone}},'Part de votre adresse pro · la réponse revient ici.'))),
+    /* Sélecteur de périmètre — visible uniquement pour l'admin. Un commercial
+       n'a qu'un périmètre possible : le sien. */
+    admin&&React.createElement('div',{style:{display:'flex',gap:7,marginBottom:10,flexWrap:'wrap',alignItems:'center'}},
+      React.createElement('span',{style:{...S,fontSize:10.5,color:C.stone,marginRight:2}},'Périmètre'),
+      [['moi','👤 Mes messages'],['equipe','👥 Toute l’équipe']].map(([id,lab])=>
+        React.createElement('button',{key:id,onClick:()=>{setVue(id);setSel(null);},style:{background:vue===id?'#B0873A':'transparent',color:vue===id?'#fff':C.stone,border:'1px solid '+(vue===id?'#B0873A':C.linen),borderRadius:20,padding:'5px 13px',...S,fontSize:11,fontWeight:700,cursor:'pointer'}},lab))),
     React.createElement('div',{style:{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}},
       [['tous','Tous'],['recus','📥 Reçus'],['envoyes','📤 Envoyés']].map(([id,lab])=>
         React.createElement('button',{key:id,onClick:()=>{setFiltre(id);setSel(null);},style:{background:filtre===id?C.ink:'transparent',color:filtre===id?'#fff':C.stone,border:'1px solid '+(filtre===id?C.ink:C.linen),borderRadius:20,padding:'6px 14px',...S,fontSize:11.5,fontWeight:700,cursor:'pointer'}},
