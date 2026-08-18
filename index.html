@@ -8336,7 +8336,7 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
         if(!ids.length){setSrvFile([]);return;}
       }
       let q=supabaseClient.from('oq_touches')
-        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects!inner(id,entreprise,dirigeant,ville,email,whatsapp,form_url,linkedin_url,statut,signaux,score_chaud,ouvertures,fonction,campagne_id)')
+        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects!inner(id,entreprise,dirigeant,ville,email,whatsapp,wa_verifie,form_url,linkedin_url,statut,signaux,score_chaud,ouvertures,fonction,campagne_id)')
         .eq('statut','a_envoyer').order('prevu_le').limit(60);
       if(ids)q=q.in('oq_prospects.campagne_id',ids);
       const {data}=await q;
@@ -8492,6 +8492,9 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
                   /* Le numéro affiché vient du site de l'entreprise : il arrive
                      qu'il ne soit plus inscrit sur WhatsApp. Un clic le retire,
                      annule les relances de ce canal, et la carte disparaît. */
+                  /* Numéro non confirmé : le commercial doit le savoir AVANT
+                     de cliquer, sinon il découvre l'échec dans WhatsApp. */
+                  (t.canal==='whatsapp'&&p.wa_verifie===false)&&React.createElement('span',{title:'Numéro trouvé sur le site de l’entreprise, mais rien ne prouve qu’il soit inscrit sur WhatsApp.',style:{fontFamily:SS,fontSize:9.5,fontWeight:700,color:'#8A6A3B',background:'rgba(176,135,58,0.14)',border:'1px solid rgba(176,135,58,0.35)',borderRadius:20,padding:'3px 9px',whiteSpace:'nowrap'}},'numéro non confirmé'),
                   (t.canal==='whatsapp')&&React.createElement('button',{onClick:()=>pasSurWhatsApp(t),style:{background:'transparent',color:C.stone,border:'none',fontFamily:SS,fontSize:10.5,cursor:'pointer',textDecoration:'underline'}},'Pas sur WhatsApp'))),
               React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.ink,background:C.paper,border:'1px solid '+C.linen,borderRadius:8,padding:'10px 12px',marginTop:10,whiteSpace:'pre-wrap',maxHeight:96,overflow:'hidden'}},
                 (t.sujet?('Objet : '+t.sujet+'\n'):'')+t.message));
