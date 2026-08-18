@@ -12,6 +12,11 @@ Disallow: /commercial
 Disallow: /support
 Disallow: /api/
 
+# Logiciels embarques : servis dans une iframe depuis la marketplace, jamais
+# destines a etre visites ni indexes directement. Sans cette regle, Google
+# les referencerait comme des pages nues, hors navigation et hors contexte.
+Disallow: /embed/
+
 # Pages publiques explicitement autorisées (redondant avec Allow: / mais
 # explicite pour les crawlers paranoïaques)
 Allow: /marketplace
