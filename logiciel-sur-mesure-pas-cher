@@ -14,39 +14,144 @@
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
 
 <style>
-  :root{--encre:#1A1715;--texte:#2A2520;--gris:#6B6058;--ligne:#E4DCD1;--fond:#FBF8F4;--or:#B0873A;--vert:#4A7C59}
+  /* Direction artistique ONIQ — chocolat & or, titrage sérif éditorial.
+     Aucune police externe : Georgia est présente partout, ce qui évite un
+     aller-retour réseau et garde la page sous 15 Ko. Le poids compte : les
+     Core Web Vitals pèsent dans le classement, et l'accueil fait 6 Mo. */
+  :root{
+    --encre:#17130F; --papier:#FBF7F1; --texte:#332B24; --gris:#7A6E63;
+    --ligne:#E6DCCD; --or:#B0873A; --or-clair:#C9A227; --creme:#F3ECE1;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:#fff;color:var(--texte);font:16px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .wrap{max-width:820px;margin:0 auto;padding:0 20px}
-  header.top{background:var(--encre);color:#fff;padding:14px 0}
-  header.top a{color:#fff;text-decoration:none;font:700 20px/1 Georgia,serif;letter-spacing:.14em}
-  header.top span{color:#C9A227;font-size:11px;letter-spacing:.1em;margin-left:12px}
-  h1{font-size:clamp(28px,5vw,40px);line-height:1.2;margin:36px 0 14px;color:var(--encre)}
-  h2{font-size:clamp(21px,3.4vw,27px);line-height:1.25;margin:44px 0 12px;color:var(--encre)}
-  h3{font-size:18px;margin:26px 0 6px;color:var(--encre)}
-  .chapo{font-size:18px;color:var(--gris)}
-  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:15px}
-  th,td{padding:10px 12px;border-bottom:1px solid var(--ligne);text-align:left;vertical-align:top}
-  th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--gris)}
-  td.num{text-align:right;white-space:nowrap}
-  .tbl{overflow-x:auto}
-  .encadre{background:var(--fond);border:1px solid var(--ligne);border-left:3px solid var(--or);border-radius:10px;padding:16px 18px;margin:22px 0}
-  .cta{background:var(--encre);border-radius:14px;padding:26px;margin:40px 0;color:#fff}
-  .cta h2{color:#fff;margin:0 0 8px}
-  .cta p{color:#D8D0C6;margin:0 0 16px}
-  .btn{display:inline-block;background:var(--or);color:#fff;text-decoration:none;font-weight:700;border-radius:9px;padding:12px 22px;margin-right:10px}
-  .btn.ghost{background:transparent;border:1px solid #6A6058;color:#fff}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--papier);color:var(--texte);
+       font:17px/1.72 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:800px;margin:0 auto;padding:0 22px}
+
+  /* En-tête */
+  header.top{background:var(--encre);padding:16px 0}
+  header.top .wrap{display:flex;align-items:baseline;gap:14px}
+  header.top a{color:#fff;text-decoration:none;font:700 21px/1 Georgia,"Times New Roman",serif;letter-spacing:.16em}
+  header.top span{color:var(--or-clair);font-size:10.5px;letter-spacing:.14em;font-weight:600}
+
+  /* Hero */
+  .hero{background:var(--encre);color:#F5EFE6;padding:54px 0 60px;position:relative}
+  .hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+              background:linear-gradient(90deg,var(--or) 0%,var(--or-clair) 45%,transparent 100%)}
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--or-clair);font-weight:700;margin:0 0 16px}
+  .hero h1{font-family:Georgia,"Times New Roman",serif;font-weight:400;
+           font-size:clamp(31px,5.4vw,50px);line-height:1.12;letter-spacing:-.01em;margin:0 0 18px;color:#fff}
+  .hero h1 em{font-style:normal;color:var(--or-clair)}
+  .chapo{font-size:18px;line-height:1.62;color:#CFC4B6;margin:0;max-width:70ch}
+
+  /* Titres */
+  h2{font-family:Georgia,"Times New Roman",serif;font-weight:400;
+     font-size:clamp(23px,3.6vw,31px);line-height:1.22;margin:54px 0 6px;color:var(--encre)}
+  h2:before{content:"";display:block;width:38px;height:2px;background:var(--or);margin-bottom:14px}
+  h3{font-size:17.5px;font-weight:700;margin:28px 0 6px;color:var(--encre)}
+
+  /* Tableaux */
+  .tbl{overflow-x:auto;margin:22px 0;border:1px solid var(--ligne);border-radius:12px;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:15.5px}
+  th,td{padding:13px 16px;border-bottom:1px solid var(--ligne);text-align:left;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  th{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--gris);
+     font-weight:700;background:var(--creme)}
+  td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  th:last-child,td:last-child{background:rgba(176,135,58,.07)}
+  td:last-child strong{color:var(--or)}
+  td small{color:var(--gris);font-size:13px;line-height:1.45;display:block;margin-top:3px}
+
+  /* Encadré */
+  .encadre{background:#fff;border:1px solid var(--ligne);border-left:3px solid var(--or);
+           border-radius:12px;padding:20px 22px;margin:26px 0}
+  .encadre h3{margin-top:0}
+
+  /* Appel à l'action */
+  .cta{background:var(--encre);border-radius:16px;padding:34px;margin:52px 0;position:relative;overflow:hidden}
+  .cta:before{content:"";position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;
+              background:radial-gradient(circle,rgba(201,162,39,.18),transparent 70%)}
+  .cta h2{color:#fff;margin:0 0 10px;position:relative}
+  .cta h2:before{background:var(--or-clair)}
+  .cta p{color:#CFC4B6;margin:0 0 20px;position:relative}
+  .btn{display:inline-block;background:var(--or);color:#fff;text-decoration:none;font-weight:700;
+       font-size:15px;border-radius:10px;padding:13px 24px;margin:0 10px 10px 0;position:relative;
+       transition:background .15s}
+  .btn:hover{background:var(--or-clair)}
+  .btn.ghost{background:transparent;border:1px solid #574E45;color:#EDE5D9}
+  .btn.ghost:hover{border-color:var(--or-clair);color:#fff}
+
   ul,ol{padding-left:22px}
-  li{margin:7px 0}
-  footer{border-top:1px solid var(--ligne);margin-top:52px;padding:24px 0 44px;font-size:13px;color:var(--gris)}
-  footer a{color:var(--or)}
-  .maj{font-size:13px;color:var(--gris);margin-top:6px}
+  li{margin:9px 0}
+  li strong{color:var(--encre)}
+  .maj{font-size:13.5px;color:var(--gris);margin-top:8px;font-style:italic}
+
+  footer{border-top:1px solid var(--ligne);margin-top:56px;padding:28px 0 52px;font-size:13.5px;color:var(--gris)}
+  footer a{color:var(--or);text-decoration:none}
+  footer strong{color:var(--encre)}
+
+
+  /* ── Révélation au défilement ─────────────────────────────────────── */
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s cubic-bezier(.2,.7,.3,1),transform .6s cubic-bezier(.2,.7,.3,1)}
+  .reveal.vu{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+  /* ── Badge animé du hero ──────────────────────────────────────────── */
+  .badge{display:inline-flex;align-items:baseline;gap:10px;background:rgba(201,162,39,.12);
+         border:1px solid rgba(201,162,39,.35);border-radius:100px;padding:9px 18px;margin:0 0 22px}
+  .badge b{font-family:Georgia,serif;font-size:26px;color:var(--or-clair);font-weight:400;line-height:1}
+  .badge span{font-size:12.5px;color:#CFC4B6;letter-spacing:.02em}
+
+  /* ── Estimateur ───────────────────────────────────────────────────── */
+  .estim{background:#fff;border:1px solid var(--ligne);border-radius:16px;padding:28px;margin:26px 0;
+         box-shadow:0 1px 3px rgba(23,19,15,.04)}
+  .estim h3{margin:0 0 4px;font-size:19px}
+  .estim .aide{font-size:13.5px;color:var(--gris);margin:0 0 22px}
+  .champ{margin-bottom:22px}
+  .champ>label{display:block;font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+               color:var(--gris);font-weight:700;margin-bottom:9px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--ligne);background:transparent;color:var(--texte);border-radius:100px;
+        padding:9px 16px;font:inherit;font-size:14px;cursor:pointer;position:relative;overflow:hidden;
+        transition:border-color .15s,background .15s,color .15s}
+  .chip:hover{border-color:var(--or)}
+  .chip[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff}
+  .chip .onde{position:absolute;border-radius:50%;transform:scale(0);background:rgba(201,162,39,.45);
+              animation:onde .55s ease-out;pointer-events:none}
+  @keyframes onde{to{transform:scale(3);opacity:0}}
+  .curseur{display:flex;align-items:center;gap:14px}
+  .curseur input[type=range]{flex:1;accent-color:var(--or);height:4px}
+  .curseur output{font-variant-numeric:tabular-nums;font-weight:700;min-width:3.4em;text-align:right}
+
+  .resultat{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
+  @media(max-width:560px){.resultat{grid-template-columns:1fr}}
+  .prix{border-radius:12px;padding:18px 20px;border:1px solid var(--ligne)}
+  .prix .lbl{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--gris);font-weight:700}
+  .prix .val{font-family:Georgia,serif;font-size:clamp(26px,4.4vw,34px);line-height:1.15;margin-top:6px;
+             font-variant-numeric:tabular-nums}
+  .prix.agence .val{color:var(--gris);text-decoration:line-through;text-decoration-thickness:1.5px}
+  .prix.oniq{background:var(--encre);border-color:var(--encre)}
+  .prix.oniq .lbl{color:var(--or-clair)}
+  .prix.oniq .val{color:#fff}
+  .prix .note{font-size:12.5px;color:var(--gris);margin-top:7px}
+  .prix.oniq .note{color:#B5A896}
+  .eco{margin-top:16px;font-size:14.5px;color:var(--texte);text-align:center}
+  .eco b{color:var(--or);font-size:17px}
+
+  /* Barre de progression comparative */
+  .barres{margin-top:20px}
+  .barre{display:flex;align-items:center;gap:12px;margin:9px 0;font-size:13px;color:var(--gris)}
+  .barre .piste{flex:1;height:9px;background:var(--creme);border-radius:100px;overflow:hidden}
+  .barre .jauge{height:100%;border-radius:100px;transition:width .7s cubic-bezier(.2,.7,.3,1)}
+  .barre .jauge.a{background:#C6BBAA}
+  .barre .jauge.o{background:linear-gradient(90deg,var(--or),var(--or-clair))}
   @media(prefers-color-scheme:dark){
-    body{background:#141210;color:#E8E2DA}
-    h1,h2,h3{color:#F5F0E8}
-    .encadre{background:#1D1A17;border-color:#332E28}
-    th,td{border-color:#332E28}
-    footer{border-color:#332E28}
+    :root{--papier:#12100D;--texte:#E4DCD0;--gris:#9C9084;--ligne:#2E2822;--creme:#1C1813}
+    .tbl,.encadre,.estim{background:#181410}
+    .chip{color:#E4DCD0}
+    .prix{border-color:#2E2822}
+    h2,h3,li strong,footer strong{color:#F5EFE6}
   }
 </style>
 
@@ -70,15 +175,21 @@
 
 <header class="top"><div class="wrap"><a href="https://www.oniq.online/">ONIQ</a><span>LOGICIELS SUR MESURE</span></div></header>
 
-<main class="wrap">
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Logiciels de gestion sur mesure · Tous secteurs</p>
+    <div class="badge"><b>÷ 4</b><span>le devis d'une agence classique, à qualité égale</span></div>
+    <h1>Logiciel sur mesure pas cher :<br>les prix réels, <em>sans langue de bois</em></h1>
+    <p class="chapo">Beaucoup d'entreprises renoncent au sur-mesure en croyant que c'est réservé aux grands groupes. Voici ce que ça coûte vraiment, pourquoi c'est habituellement si cher, et comment diviser la facture par quatre sans rogner sur la qualité.</p>
+  </div>
+</section>
 
-<h1>Logiciel sur mesure pas cher : les prix réels, sans langue de bois</h1>
-<p class="chapo">Beaucoup d'entreprises renoncent au sur-mesure en croyant que c'est réservé aux grands groupes. Voici ce que ça coûte vraiment, pourquoi c'est habituellement si cher, et comment diviser la facture par quatre sans rogner sur la qualité.</p>
+<main class="wrap">
 
 <h2>Combien coûte un logiciel sur mesure en 2026 ?</h2>
 <p>Les fourchettes ci-dessous correspondent au marché français pour une agence ou une ESN de taille moyenne, et à ce que nous pratiquons à périmètre identique.</p>
 
-<div class="tbl">
+<div class="tbl reveal">
 <table>
   <thead><tr><th>Type de projet</th><th class="num">Agence classique</th><th class="num">Avec nos méthodes</th></tr></thead>
   <tbody>
@@ -91,6 +202,67 @@
 </div>
 <p class="maj">Fourchettes indicatives, hors reprise de données volumineuse et hors interfaçages complexes. Le devis final est ferme et écrit avant tout démarrage.</p>
 
+<h2 id="estimateur">Estimez votre projet en 30 secondes</h2>
+<p>Choisissez ce qui ressemble le plus à votre besoin. L'estimation se met à jour instantanément — et cette page est elle-même un exemple de ce que nous construisons.</p>
+
+<div class="estim reveal">
+  <h3>Estimateur de budget</h3>
+  <p class="aide">Fourchette indicative. Le devis final est ferme et écrit, après une maquette offerte.</p>
+
+  <div class="champ">
+    <label id="l-type">Type de projet</label>
+    <div class="chips" role="group" aria-labelledby="l-type" id="g-type">
+      <button type="button" class="chip" data-v="1" aria-pressed="true">Outil métier simple</button>
+      <button type="button" class="chip" data-v="2" aria-pressed="false">Application de gestion</button>
+      <button type="button" class="chip" data-v="3" aria-pressed="false">ERP métier complet</button>
+    </div>
+  </div>
+
+  <div class="champ">
+    <label id="l-mod">Ce dont vous avez besoin</label>
+    <div class="chips" role="group" aria-labelledby="l-mod" id="g-mod">
+      <button type="button" class="chip" data-k="devis" aria-pressed="true">Devis &amp; factures</button>
+      <button type="button" class="chip" data-k="clients" aria-pressed="false">Clients / CRM</button>
+      <button type="button" class="chip" data-k="planning" aria-pressed="false">Plannings</button>
+      <button type="button" class="chip" data-k="stocks" aria-pressed="false">Stocks</button>
+      <button type="button" class="chip" data-k="prod" aria-pressed="false">Production</button>
+      <button type="button" class="chip" data-k="mobile" aria-pressed="false">Application mobile</button>
+      <button type="button" class="chip" data-k="portail" aria-pressed="false">Portail client</button>
+      <button type="button" class="chip" data-k="interfaces" aria-pressed="false">Interfaçages</button>
+    </div>
+  </div>
+
+  <div class="champ">
+    <label for="users">Nombre d'utilisateurs</label>
+    <div class="curseur">
+      <input type="range" id="users" min="1" max="120" step="1" value="10">
+      <output id="users-out">10</output>
+    </div>
+  </div>
+
+  <div class="resultat" aria-live="polite">
+    <div class="prix agence">
+      <div class="lbl">Agence classique</div>
+      <div class="val" id="p-agence">—</div>
+      <div class="note">Devis moyen du marché français</div>
+    </div>
+    <div class="prix oniq">
+      <div class="lbl">Avec ONIQ</div>
+      <div class="val" id="p-oniq">—</div>
+      <div class="note">Maquette interactive offerte</div>
+    </div>
+  </div>
+
+  <div class="barres" aria-hidden="true">
+    <div class="barre"><span>Agence</span><div class="piste"><div class="jauge a" id="b-agence" style="width:100%"></div></div></div>
+    <div class="barre"><span>ONIQ</span><div class="piste"><div class="jauge o" id="b-oniq" style="width:25%"></div></div></div>
+  </div>
+
+  <p class="eco">Vous économisez <b id="p-eco">—</b> sur ce projet.</p>
+
+  <p style="margin:22px 0 0"><a class="btn" id="cta-estim" href="https://wa.me/33624081910">Recevoir ma maquette offerte</a></p>
+</div>
+
 <h2>Pourquoi un développement sur mesure coûte-t-il habituellement si cher ?</h2>
 <p>Parce qu'on ne facture pas une idée : on facture du <strong>temps</strong>. Et dans un projet classique, la majeure partie de ce temps ne concerne pas votre métier :</p>
 <ol>
@@ -102,7 +274,7 @@
 </ol>
 <p>Ces cinq postes dépassent souvent la moitié d'un devis. Ce sont précisément eux que l'intelligence artificielle absorbe aujourd'hui.</p>
 
-<div class="encadre">
+<div class="encadre reveal">
 <h3 style="margin-top:0">Ce qui change concrètement</h3>
 <p style="margin-bottom:0">Nos méthodes internes s'appuient sur l'IA à chaque étape : analyse du besoin, génération et revue de code, tests automatisés, documentation. Le temps facturé se concentre alors sur ce qui a réellement de la valeur — <strong>comprendre votre métier et concevoir juste</strong>. D'où un devis divisé par quatre, à qualité égale ou supérieure, et une livraison en semaines plutôt qu'en mois.</p>
 </div>
@@ -120,7 +292,7 @@
 
 <h2>Sur mesure ou abonnement SaaS : le vrai calcul</h2>
 <p>Le sur-mesure paraît cher parce qu'on le compare à un abonnement mensuel. Sur cinq ans, pour une équipe de dix personnes :</p>
-<div class="tbl">
+<div class="tbl reveal">
 <table>
   <thead><tr><th></th><th class="num">SaaS à 40 €/utilisateur/mois</th><th class="num">Sur mesure ONIQ</th></tr></thead>
   <tbody>
@@ -142,7 +314,7 @@
   <li><strong>Nommez un décideur unique</strong> — les allers-retours à cinq personnes sont le premier poste de dérive.</li>
 </ul>
 
-<div class="cta">
+<div class="cta reveal">
   <h2>Voyez votre logiciel avant de payer</h2>
   <p>Décrivez votre besoin : nous réalisons la première maquette interactive gratuitement. Vous la manipulez, puis vous décidez.</p>
   <a class="btn" href="https://www.oniq.online/">Demander ma maquette offerte</a>
@@ -168,5 +340,104 @@
   <p>Logiciels de gestion sur mesure, ERP métier et automatisations pour TPE, PME et ETI, tous secteurs.</p>
 </div></footer>
 
+
+<script>
+/* Aucune bibliothèque : la page doit rester sous 20 Ko et s'afficher
+   instantanément — c'est ce qui la fera remonter dans les résultats. */
+(function(){
+  'use strict';
+  var $=function(s){return document.querySelector(s)},
+      $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+
+  /* ── Révélation au défilement ──────────────────────────────────────── */
+  var cibles=$$('.reveal');
+  if('IntersectionObserver' in window && cibles.length){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('vu'); io.unobserve(e.target); } });
+    },{rootMargin:'0px 0px -10% 0px'});
+    cibles.forEach(function(c){io.observe(c)});
+  } else cibles.forEach(function(c){c.classList.add('vu')});
+
+  /* ── Onde au clic sur les puces ────────────────────────────────────── */
+  function onde(btn,ev){
+    var r=btn.getBoundingClientRect(), d=Math.max(r.width,r.height),
+        s=document.createElement('span');
+    s.className='onde';
+    s.style.width=s.style.height=d+'px';
+    s.style.left=((ev.clientX||r.left+r.width/2)-r.left-d/2)+'px';
+    s.style.top =((ev.clientY||r.top +r.height/2)-r.top -d/2)+'px';
+    btn.appendChild(s); setTimeout(function(){s.remove()},560);
+  }
+
+  /* ── Modèle de prix ────────────────────────────────────────────────────
+     Bases alignées sur la grille tarifaire du haut de page. Chaque brique
+     ajoute son coût, et le nombre d'utilisateurs pèse modérément (droits,
+     formation, montée en charge) sans jamais devenir un prix par siège. */
+  var BASE={1:[15000,40000],2:[40000,90000],3:[90000,250000]},
+      MOD ={devis:0,clients:6000,planning:5000,stocks:8000,prod:14000,mobile:16000,portail:9000,interfaces:11000},
+      RATIO=0.25;                                   /* nos méthodes : ÷4 */
+
+  var typ=1, mods={devis:true}, users=10;
+
+  var fmt=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+  function euros(n){return fmt.format(Math.round(n/500)*500)}
+
+  /* Compteur animé : le chiffre glisse au lieu de sauter. */
+  function anime(el,de,vers){
+    var t0=null, d=520;
+    /* Premier affichage : ecriture directe. requestAnimationFrame ne tourne pas
+       dans un onglet d'arriere-plan, et le prix resterait alors vide. */
+    if(!de){ el.textContent=euros(vers); return; }
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=euros(vers);return}
+    function pas(t){
+      if(!t0)t0=t;
+      var p=Math.min(1,(t-t0)/d), e=1-Math.pow(1-p,3);
+      el.textContent=euros(de+(vers-de)*e);
+      if(p<1)requestAnimationFrame(pas);
+    }
+    requestAnimationFrame(pas);
+    /* Filet : si l'animation ne tourne pas (onglet en arriere-plan, economie
+       d'energie), le montant exact est ecrit malgre tout. */
+    setTimeout(function(){ el.textContent=euros(vers); }, d+90);
+  }
+  var precA=0, precO=0;
+
+  function calcule(){
+    var b=BASE[typ], sup=0;
+    for(var k in mods) if(mods[k]) sup+=MOD[k]||0;
+    var facteur=1+Math.min(0.45,Math.log10(Math.max(1,users))*0.22);  /* progression douce */
+    var basA=(b[0]+b[1])/2*facteur+sup,
+        basO=basA*RATIO;
+    anime($('#p-agence'),precA,basA); precA=basA;
+    anime($('#p-oniq'),  precO,basO); precO=basO;
+    $('#p-eco').textContent=euros(basA-basO);
+    $('#b-oniq').style.width=(RATIO*100)+'%';
+    var t=$$('#g-type .chip').filter(function(c){return c.getAttribute('aria-pressed')==='true'})[0];
+    $('#cta-estim').href='https://wa.me/33624081910?text='+encodeURIComponent(
+      'Bonjour, je souhaite une maquette pour un projet « '+(t?t.textContent:'')+' » '
+      +'('+Object.keys(mods).filter(function(k){return mods[k]}).join(', ')+') pour '+users+' utilisateurs.');
+  }
+
+  $$('#g-type .chip').forEach(function(c){
+    c.addEventListener('click',function(ev){
+      onde(c,ev);
+      $$('#g-type .chip').forEach(function(x){x.setAttribute('aria-pressed','false')});
+      c.setAttribute('aria-pressed','true'); typ=+c.dataset.v; calcule();
+    });
+  });
+  $$('#g-mod .chip').forEach(function(c){
+    c.addEventListener('click',function(ev){
+      onde(c,ev);
+      var on=c.getAttribute('aria-pressed')==='true';
+      c.setAttribute('aria-pressed',on?'false':'true');
+      mods[c.dataset.k]=!on; calcule();
+    });
+  });
+  var rng=$('#users');
+  rng.addEventListener('input',function(){ users=+rng.value; $('#users-out').textContent=users; calcule(); });
+
+  calcule();
+})();
+</script>
 </body>
 </html>
