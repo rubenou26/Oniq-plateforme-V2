@@ -8336,7 +8336,7 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
         if(!ids.length){setSrvFile([]);return;}
       }
       let q=supabaseClient.from('oq_touches')
-        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects!inner(id,entreprise,dirigeant,ville,email,whatsapp,wa_verifie,form_url,linkedin_url,statut,signaux,score_chaud,ouvertures,fonction,campagne_id)')
+        .select('id,canal,etape,sujet,message,prevu_le,prospect_id,oq_prospects!inner(id,entreprise,dirigeant,ville,email,whatsapp,wa_verifie,tel,form_url,linkedin_url,statut,signaux,score_chaud,ouvertures,fonction,campagne_id)')
         .eq('statut','a_envoyer').order('prevu_le').limit(60);
       if(ids)q=q.in('oq_prospects.campagne_id',ids);
       const {data}=await q;
@@ -8481,6 +8481,15 @@ const OqCampagnes=({mob,C,SS,SF,userEmail,admin})=>{
                   React.createElement('div',{style:{fontFamily:SS,fontSize:11.5,color:C.stone}},
                     (p.dirigeant?('🎯 '+p.dirigeant+(p.fonction?(' · '+p.fonction):'')):'')+(p.ville?(' · '+p.ville):'')+(isFinite(p.ca)&&p.ca?(' · CA '+(p.ca>=1e6?((Math.round(p.ca/1e5)/10)+' M€'):(Math.round(p.ca/1e3)+' k€'))):'')),
                   /* ④ prospect chaud : il a ouvert vos emails sans répondre */
+                  /* Numéro publié sur le site de l'entreprise — cliquable pour
+                     appeler. Le registre officiel n'en fournit aucun : c'est la
+                     seule source fiable, et le démarchage téléphonique convertit
+                     bien mieux que l'email froid quand on a déjà le nom du
+                     dirigeant, sa ville et le signal qui l'a fait choisir. */
+                  p.tel&&React.createElement('a',{href:'tel:'+String(p.tel).replace(/\s/g,''),onClick:e=>e.stopPropagation(),
+                    style:{display:'inline-flex',alignItems:'center',gap:5,fontFamily:SS,fontSize:11.5,fontWeight:700,
+                    color:'#2D5687',textDecoration:'none',marginTop:5,background:'rgba(45,86,135,0.08)',
+                    border:'1px solid rgba(45,86,135,0.22)',borderRadius:20,padding:'3px 10px'}},'📞 '+p.tel),
                   (p.ouvertures>0)&&React.createElement('div',{style:{display:'inline-flex',alignItems:'center',gap:5,marginTop:5,background:'rgba(192,57,43,0.10)',border:'1px solid rgba(192,57,43,0.35)',borderRadius:99,padding:'2px 9px',fontFamily:SS,fontSize:10,fontWeight:800,color:'#C0392B'}},'🔥 A ouvert '+p.ouvertures+' fois — prospect chaud'),
                   /* ② signaux détectés sur le registre */
                   (Array.isArray(p.signaux)&&p.signaux.length>0)&&React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:5,marginTop:5}},
@@ -8782,7 +8791,7 @@ const OQ_CANAUX_MOD=[
   {canal:'email',      etape:2, titre:'Email — relance J+3',   aide:'Uniquement si le prospect n’a pas répondu.'},
   {canal:'email',      etape:3, titre:'Email — relance J+7',   aide:'Dernier message, ton « je vous laisse tranquille ».'},
   {canal:'whatsapp',   etape:1, titre:'WhatsApp — J+1',        aide:'Court et direct. Les emojis passent bien ici.'},
-  {canal:'linkedin',   etape:1, titre:'LinkedIn — J+2',        aide:'Copié dans le presse-papier au clic du commercial.'},
+  {canal:'linkedin',   etape:1, titre:'LinkedIn — J+0',        aide:'⚠️ 200 caractères maximum — au-delà, LinkedIn refuse l’invitation. Copié dans le presse-papier au clic.'},
   {canal:'formulaire', etape:1, titre:'Formulaire de contact', aide:'Envoyé via le formulaire du site du prospect.'},
   {canal:'sms',        etape:1, titre:'SMS (désactivé)',       aide:'Payant — inactif tant que sms_actif = false.'},
 ];
@@ -9003,6 +9012,16 @@ const AdminMessages=()=>{
           React.createElement('label',{style:{...S,fontSize:11,fontWeight:700,color:'#5A5048',display:'block',marginBottom:4}},'Message'),
           React.createElement('textarea',{value:m.corps,onChange:e=>maj(k,'corps',e.target.value),rows:c.canal==='email'?14:7,
             style:{...S,width:'100%',border:'1px solid #E4DCD1',borderRadius:8,padding:'10px 12px',fontSize:12.5,lineHeight:1.55,resize:'vertical',boxSizing:'border-box',fontFamily:'ui-monospace,Menlo,monospace'}}),
+          /* Compteur de caractères : LinkedIn refuse au-delà de 200, et on ne
+             s'en aperçoit qu'au moment d'envoyer, l'invitation déjà rédigée. */
+          (function(){
+            var n=String(m.corps||'').replace(/\{prenom\}/g,'Christophe').replace(/\{entreprise\}/g,'').length;
+            var lim=c.canal==='linkedin'?200:(c.canal==='sms'?160:0);
+            if(!lim)return null;
+            return React.createElement('div',{style:{...S,fontSize:11,marginTop:5,textAlign:'right',
+              color:n>lim?'#B4433C':(n>lim*0.9?'#B0873A':'#9A8F84'),fontWeight:n>lim?800:400}},
+              n+' / '+lim+' caractères'+(n>lim?' — trop long, LinkedIn refusera':''));
+          })(),
           React.createElement('div',{style:{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',marginTop:10}},
             React.createElement('button',{onClick:()=>sauver(c),disabled:enreg===k,style:{...S,background:'#1A1715',color:'#fff',border:'none',borderRadius:8,padding:'9px 18px',fontSize:12,fontWeight:800,cursor:'pointer',opacity:enreg===k?0.5:1}},enreg===k?'Enregistrement…':'Enregistrer'),
             React.createElement('label',{style:{...S,fontSize:11.5,color:'#5A5048',display:'flex',alignItems:'center',gap:6,cursor:'pointer'}},
