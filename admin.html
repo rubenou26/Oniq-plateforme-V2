@@ -1,0 +1,1445 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ONIQ, administration</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* ══════════════════════════════════════════════════════════════════
+     ONIQ, administration.
+     Meme langage que la vitrine : fond bleu-noir, filets d'un pixel,
+     monochrome sauf pour le sens (vert = encaisse, ambre = attente,
+     rouge = retard). Un outil de pilotage se lit d'un coup d'oeil, il
+     ne se contemple pas : la couleur y porte une information, jamais
+     une decoration.
+     Aucune bibliotheque : l'authentification et les donnees passent par
+     l'API REST en fetch direct.
+     ══════════════════════════════════════════════════════════════════ */
+  :root{
+    --fond:#08090C; --surface:#0E1116; --surface-2:#141922; --survol:#171D26;
+    --filet:#1B212B; --filet-fort:#2A3341;
+    --texte:#EAEDF2; --attenue:#8B94A5; --faible:#59616F;
+    --signal:#7FA8FF; --signal-r:127,168,255;
+    --ok:#5FD3A6; --ok-r:95,211,166;
+    --attente:#E0B15C; --retard:#E8796B;
+    --rail:238px;
+  }
+  @media (prefers-color-scheme:light){
+    :root:not([data-theme="dark"]){
+      --fond:#F7F8FA; --surface:#FFFFFF; --surface-2:#F1F3F6; --survol:#EDF0F4;
+      --filet:#E3E7ED; --filet-fort:#CFD5DE;
+      --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+      --signal:#2B5FD9; --signal-r:43,95,217;
+      --ok:#17805C; --ok-r:23,128,92;
+      --attente:#96701C; --retard:#B5443A;
+    }
+  }
+  :root[data-theme="light"]{
+    --fond:#F7F8FA; --surface:#FFFFFF; --surface-2:#F1F3F6; --survol:#EDF0F4;
+    --filet:#E3E7ED; --filet-fort:#CFD5DE;
+    --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+    --signal:#2B5FD9; --signal-r:43,95,217;
+    --ok:#17805C; --ok-r:23,128,92;
+    --attente:#96701C; --retard:#B5443A;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);
+    font:400 15px/1.55 "Instrument Sans",system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;letter-spacing:-.004em}
+  .mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+  button,input,select,textarea{font:inherit;color:inherit}
+  a{color:var(--signal);text-decoration:none}
+
+  /* ── Connexion ─────────────────────────────────────────────────── */
+  .porte{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .porte form{width:min(380px,100%);background:var(--surface);border:1px solid var(--filet);
+    border-radius:14px;padding:32px}
+  .porte h1{font-size:20px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
+  .porte p{color:var(--attenue);font-size:13.5px;margin:0 0 24px}
+  .champ{margin-bottom:14px}
+  .champ label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faible);margin-bottom:6px}
+  .champ input,.champ select,.champ textarea{width:100%;background:var(--surface-2);
+    border:1px solid var(--filet);border-radius:8px;padding:10px 12px;font-size:14px}
+  .champ input:focus,.champ select:focus,.champ textarea:focus{outline:none;border-color:var(--signal)}
+  .plein{width:100%;background:var(--texte);color:var(--fond);border:none;border-radius:8px;
+    padding:12px;font-weight:600;font-size:14.5px;cursor:pointer;transition:opacity .15s}
+  .plein:hover{opacity:.88}
+  .plein:disabled{opacity:.45;cursor:default}
+  .erreur{background:rgba(232,121,107,.1);border:1px solid rgba(232,121,107,.35);
+    color:var(--retard);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+
+  /* ── Charpente ─────────────────────────────────────────────────── */
+  .app{display:none;min-height:100vh}
+  .app.ouvert{display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
+  .rail{border-right:1px solid var(--filet);background:var(--surface);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .marque{padding:20px 22px 16px;border-bottom:1px solid var(--filet);
+    display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .marque b{font-size:19px;font-weight:700;letter-spacing:.2em}
+  .pastille{width:7px;height:7px;border-radius:50%;background:var(--ok);
+    box-shadow:0 0 10px rgba(var(--ok-r),.8)}
+  .menu{padding:14px 12px;flex:1}
+  .groupe{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faible);
+    padding:16px 10px 7px}
+  .menu a{display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:8px;
+    color:var(--attenue);font-size:14px;transition:background .14s,color .14s}
+  .menu a:hover{background:var(--survol);color:var(--texte)}
+  .menu a.actif{background:rgba(var(--signal-r),.13);color:var(--texte)}
+  .menu a .p{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.42;flex:none}
+  .menu a.actif .p{background:var(--signal);opacity:1}
+  .menu a .badge{margin-left:auto;font-size:11px;background:var(--surface-2);
+    border:1px solid var(--filet);border-radius:20px;padding:1px 7px;color:var(--attenue)}
+  .pied{padding:14px 18px;border-top:1px solid var(--filet);font-size:12.5px;color:var(--faible)}
+  .pied button{background:none;border:none;color:var(--attenue);cursor:pointer;padding:0;font-size:12.5px}
+  .pied button:hover{color:var(--texte)}
+
+  main{min-width:0}
+  .barre{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--fond) 84%,transparent);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--filet);
+    padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .barre h1{font-size:17px;font-weight:600;letter-spacing:-.02em;margin:0}
+  .barre .sous{font-size:12.5px;color:var(--faible);margin-top:1px}
+  .outils{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--surface);border:1px solid var(--filet);border-radius:8px;
+    padding:8px 14px;font-size:13.5px;cursor:pointer;transition:border-color .15s,background .15s}
+  .btn:hover{border-color:var(--filet-fort);background:var(--survol)}
+  .btn.fort{background:var(--texte);color:var(--fond);border-color:var(--texte);font-weight:600}
+  .btn.fort:hover{opacity:.88}
+  .vue{padding:28px}
+
+  /* ── Blocs ─────────────────────────────────────────────────────── */
+  .kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:26px}
+  .kpi{background:var(--surface);border:1px solid var(--filet);border-radius:12px;padding:18px}
+  .kpi .lib{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible)}
+  .kpi .val{font-size:29px;font-weight:600;letter-spacing:-.035em;margin-top:8px;
+    font-variant-numeric:tabular-nums;line-height:1}
+  .kpi .note{font-size:12.5px;color:var(--attenue);margin-top:8px}
+  .kpi.vert .val{color:var(--ok)} .kpi.ambre .val{color:var(--attente)}
+  .kpi.rouge .val{color:var(--retard)} .kpi.bleu .val{color:var(--signal)}
+
+  .panneau{background:var(--surface);border:1px solid var(--filet);border-radius:12px;margin-bottom:18px}
+  .panneau > header{padding:15px 18px;border-bottom:1px solid var(--filet);
+    display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .panneau > header h2{font-size:14.5px;font-weight:600;margin:0}
+  .panneau > header .aide{font-size:12.5px;color:var(--faible)}
+  .corps{padding:18px}
+  .duo{display:grid;gap:18px}
+  .duo>*{min-width:0}
+  @media(min-width:1080px){.duo{grid-template-columns:1.5fr 1fr}}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:11px 18px;text-align:left;border-bottom:1px solid var(--filet)}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .14s}
+  tbody tr:hover{background:var(--survol)}
+  th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible);font-weight:500}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+    font-family:"JetBrains Mono",monospace;font-size:13px}
+  .tbl-scroll{overflow-x:auto}
+
+  .etat{display:inline-block;font-size:10.5px;font-weight:500;letter-spacing:.06em;
+    padding:3px 9px;border-radius:20px;border:1px solid;white-space:nowrap;text-transform:uppercase}
+  .e-ok{color:var(--ok);border-color:rgba(var(--ok-r),.4);background:rgba(var(--ok-r),.1)}
+  .e-att{color:var(--attente);border-color:rgba(224,177,92,.4);background:rgba(224,177,92,.1)}
+  .e-ret{color:var(--retard);border-color:rgba(232,121,107,.4);background:rgba(232,121,107,.1)}
+  .e-neu{color:var(--attenue);border-color:var(--filet);background:var(--surface-2)}
+
+  .vide{padding:46px 20px;text-align:center;color:var(--faible)}
+  .vide .gros{font-size:15px;color:var(--attenue);margin-bottom:6px;font-weight:500}
+  .vide .pt{font-size:13px;max-width:44ch;margin:0 auto;line-height:1.6}
+
+  .journal{list-style:none;margin:0;padding:0}
+  .journal li{display:flex;gap:12px;padding:11px 18px;border-bottom:1px solid var(--filet);font-size:13.5px}
+  .journal li:last-child{border-bottom:none}
+  .journal .qd{color:var(--faible);font-size:12px;white-space:nowrap;min-width:82px}
+  .journal .qui{color:var(--attenue)}
+
+  .bascule{position:relative;width:38px;height:21px;border-radius:20px;background:var(--filet-fort);
+    border:none;cursor:pointer;transition:background .18s;flex:none}
+  .bascule:after{content:"";position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;
+    border-radius:50%;background:#fff;transition:transform .18s}
+  .bascule[aria-pressed="true"]{background:var(--ok)}
+  .bascule[aria-pressed="true"]:after{transform:translateX(17px)}
+
+  /* Fenetre de saisie */
+  .fond-modale{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+    display:grid;place-items:center;padding:22px;z-index:50}
+  .modale{width:min(560px,100%);max-height:88vh;overflow-y:auto;background:var(--surface);
+    border:1px solid var(--filet-fort);border-radius:14px}
+  .modale header{padding:17px 20px;border-bottom:1px solid var(--filet);
+    display:flex;justify-content:space-between;align-items:center}
+  .modale header h3{margin:0;font-size:15.5px;font-weight:600}
+  .modale .corps{padding:20px}
+  .modale footer{padding:15px 20px;border-top:1px solid var(--filet);display:flex;gap:9px;justify-content:flex-end}
+  .fermer{background:none;border:none;color:var(--faible);font-size:19px;cursor:pointer;line-height:1}
+  .grille2{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+  @media(max-width:560px){.grille2{grid-template-columns:1fr}}
+
+  @media(max-width:900px){
+    .app.ouvert{grid-template-columns:1fr}
+    .rail{position:static;height:auto;flex-direction:row;overflow-x:auto;
+      border-right:none;border-bottom:1px solid var(--filet)}
+    .marque{border-bottom:none;border-right:1px solid var(--filet);white-space:nowrap}
+    .menu{display:flex;gap:6px;padding:10px;flex:1}
+    .menu a{white-space:nowrap}
+    .groupe,.pied,.menu a .badge{display:none}
+    .vue{padding:18px}
+    .barre{padding:0 18px}
+  }
+  :focus-visible{outline:2px solid var(--signal);outline-offset:2px;border-radius:6px}
+  /* ── La scène du symbole ──────────────────────────────────────────
+     Le dégradé tourne parce que son angle est une vraie propriété
+     typée, donc interpolable. Le masque découpe la silhouette : rien
+     n'est redessiné image par image, tout se joue à la composition,
+     donc sur la carte graphique. Trois mouvements décalés et de durées
+     premières entre elles : ils ne se resynchronisent jamais, l'oeil
+     ne trouve pas la boucle. */
+  @property --tour{syntax:'<angle>';inherits:false;initial-value:0deg}
+  @property --contre{syntax:'<angle>';inherits:false;initial-value:180deg}
+  .vitrine{position:relative;display:grid;grid-template-columns:auto 1fr;gap:34px;align-items:center;
+    padding:34px 30px;margin-bottom:18px;border:1px solid var(--filet);border-radius:16px;
+    background:radial-gradient(120% 140% at 82% -10%,rgba(var(--signal-r),.10),transparent 58%),
+      linear-gradient(160deg,#10151D,#08090C 62%);overflow:hidden;isolation:isolate}
+  .vitrine .halo{position:absolute;inset:-40% -10% auto auto;width:520px;height:520px;pointer-events:none;
+    background:radial-gradient(circle,rgba(var(--signal-r),.18),transparent 62%);filter:blur(28px);
+    animation:respirer 13s cubic-bezier(.45,0,.55,1) infinite}
+  @keyframes respirer{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.09)}}
+  .astre{position:relative;width:168px;height:168px;flex:none;
+    animation:flotter 11s cubic-bezier(.37,0,.63,1) infinite;will-change:transform}
+  @keyframes flotter{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-7px,0)}}
+  .astre .chair,.astre .eclat,.astre .voile,.astre .trait{position:absolute;inset:0;
+    -webkit-mask-size:contain;mask-size:contain;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+  .astre .chair,.astre .eclat,.astre .voile{-webkit-mask-image:var(--anneau);mask-image:var(--anneau)}
+  .astre .chair{background:linear-gradient(168deg,#FFFFFF,#D3DBE9 38%,#96A0B4 68%,#6E7889)}
+  /* Le balayage : une lumière large qui fait le tour de la lettre.
+     Les paliers sont nombreux et rapprochés, c'est ce qui remplace le
+     flou : une bande franche donnerait un éclair de gyrophare. */
+  .astre .eclat{background:conic-gradient(from var(--tour),
+      rgba(255,255,255,0) 0deg,rgba(var(--signal-r),.10) 22deg,rgba(var(--signal-r),.34) 40deg,
+      rgba(214,230,255,.72) 56deg,#FFFFFF 66deg,rgba(214,230,255,.70) 76deg,
+      rgba(var(--signal-r),.30) 96deg,rgba(var(--signal-r),.08) 118deg,rgba(255,255,255,0) 150deg);
+    mix-blend-mode:screen;animation:tourner 9s linear infinite}
+  /* Un second passage, plus lent et à contresens, pour que la surface
+     garde du relief entre deux balayages. */
+  .astre .voile{background:conic-gradient(from var(--contre),
+      rgba(255,255,255,0) 0deg,rgba(var(--signal-r),.16) 60deg,rgba(255,255,255,.10) 96deg,
+      rgba(var(--signal-r),.14) 130deg,rgba(255,255,255,0) 200deg);
+    mix-blend-mode:screen;animation:contourner 23s linear infinite}
+  @keyframes tourner{to{--tour:360deg}}
+  @keyframes contourner{to{--contre:-180deg}}
+  .astre .trait{-webkit-mask-image:var(--queue);mask-image:var(--queue);
+    background:linear-gradient(135deg,rgba(var(--signal-r),.78),#B6CDFF);
+    filter:drop-shadow(0 0 16px rgba(var(--signal-r),.5));
+    animation:pulser 9s cubic-bezier(.45,0,.55,1) infinite}
+  @keyframes pulser{0%,100%{filter:drop-shadow(0 0 10px rgba(var(--signal-r),.34))}
+    50%{filter:drop-shadow(0 0 22px rgba(var(--signal-r),.62))}}
+  .vitrine .dit b{display:block;font-size:29px;font-weight:600;letter-spacing:.22em}
+  .vitrine .dit b i{font-style:normal;color:var(--signal)}
+  .vitrine .dit span{display:block;margin-top:10px;max-width:52ch;color:var(--attenue);
+    font-size:13.5px;line-height:1.7}
+  @media(max-width:760px){
+    .vitrine{grid-template-columns:1fr;justify-items:center;text-align:center;gap:22px;padding:28px 20px}
+    .astre{width:132px;height:132px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .astre,.astre .eclat,.astre .voile,.astre .trait,.vitrine .halo{animation:none}
+    .astre .eclat{opacity:.45}
+  }
+  .dossier-d .tete-d{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding-bottom:12px;border-bottom:1px solid var(--filet);margin-bottom:14px;font-size:14px}
+  .dossier-d .tete-d a{color:var(--signal);text-decoration:none}
+  .dossier-d .faits{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .dossier-d .faits div{border:1px solid var(--filet);border-radius:10px;padding:9px 11px}
+  .dossier-d .faits span{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible)}
+  .dossier-d .faits b{font-size:13.5px;font-weight:500}
+  .dossier-d .besoin-d{margin:0 0 14px;padding:14px;border-radius:11px;background:var(--fond);
+    border:1px solid var(--filet);white-space:pre-wrap;font:400 13.5px/1.7 inherit;color:var(--attenue)}
+  .dossier-d .actes{display:flex;gap:9px;flex-wrap:wrap}
+
+  /* ── Ressources de marque ─────────────────────────────────────────── */
+  .res{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .ress{border:1px solid var(--filet);border-radius:12px;background:var(--surface-2);
+    padding:14px;display:flex;flex-direction:column;gap:12px;text-align:left;font:inherit;color:inherit}
+  .ress.large{grid-column:span 2}
+  @media(max-width:900px){ .ress.large{grid-column:span 1} }
+  .ress .quoi b{display:block;font-size:14px}
+  .ress .quoi span{display:block;color:var(--faible);font-size:12.5px;line-height:1.5;margin-top:3px}
+  .ress .actes{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+  .apercu{border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;
+    min-height:112px;overflow:hidden}
+  .apercu.sombre{background:#0B0E13;border:1px solid var(--filet)}
+  .apercu.clair{background:#FAFAFB;border:1px solid var(--filet)}
+  .apercu.petit{min-height:72px}
+  .apercu svg{max-width:100%;height:auto}
+  .toile{width:100%;height:auto;border-radius:10px;border:1px solid var(--filet);display:block}
+  button.ress{cursor:pointer}
+  button.ress:hover{border-color:var(--filet-fort);background:var(--survol)}
+  .extrait{min-width:0;border:1px solid var(--filet);border-radius:12px;margin-top:14px;overflow:hidden}
+  .extrait header{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--filet);
+    font-size:12.5px;color:var(--attenue)}
+  .extrait pre{margin:0;padding:14px;overflow-x:auto;background:var(--fond);
+    font:400 12.5px/1.7 "JetBrains Mono",ui-monospace,monospace;color:var(--texte)}
+  .nuancier{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .teinte{display:flex;flex-direction:column;gap:6px;align-items:flex-start;cursor:pointer;
+    border:1px solid var(--filet);border-radius:10px;padding:10px;background:var(--surface-2);
+    color:inherit;font:inherit;text-align:left}
+  .teinte:hover{border-color:var(--filet-fort)}
+  .teinte span{width:100%;height:34px;border-radius:7px;border:1px solid var(--filet)}
+  .teinte b{font-size:13px}
+  .teinte i{font-style:normal;font-size:12px;color:var(--attenue)}
+  .teinte em{font-style:normal;font-size:11.5px;color:var(--faible)}
+  .apercu table{width:auto;border-collapse:separate;font-size:inherit}
+  .apercu table td{border:0;padding:0}
+  .specimen .gd{font-size:30px;font-weight:600;letter-spacing:-.01em}
+  .specimen .attn{color:var(--faible);font-size:13px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="porte" id="porte">
+  <form id="form-connexion">
+    <h1>Administration ONIQ</h1>
+    <p>Accès réservé à l'équipe.</p>
+    <div id="err-connexion"></div>
+    <div class="champ"><label for="mail">Adresse</label>
+      <input id="mail" type="email" autocomplete="username" required placeholder="vous@oniq.online"></div>
+    <div class="champ"><label for="mdp">Mot de passe</label>
+      <input id="mdp" type="password" autocomplete="current-password" required></div>
+    <button class="plein" type="submit" id="btn-connexion">Se connecter</button>
+  </form>
+</div>
+
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="marque"><b>ONIQ</b><span class="pastille" title="Moteur en service"></span></div>
+    <nav class="menu" id="menu"></nav>
+    <div class="pied">
+      <div id="qui-suis-je">…</div>
+      <button id="btn-sortir">Se déconnecter</button>
+    </div>
+  </aside>
+  <main>
+    <div class="barre">
+      <div><h1 id="titre-vue">Pilotage</h1><div class="sous" id="sous-vue"></div></div>
+      <div class="outils" id="outils"></div>
+    </div>
+    <div class="vue" id="vue"></div>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ══ Accès aux données ═══════════════════════════════════════════════
+   Pas de bibliothèque : l'authentification et les requêtes passent par
+   l'API REST. La clé publique est faite pour être exposée, ce sont les
+   règles de sécurité de la base qui protègent les données. */
+var URL_BASE='https://kxdxxhepewziazfnfnkq.supabase.co';
+var CLE='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZHh4aGVwZXd6aWF6Zm5mbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjkyMDMsImV4cCI6MjA4OTIwNTIwM30.erlLC8zLX3rucPE7-CzJyLGwCljWpzIeGwa6oWXfbMM';
+var jeton=null, moi=null;
+
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
+
+function entetes(extra){
+  var h={'apikey':CLE,'Authorization':'Bearer '+(jeton||CLE),'Content-Type':'application/json'};
+  if(extra)for(var k in extra)h[k]=extra[k];
+  return h;
+}
+async function lire(table,requete){
+  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?'+(requete||'select=*'),{headers:entetes()});
+  if(!r.ok)throw new Error(table+' : '+r.status);
+  return r.json();
+}
+async function compter(table,filtre){
+  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?select=id&limit=1'+(filtre?'&'+filtre:''),
+    {headers:entetes({'Prefer':'count=exact'})});
+  var cr=r.headers.get('content-range')||'0/0';
+  return parseInt(cr.split('/')[1],10)||0;
+}
+async function ecrire(table,corps){
+  var r=await fetch(URL_BASE+'/rest/v1/'+table,
+    {method:'POST',headers:entetes({'Prefer':'return=representation'}),body:JSON.stringify(corps)});
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+async function modifier(table,filtre,corps){
+  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?'+filtre,
+    {method:'PATCH',headers:entetes(),body:JSON.stringify(corps)});
+  if(!r.ok)throw new Error(await r.text());
+}
+async function tracer(action,cible,id){
+  try{ await ecrire('oq_activite',{acteur:moi||'inconnu',action:action,cible:cible,cible_id:id||null}); }catch(e){}
+}
+
+/* ══ Mise en forme ══════════════════════════════════════════════════ */
+var fEuro=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+var euro=function(n){return fEuro.format(n||0);};
+var nb=function(n){return new Intl.NumberFormat('fr-FR').format(n||0);};
+function date(d){ if(!d)return '—'; try{return new Date(d).toLocaleDateString('fr-FR');}catch(e){return '—';} }
+function depuis(d){
+  if(!d)return '';
+  var s=Math.floor((Date.now()-new Date(d).getTime())/1000);
+  if(s<60)return 'à l’instant';
+  if(s<3600)return 'il y a '+Math.floor(s/60)+' min';
+  if(s<86400)return 'il y a '+Math.floor(s/3600)+' h';
+  return 'il y a '+Math.floor(s/86400)+' j';
+}
+function ech(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function etat(txt,genre){return '<span class="etat e-'+genre+'">'+ech(txt)+'</span>';}
+function vide(titre,pt){return '<div class="vide"><div class="gros">'+ech(titre)+'</div><div class="pt">'+ech(pt)+'</div></div>';}
+
+/* ══ Connexion ══════════════════════════════════════════════════════ */
+$('#form-connexion').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var b=$('#btn-connexion'); b.disabled=true; b.textContent='Connexion…';
+  $('#err-connexion').innerHTML='';
+  try{
+    var r=await fetch(URL_BASE+'/auth/v1/token?grant_type=password',{
+      method:'POST',headers:{'apikey':CLE,'Content-Type':'application/json'},
+      body:JSON.stringify({email:$('#mail').value.trim(),password:$('#mdp').value})});
+    var j=await r.json();
+    if(!r.ok||!j.access_token) throw new Error(j.error_description||j.msg||'Identifiants refusés');
+    jeton=j.access_token; moi=(j.user&&j.user.email)||$('#mail').value.trim();
+    try{ sessionStorage.setItem('oq_adm',JSON.stringify({j:jeton,m:moi})); }catch(x){}
+    ouvrir();
+  }catch(err){
+    $('#err-connexion').innerHTML='<div class="erreur">'+ech(err.message)+'</div>';
+    b.disabled=false; b.textContent='Se connecter';
+  }
+});
+$('#btn-sortir').addEventListener('click',function(){
+  try{ sessionStorage.removeItem('oq_adm'); }catch(e){}
+  location.reload();
+});
+
+/* ══ Navigation ═════════════════════════════════════════════════════ */
+var SECTIONS=[
+  {g:'Pilotage'},
+  {id:'pilotage',   nom:'Tableau de bord', sous:'La photo du jour, sur données réelles'},
+  {id:'activite',   nom:'Activité',        sous:'Qui a fait quoi, et quand'},
+  {g:'Acquisition'},
+  {id:'prospection',nom:'Prospection',     sous:'Ce que la machine produit toute seule'},
+  {id:'demandes',   nom:'Demandes',        sous:'Formulaires reçus depuis le site'},
+  {g:'Affaires'},
+  {id:'clients',    nom:'Clients',         sous:'Le portefeuille'},
+  {id:'projets',    nom:'Projets',         sous:'Ce qui est en cours de construction'},
+  {id:'devis',      nom:'Devis',           sous:'Propositions envoyées et décidées'},
+  {id:'factures',   nom:'Factures',        sous:'Encaissé, en attente, en retard'},
+  {id:'abonnements',nom:'Abonnements',     sous:'Le revenu récurrent'},
+  {g:'Maison'},
+  {id:'automatisations',nom:'Automatisations',sous:'Ce que la maison fait tourner seule'},
+  {id:'reglages',   nom:'Réglages',        sous:'Expéditeurs et modèles de messages'},
+  {g:'Marque'},
+  {id:'ressources', nom:'Ressources',      sous:'Logo, favicon, bannières et éléments de marque'}
+];
+var courante='pilotage';
+
+function dessinerMenu(){
+  var h='';
+  SECTIONS.forEach(function(s){
+    if(s.g){ h+='<div class="groupe">'+s.g+'</div>'; return; }
+    h+='<a href="#'+s.id+'" data-id="'+s.id+'" class="'+(s.id===courante?'actif':'')+'">'
+      +'<span class="p"></span>'+ech(s.nom)+'<span class="badge" id="b-'+s.id+'"></span></a>';
+  });
+  $('#menu').innerHTML=h;
+}
+function aller(id){
+  if(!SECTIONS.some(function(s){return s.id===id;})) id='pilotage';
+  courante=id;
+  $$('#menu a').forEach(function(a){a.classList.toggle('actif',a.dataset.id===id);});
+  var s=SECTIONS.filter(function(x){return x.id===id;})[0];
+  $('#titre-vue').textContent=s.nom; $('#sous-vue').textContent=s.sous||'';
+  $('#outils').innerHTML='';
+  $('#vue').innerHTML='<div class="vide"><div class="pt">Chargement…</div></div>';
+  (VUES[id]||function(){})();
+}
+window.addEventListener('hashchange',function(){aller((location.hash||'#pilotage').slice(1));});
+
+function ouvrir(){
+  $('#porte').style.display='none';
+  $('#app').classList.add('ouvert');
+  $('#qui-suis-je').textContent=moi||'';
+  dessinerMenu();
+  aller((location.hash||'#pilotage').slice(1));
+  compteurs();
+}
+
+/* Pastilles du menu : ce qui attend une action. */
+async function compteurs(){
+  try{
+    var d=await compter('demandes_surmesure','statut=eq.nouveau');
+    if(d)$('#b-demandes').textContent=d;
+  }catch(e){}
+  try{
+    var f=await compter('oq_factures','statut=eq.retard');
+    if(f)$('#b-factures').textContent=f;
+  }catch(e){}
+}
+
+/* ══ Vues ═══════════════════════════════════════════════════════════ */
+var VUES={};
+
+/* ── Tableau de bord ─────────────────────────────────────────────────
+   Six indicateurs seulement. Un tableau de bord qui affiche tout
+   n'affiche rien : chaque chiffre ici doit pouvoir declencher une
+   decision dans la journee. */
+VUES.pilotage=async function(){
+  try{
+    var res=await Promise.all([
+      lire('oq_factures','select=montant_ht,tva,statut,echeance_le,payee_le&limit=1000'),
+      lire('oq_devis','select=montant_ht,statut,cree_le&limit=1000'),
+      lire('oq_abonnements','select=montant_mois,statut&limit=500'),
+      compter('oq_clients','statut=eq.actif'),
+      compter('oq_prospects'),
+      compter('oq_prospects','statut=neq.nouveau'),
+      compter('oq_messages','sens=eq.in&auto=is.false'),
+      lire('oq_activite','select=*&order=cree_le.desc&limit=12'),
+      lire('oq_projets','select=titre,statut,budget_ht,client_id&order=cree_le.desc&limit=8')
+    ]);
+    var fac=res[0],dev=res[1],abo=res[2],clients=res[3],prospects=res[4],
+        contactes=res[5],reponses=res[6],journal=res[7],projets=res[8];
+
+    var ttc=function(f){return (+f.montant_ht||0)*(1+(+f.tva||0)/100);};
+    var encaisse=fac.filter(function(f){return f.statut==='payee';}).reduce(function(a,f){return a+ttc(f);},0);
+    var attente =fac.filter(function(f){return f.statut==='envoyee';}).reduce(function(a,f){return a+ttc(f);},0);
+    var retard  =fac.filter(function(f){return f.statut==='retard';}).reduce(function(a,f){return a+ttc(f);},0);
+    var mrr     =abo.filter(function(a){return a.statut==='actif';}).reduce(function(a,b){return a+(+b.montant_mois||0);},0);
+    var enCours =dev.filter(function(d){return d.statut==='envoye';}).reduce(function(a,d){return a+(+d.montant_ht||0);},0);
+    var envoyes =dev.filter(function(d){return d.statut!=='brouillon';}).length;
+    var gagnes  =dev.filter(function(d){return d.statut==='accepte';}).length;
+    var taux    =envoyes?Math.round(100*gagnes/envoyes):0;
+    var partRec =(encaisse+mrr*12)>0?Math.round(100*(mrr*12)/(encaisse+mrr*12)):0;
+
+    var h='<div class="kpis">'
+      +kpi('Encaissé',euro(encaisse),'vert',fac.filter(function(f){return f.statut==='payee';}).length+' facture(s) réglée(s)')
+      +kpi('En attente',euro(attente),'ambre','factures envoyées, non réglées')
+      +kpi('En retard',euro(retard),retard>0?'rouge':'', retard>0?'à relancer aujourd’hui':'rien en souffrance')
+      +kpi('Récurrent mensuel',euro(mrr),'bleu',partRec+' % du chiffre annuel')
+      +kpi('Devis en cours',euro(enCours),'','taux de transformation '+taux+' %')
+      +kpi('Clients actifs',nb(clients),'',nb(prospects)+' prospects en base')
+      +'</div>';
+
+    /* Entonnoir : du prospect au client, en une ligne lisible. */
+    var etapes=[['Prospects',prospects],['Contactés',contactes],['Réponses',reponses],
+                ['Devis envoyés',envoyes],['Signés',gagnes],['Clients',clients]];
+    h+='<div class="panneau"><header><h2>De la prospection au client</h2>'
+      +'<span class="aide">chaque étape, et ce qui reste</span></header><div class="corps">'
+      +'<div class="kpis" style="margin:0">';
+    etapes.forEach(function(e,i){
+      var prec=i>0?etapes[i-1][1]:0;
+      var conv=i>0&&prec?Math.round(100*e[1]/prec)+' % de l’étape précédente':'';
+      h+=kpi(e[0],nb(e[1]),'',conv);
+    });
+    h+='</div></div></div>';
+
+    h+='<div class="duo">';
+    h+='<div class="panneau"><header><h2>Projets en cours</h2>'
+      +'<a href="#projets" class="aide">tout voir</a></header>';
+    h+=projets.length?('<div class="tbl-scroll"><table><thead><tr><th>Projet</th><th>Étape</th><th class="n">Budget</th></tr></thead><tbody>'
+      +projets.map(function(p){
+        return '<tr><td>'+ech(p.titre)+'</td><td>'+etat(p.statut,p.statut==='livre'?'ok':'neu')
+          +'</td><td class="n">'+(p.budget_ht?euro(p.budget_ht):'—')+'</td></tr>';}).join('')
+      +'</tbody></table></div>')
+      :vide('Aucun projet enregistré','Créez un projet dès qu’un devis est signé : c’est lui qui deviendra votre première référence publiable.');
+    h+='</div>';
+
+    h+='<div class="panneau"><header><h2>Dernière activité</h2></header>';
+    h+=journal.length?('<ul class="journal">'+journal.map(function(a){
+        return '<li><span class="qd mono">'+depuis(a.cree_le)+'</span><span>'
+          +ech(a.action)+(a.cible?' <span class="qui">'+ech(a.cible)+'</span>':'')+'</span></li>';}).join('')+'</ul>')
+      :vide('Rien à afficher','Le journal se remplit dès que vous créez un client, envoyez un devis ou encaissez une facture.');
+    h+='</div></div>';
+
+    $('#vue').innerHTML=h;
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">Lecture impossible : '+ech(e.message)
+    +'<br>Avez-vous exécuté <b>oniq-admin-schema.sql</b> ?</div>'; }
+};
+function kpi(lib,val,genre,note){
+  return '<div class="kpi '+(genre||'')+'"><div class="lib">'+ech(lib)+'</div>'
+    +'<div class="val">'+ech(val)+'</div>'+(note?'<div class="note">'+ech(note)+'</div>':'')+'</div>';
+}
+
+/* ── Activité ──────────────────────────────────────────────────────── */
+VUES.activite=async function(){
+  try{
+    var j=await lire('oq_activite','select=*&order=cree_le.desc&limit=120');
+    $('#vue').innerHTML='<div class="panneau">'
+      +(j.length?('<ul class="journal">'+j.map(function(a){
+        return '<li><span class="qd mono">'+date(a.cree_le)+'</span><span class="qui">'+ech(a.acteur||'')
+          +'</span><span>'+ech(a.action)+(a.cible?' · '+ech(a.cible):'')+'</span></li>';}).join('')+'</ul>')
+      :vide('Journal vide','Chaque création, envoi et encaissement viendra s’inscrire ici automatiquement.'))
+      +'</div>';
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Prospection ───────────────────────────────────────────────────── */
+VUES.prospection=async function(){
+  try{
+    var r=await Promise.all([
+      compter('oq_prospects'), compter('oq_prospects','statut=neq.nouveau'),
+      compter('oq_messages','sens=eq.out'), compter('oq_messages','sens=eq.in&auto=is.false'),
+      compter('oq_desinscrits'),
+      lire('oq_campagnes','select=nom,secteur,region,statut,owner_email,cree_le&order=cree_le.desc&limit=20')
+        .catch(function(){return lire('oq_campagnes','select=*&limit=20');})
+    ]);
+    var tx=r[1]?Math.round(1000*r[3]/r[1])/10:0;
+    var h='<div class="kpis">'
+      +kpi('Prospects',nb(r[0]),'','entreprises en base')
+      +kpi('Contactés',nb(r[1]),'','au moins un message parti')
+      +kpi('Messages envoyés',nb(r[2]),'','tous canaux confondus')
+      +kpi('Réponses réelles',nb(r[3]),r[3]?'vert':'',tx+' % des contactés')
+      +kpi('Désinscrits',nb(r[4]),'','ne seront jamais recontactés')
+      +'</div>';
+    h+='<div class="panneau"><header><h2>Campagnes</h2>'
+      +'<a class="aide" href="/commercial/crm">ouvrir le CRM</a></header>';
+    h+=r[5].length?('<div class="tbl-scroll"><table><thead><tr><th>Campagne</th><th>Commercial</th><th>Statut</th></tr></thead><tbody>'
+      +r[5].map(function(c){
+        return '<tr><td>'+ech(c.nom||'—')+'<div style="color:var(--faible);font-size:12px">'
+          +ech((c.secteur||'tous secteurs')+' · '+(c.region||'France'))+'</div></td><td>'
+          +ech(c.owner_email||'—')+'</td><td>'+etat(c.statut||'—',c.statut==='active'?'ok':'neu')+'</td></tr>';
+      }).join('')+'</tbody></table></div>')
+      :vide('Aucune campagne','Lancez-en une depuis le CRM commercial : le moteur pioche ensuite les entreprises tout seul.');
+    h+='</div>';
+    $('#vue').innerHTML=h;
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Demandes reçues ───────────────────────────────────────────────
+   Une demande de maquette n'est pas une ligne de tableau : c'est un
+   dossier commercial. On montre donc tout ce que le visiteur a pris la
+   peine d'écrire, et l'action qui suit est à un clic. */
+VUES.demandes=async function(){
+  try{
+    var d=await lire('demandes_surmesure','select=*&order=created_at.desc&limit=200');
+    var neuves=d.filter(function(x){return (x.statut||'nouveau')==='nouveau';}).length;
+    var h='<div class="kpis">'
+      +kpi('Demandes reçues',nb(d.length),'','depuis le formulaire du site')
+      +kpi('À traiter',nb(neuves),neuves?'ambre':'','sans réponse de notre part')
+      +kpi('Ce mois-ci',nb(d.filter(function(x){
+          var t=new Date(x.created_at||0), n=new Date();
+          return t.getMonth()===n.getMonth()&&t.getFullYear()===n.getFullYear();}).length),'','arrivées ce mois')
+      +'</div>';
+
+    if(!d.length){
+      h+='<div class="panneau">'+vide('Aucune demande pour le moment',
+        'Le formulaire de la vitrine écrit directement ici. Vérifiez que la page est bien en ligne, puis faites un essai vous-même : la demande doit apparaître dans la minute.')+'</div>';
+      $('#vue').innerHTML=h; return;
+    }
+
+    h+=d.map(function(x,i){
+      var etat_=(x.statut||'nouveau');
+      var lignes=[
+        ['Métier',x.sector],['Utilisateurs',x.team_size],['Échéance',x.timeline],
+        ['Budget annoncé',x.dev_budget],['Abonnement',x.monthly_budget]
+      ].filter(function(l){return l[1];});
+      return '<div class="panneau dossier-d"><header>'
+        +'<h2>'+ech(x.company||'Sans nom')+'</h2>'
+        +'<span class="aide mono">'+date(x.created_at)+' · '+depuis(x.created_at)+'</span>'
+        +'</header><div class="corps">'
+        +'<div class="tete-d">'
+          +'<div><b>'+ech(x.contact||'—')+'</b>'
+          +(x.email?' · <a href="mailto:'+ech(x.email)+'">'+ech(x.email)+'</a>':'')+'</div>'
+          +'<div>'+etat(etat_,etat_==='nouveau'?'att':'ok')+'</div>'
+        +'</div>'
+        +(lignes.length?('<div class="faits">'+lignes.map(function(l){
+            return '<div><span>'+ech(l[0])+'</span><b>'+ech(l[1])+'</b></div>';}).join('')+'</div>'):'')
+        +'<pre class="besoin-d">'+ech(x.need||x.besoin||x.message||'')+'</pre>'
+        +'<div class="actes">'
+          +(x.email?'<a class="btn fort" href="mailto:'+ech(x.email)+'?subject='
+            +encodeURIComponent('Votre maquette ONIQ')+'">Répondre</a>':'')
+          +(etat_==='nouveau'?'<button class="btn" data-traite="'+ech(x.id)+'">Marquer traitée</button>':'')
+        +'</div></div></div>';
+    }).join('');
+
+    $('#vue').innerHTML=h;
+    $$('[data-traite]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        await modifier('demandes_surmesure','id=eq.'+b.dataset.traite,{statut:'traitee'});
+        await tracer('demande.traitee','');
+        VUES.demandes();
+      };
+    });
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ══ Fenêtre de saisie générique ═════════════════════════════════════
+   Un seul composant pour toutes les créations : moins de code, et
+   surtout un comportement identique partout. */
+function formulaire(titre,champs,onValide){
+  var f=document.createElement('div');
+  f.className='fond-modale';
+  f.innerHTML='<div class="modale" role="dialog" aria-modal="true"><header><h3>'+ech(titre)+'</h3>'
+    +'<button class="fermer" aria-label="Fermer">×</button></header><div class="corps">'
+    +'<div id="err-modale"></div><div class="grille2">'
+    +champs.map(function(c){
+      var large=c.large?' style="grid-column:1/-1"':'';
+      var ctrl;
+      if(c.type==='select')
+        ctrl='<select id="c-'+c.id+'">'+c.options.map(function(o){
+          return '<option value="'+ech(o[0])+'">'+ech(o[1])+'</option>';}).join('')+'</select>';
+      else if(c.type==='textarea') ctrl='<textarea id="c-'+c.id+'" rows="3"></textarea>';
+      else ctrl='<input id="c-'+c.id+'" type="'+(c.type||'text')+'"'
+        +(c.valeur!=null?' value="'+ech(c.valeur)+'"':'')
+        +(c.aide?' placeholder="'+ech(c.aide)+'"':'')+'>';
+      return '<div class="champ"'+large+'><label for="c-'+c.id+'">'+ech(c.nom)+'</label>'+ctrl+'</div>';
+    }).join('')
+    +'</div></div><footer><button class="btn" data-annuler>Annuler</button>'
+    +'<button class="btn fort" data-ok>Enregistrer</button></footer></div>';
+  document.body.appendChild(f);
+  var partir=function(){f.remove();};
+  f.querySelector('.fermer').onclick=partir;
+  f.querySelector('[data-annuler]').onclick=partir;
+  f.addEventListener('click',function(e){if(e.target===f)partir();});
+  document.addEventListener('keydown',function esc(e){
+    if(e.key==='Escape'){partir();document.removeEventListener('keydown',esc);}});
+  var ok=f.querySelector('[data-ok]');
+  ok.onclick=async function(){
+    var v={};
+    champs.forEach(function(c){
+      var el=f.querySelector('#c-'+c.id);
+      var val=el.value.trim();
+      v[c.id]=(c.type==='number')?(val===''?null:parseFloat(val)):(val===''?null:val);
+    });
+    var manque=champs.filter(function(c){return c.requis&&!v[c.id];});
+    if(manque.length){
+      f.querySelector('#err-modale').innerHTML='<div class="erreur">Champ obligatoire : '
+        +ech(manque[0].nom)+'</div>';
+      return;
+    }
+    ok.disabled=true; ok.textContent='Enregistrement…';
+    try{ await onValide(v); partir(); }
+    catch(err){
+      f.querySelector('#err-modale').innerHTML='<div class="erreur">'+ech(String(err.message||err).slice(0,220))+'</div>';
+      ok.disabled=false; ok.textContent='Enregistrer';
+    }
+  };
+  setTimeout(function(){var p=f.querySelector('input,select,textarea'); if(p)p.focus();},40);
+}
+function bouton(libelle,action){
+  var b=document.createElement('button');
+  b.className='btn fort'; b.textContent=libelle; b.onclick=action;
+  $('#outils').appendChild(b);
+}
+
+/* ── Clients ───────────────────────────────────────────────────────── */
+VUES.clients=async function(){
+  bouton('+ Client',function(){
+    formulaire('Nouveau client',[
+      {id:'entreprise',nom:'Entreprise',requis:true,large:true},
+      {id:'contact',nom:'Contact'},{id:'fonction',nom:'Fonction'},
+      {id:'email',nom:'Adresse',type:'email'},{id:'tel',nom:'Téléphone'},
+      {id:'ville',nom:'Ville'},{id:'secteur',nom:'Secteur'},
+      {id:'statut',nom:'Statut',type:'select',options:[['prospect','Prospect'],['actif','Client actif'],['inactif','Inactif']]},
+      {id:'origine',nom:'Origine',type:'select',options:[['prospection','Prospection'],['recommandation','Recommandation'],['seo','Recherche Google'],['reseau','Réseau']]},
+      {id:'notes',nom:'Notes',type:'textarea',large:true}
+    ],async function(v){
+      v.proprietaire=moi;
+      var c=await ecrire('oq_clients',v);
+      await tracer('client.cree',v.entreprise,c[0]&&c[0].id);
+      VUES.clients();
+    });
+  });
+  try{
+    var c=await lire('oq_clients','select=*&order=cree_le.desc&limit=300');
+    var genre={actif:'ok',prospect:'neu',inactif:'neu',perdu:'ret'};
+    $('#vue').innerHTML='<div class="panneau">'
+      +(c.length?('<div class="tbl-scroll"><table><thead><tr><th>Entreprise</th><th>Contact</th><th>Ville</th><th>Origine</th><th>Statut</th></tr></thead><tbody>'
+      +c.map(function(x){
+        return '<tr><td><b>'+ech(x.entreprise)+'</b></td><td>'+ech(x.contact||'—')
+          +(x.email?'<div style="color:var(--faible);font-size:12px">'+ech(x.email)+'</div>':'')
+          +'</td><td>'+ech(x.ville||'—')+'</td><td>'+ech(x.origine||'—')+'</td><td>'
+          +etat(x.statut,genre[x.statut]||'neu')+'</td></tr>';}).join('')+'</tbody></table></div>')
+      :vide('Portefeuille vide','Ajoutez votre premier client, ou convertissez un prospect qui a répondu favorablement.'))
+      +'</div>';
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Projets ───────────────────────────────────────────────────────── */
+VUES.projets=async function(){
+  var clients=await lire('oq_clients','select=id,entreprise&order=entreprise').catch(function(){return [];});
+  bouton('+ Projet',function(){
+    if(!clients.length){alert('Créez d’abord un client.');return;}
+    formulaire('Nouveau projet',[
+      {id:'titre',nom:'Titre',requis:true,large:true},
+      {id:'client_id',nom:'Client',type:'select',options:clients.map(function(c){return [c.id,c.entreprise];})},
+      {id:'type',nom:'Type',type:'select',options:[['logiciel','Logiciel métier'],['erp','ERP'],['site','Site'],['application','Application'],['automatisation','Automatisation']]},
+      {id:'budget_ht',nom:'Budget HT',type:'number'},
+      {id:'statut',nom:'Étape',type:'select',options:[['cadrage','Cadrage'],['maquette','Maquette'],['construction','Construction'],['livre','Livré']]},
+      {id:'gain_client',nom:'Ce que le client y gagne',type:'textarea',large:true,aide:'Sert de référence publiable une fois le projet livré'}
+    ],async function(v){
+      var p=await ecrire('oq_projets',v);
+      await tracer('projet.cree',v.titre,p[0]&&p[0].id);
+      VUES.projets();
+    });
+  });
+  try{
+    var p=await lire('oq_projets','select=*&order=cree_le.desc&limit=200');
+    var nom={}; clients.forEach(function(c){nom[c.id]=c.entreprise;});
+    $('#vue').innerHTML='<div class="panneau">'
+      +(p.length?('<div class="tbl-scroll"><table><thead><tr><th>Projet</th><th>Client</th><th>Type</th><th>Étape</th><th class="n">Budget</th><th>Publiable</th></tr></thead><tbody>'
+      +p.map(function(x){
+        return '<tr><td><b>'+ech(x.titre)+'</b></td><td>'+ech(nom[x.client_id]||'—')+'</td><td>'
+          +ech(x.type||'—')+'</td><td>'+etat(x.statut,x.statut==='livre'?'ok':'neu')+'</td><td class="n">'
+          +(x.budget_ht?euro(x.budget_ht):'—')+'</td><td>'
+          +(x.publiable?etat('oui','ok'):etat('non','neu'))+'</td></tr>';}).join('')+'</tbody></table></div>')
+      :vide('Aucun projet','Chaque projet livré et marqué « publiable » devient une référence pour le site. C’est ce qui vous manque le plus aujourd’hui.'))
+      +'</div>';
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Devis ─────────────────────────────────────────────────────────── */
+VUES.devis=async function(){
+  var clients=await lire('oq_clients','select=id,entreprise&order=entreprise').catch(function(){return [];});
+  bouton('+ Devis',function(){
+    if(!clients.length){alert('Créez d’abord un client.');return;}
+    formulaire('Nouveau devis',[
+      {id:'objet',nom:'Objet',requis:true,large:true,aide:'Ex. Logiciel de suivi de chantier'},
+      {id:'client_id',nom:'Client',type:'select',options:clients.map(function(c){return [c.id,c.entreprise];})},
+      {id:'montant_ht',nom:'Montant HT',type:'number',requis:true},
+      {id:'tva',nom:'TVA %',type:'number',valeur:20},
+      {id:'valide_jusqu',nom:'Valable jusqu’au',type:'date'},
+      {id:'conditions',nom:'Conditions',type:'textarea',large:true,aide:'Acompte, délais, ce qui est inclus'}
+    ],async function(v){
+      v.proprietaire=moi;
+      var d=await ecrire('oq_devis',v);
+      await tracer('devis.cree',v.objet,d[0]&&d[0].id);
+      VUES.devis();
+    });
+  });
+  try{
+    var d=await lire('oq_devis','select=*&order=cree_le.desc&limit=300');
+    var nom={}; clients.forEach(function(c){nom[c.id]=c.entreprise;});
+    var g={brouillon:'neu',envoye:'att',accepte:'ok',refuse:'ret'};
+    var suite={brouillon:['envoye','Marquer envoyé'],envoye:['accepte','Marquer accepté']};
+    $('#vue').innerHTML='<div class="panneau">'
+      +(d.length?('<div class="tbl-scroll"><table><thead><tr><th>Numéro</th><th>Client</th><th>Objet</th><th class="n">Montant HT</th><th>Statut</th><th></th></tr></thead><tbody>'
+      +d.map(function(x){
+        var s=suite[x.statut];
+        return '<tr><td class="mono">'+ech(x.numero||'')+'</td><td>'+ech(nom[x.client_id]||'')
+          +'</td><td>'+ech(x.objet)+'</td><td class="n">'+euro(x.montant_ht)+'</td><td>'
+          +etat(x.statut,g[x.statut]||'neu')+'</td><td class="n">'
+          +(s?'<button class="btn" data-devis="'+x.id+'" data-vers="'+s[0]+'">'+s[1]+'</button>':'')
+          +(x.statut==='accepte'?'<button class="btn" data-facturer="'+x.id+'">Facturer</button>':'')
+          +'</td></tr>';}).join('')+'</tbody></table></div>')
+      :vide('Aucun devis','Un devis créé ici reçoit son numéro automatiquement, et alimente le taux de transformation du tableau de bord.'))
+      +'</div>';
+    $$('[data-devis]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        var vers=b.dataset.vers, ch={statut:vers};
+        ch[vers==='envoye'?'envoye_le':'decide_le']=new Date().toISOString();
+        await modifier('oq_devis','id=eq.'+b.dataset.devis,ch);
+        await tracer('devis.'+vers,''); VUES.devis();
+      };
+    });
+    $$('[data-facturer]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        var src=d.filter(function(x){return x.id===b.dataset.facturer;})[0];
+        var fin=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+        await ecrire('oq_factures',{client_id:src.client_id,devis_id:src.id,objet:src.objet,
+          montant_ht:src.montant_ht,tva:src.tva,statut:'envoyee',
+          emise_le:new Date().toISOString().slice(0,10),echeance_le:fin});
+        await tracer('facture.creee',src.objet);
+        location.hash='#factures';
+      };
+    });
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Factures ──────────────────────────────────────────────────────── */
+VUES.factures=async function(){
+  var clients=await lire('oq_clients','select=id,entreprise&order=entreprise').catch(function(){return [];});
+  bouton('+ Facture',function(){
+    if(!clients.length){alert('Créez d’abord un client.');return;}
+    formulaire('Nouvelle facture',[
+      {id:'objet',nom:'Objet',requis:true,large:true},
+      {id:'client_id',nom:'Client',type:'select',options:clients.map(function(c){return [c.id,c.entreprise];})},
+      {id:'montant_ht',nom:'Montant HT',type:'number',requis:true},
+      {id:'tva',nom:'TVA %',type:'number',valeur:20},
+      {id:'emise_le',nom:'Émise le',type:'date',valeur:new Date().toISOString().slice(0,10)},
+      {id:'echeance_le',nom:'Échéance',type:'date',valeur:new Date(Date.now()+30*864e5).toISOString().slice(0,10)}
+    ],async function(v){
+      v.statut='envoyee';
+      var f=await ecrire('oq_factures',v);
+      await tracer('facture.creee',v.objet,f[0]&&f[0].id);
+      VUES.factures();
+    });
+  });
+  try{
+    var f=await lire('oq_factures','select=*&order=cree_le.desc&limit=300');
+    var nom={}; clients.forEach(function(c){nom[c.id]=c.entreprise;});
+    var auj=new Date().toISOString().slice(0,10);
+    var g={brouillon:'neu',envoyee:'att',payee:'ok',retard:'ret'};
+    /* Le retard se constate, il ne se saisit pas. */
+    f.forEach(function(x){ if(x.statut==='envoyee'&&x.echeance_le&&x.echeance_le<auj) x.statut='retard'; });
+    var ttc=function(x){return (+x.montant_ht||0)*(1+(+x.tva||0)/100);};
+    $('#vue').innerHTML='<div class="panneau">'
+      +(f.length?('<div class="tbl-scroll"><table><thead><tr><th>Numéro</th><th>Client</th><th>Objet</th><th>Échéance</th><th class="n">TTC</th><th>Statut</th><th></th></tr></thead><tbody>'
+      +f.map(function(x){
+        return '<tr><td class="mono">'+ech(x.numero||'')+'</td><td>'+ech(nom[x.client_id]||'')
+          +'</td><td>'+ech(x.objet||'')+'</td><td>'+date(x.echeance_le)+'</td><td class="n">'
+          +euro(ttc(x))+'</td><td>'+etat(x.statut,g[x.statut]||'neu')+'</td><td class="n">'
+          +(x.statut!=='payee'?'<button class="btn" data-payee="'+x.id+'">Encaissée</button>':date(x.payee_le))
+          +'</td></tr>';}).join('')+'</tbody></table></div>')
+      :vide('Aucune facture','Les factures issues d’un devis accepté se créent en un clic depuis l’écran Devis.'))
+      +'</div>';
+    $$('[data-payee]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        await modifier('oq_factures','id=eq.'+b.dataset.payee,
+          {statut:'payee',payee_le:new Date().toISOString().slice(0,10)});
+        await tracer('facture.encaissee',''); VUES.factures();
+      };
+    });
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Abonnements ───────────────────────────────────────────────────── */
+VUES.abonnements=async function(){
+  var clients=await lire('oq_clients','select=id,entreprise&order=entreprise').catch(function(){return [];});
+  bouton('+ Abonnement',function(){
+    if(!clients.length){alert('Créez d’abord un client.');return;}
+    formulaire('Nouvel abonnement',[
+      {id:'libelle',nom:'Libellé',requis:true,large:true,aide:'Ex. Hébergement et maintenance'},
+      {id:'client_id',nom:'Client',type:'select',options:clients.map(function(c){return [c.id,c.entreprise];})},
+      {id:'montant_mois',nom:'Montant par mois',type:'number',requis:true},
+      {id:'debut_le',nom:'Début',type:'date',valeur:new Date().toISOString().slice(0,10)}
+    ],async function(v){
+      var a=await ecrire('oq_abonnements',v);
+      await tracer('abonnement.cree',v.libelle,a[0]&&a[0].id);
+      VUES.abonnements();
+    });
+  });
+  try{
+    var a=await lire('oq_abonnements','select=*&order=cree_le.desc&limit=200');
+    var nom={}; clients.forEach(function(c){nom[c.id]=c.entreprise;});
+    var actifs=a.filter(function(x){return x.statut==='actif';});
+    var mrr=actifs.reduce(function(s,x){return s+(+x.montant_mois||0);},0);
+    var h='<div class="kpis">'
+      +kpi('Revenu mensuel',euro(mrr),'bleu',actifs.length+' abonnement(s) actif(s)')
+      +kpi('Sur douze mois',euro(mrr*12),'','à périmètre constant')
+      +kpi('Panier moyen',euro(actifs.length?mrr/actifs.length:0),'','par client abonné')
+      +'</div><div class="panneau">';
+    h+=a.length?('<div class="tbl-scroll"><table><thead><tr><th>Libellé</th><th>Client</th><th>Début</th><th class="n">Par mois</th><th>Statut</th><th></th></tr></thead><tbody>'
+      +a.map(function(x){
+        return '<tr><td>'+ech(x.libelle)+'</td><td>'+ech(nom[x.client_id]||'')+'</td><td>'
+          +date(x.debut_le)+'</td><td class="n">'+euro(x.montant_mois)+'</td><td>'
+          +etat(x.statut,x.statut==='actif'?'ok':'neu')+'</td><td class="n">'
+          +(x.statut==='actif'?'<button class="btn" data-stop="'+x.id+'">Arrêter</button>':'')
+          +'</td></tr>';}).join('')+'</tbody></table></div>')
+      :vide('Aucun abonnement','C’est le revenu qui ne se renégocie pas chaque mois. Ajoutez l’hébergement et la maintenance de chaque logiciel livré.');
+    $('#vue').innerHTML=h+'</div>';
+    $$('[data-stop]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        await modifier('oq_abonnements','id=eq.'+b.dataset.stop,
+          {statut:'arrete',fin_le:new Date().toISOString().slice(0,10)});
+        await tracer('abonnement.arrete',''); VUES.abonnements();
+      };
+    });
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Automatisations ───────────────────────────────────────────────── */
+VUES.automatisations=async function(){
+  try{
+    var a=await lire('oq_automatisations','select=*&order=domaine,nom');
+    var h='<div class="panneau"><header><h2>Ce qui tourne sans vous</h2>'
+      +'<span class="aide">le moteur passe toutes les cinq minutes</span></header><div class="corps">';
+    h+=a.length?a.map(function(x){
+      var total=(x.succes||0)+(x.echecs||0);
+      var fiab=total?Math.round(100*(x.succes||0)/total)+' % de réussite':'pas encore de passage';
+      return '<div class="bascule"><div><b>'+ech(x.nom)+'</b>'
+        +'<div style="color:var(--faible);font-size:13px">'+ech(x.description||'')+'</div>'
+        +'<div class="mono" style="color:var(--faible);font-size:12px">'+ech(x.cadence||'')
+        +' · '+fiab+(x.derniere_le?' · dernier passage '+depuis(x.derniere_le):'')+'</div></div>'
+        +'<button class="btn'+(x.active?' fort':'')+'" data-auto="'+x.id+'" data-actif="'+(x.active?'1':'0')+'">'
+        +(x.active?'Active':'En pause')+'</button></div>';
+    }).join('')
+      :vide('Aucune automatisation déclarée','Exécutez oniq-admin-schema.sql : les quatre automatisations déjà en production s’inscriront ici.');
+    $('#vue').innerHTML=h+'</div></div>';
+    $$('[data-auto]').forEach(function(b){
+      b.onclick=async function(){
+        var vers=b.dataset.actif!=='1';
+        b.disabled=true;
+        await modifier('oq_automatisations','id=eq.'+b.dataset.auto,{active:vers});
+        await tracer(vers?'automatisation.activee':'automatisation.mise_en_pause',
+          b.parentNode.querySelector('b').textContent);
+        VUES.automatisations();
+      };
+    });
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Réglages ──────────────────────────────────────────────────────── */
+VUES.reglages=async function(){
+  try{
+    var r=await Promise.all([
+      lire('oq_expediteurs','select=*&limit=50').catch(function(){return [];}),
+      lire('oq_modeles','select=canal,etape,sujet,maj_le&order=canal,etape').catch(function(){return [];})
+    ]);
+    var h='<div class="duo"><div class="panneau"><header><h2>Expéditeurs</h2></header>';
+    h+=r[0].length?('<div class="tbl-scroll"><table><thead><tr><th>Commercial</th><th>Alias</th><th>Téléphone</th></tr></thead><tbody>'
+      +r[0].map(function(x){
+        return '<tr><td>'+ech(x.nom||x.owner_email||'')+'</td><td class="mono">'+ech(x.alias||'')
+          +'</td><td>'+ech(x.tel||'')+'</td></tr>';}).join('')+'</tbody></table></div>')
+      :vide('Aucun expéditeur','Chaque commercial renseigne son alias à sa première connexion au CRM.');
+    h+='</div><div class="panneau"><header><h2>Modèles de messages</h2>'
+      +'<span class="aide">édition dans le CRM</span></header>';
+    h+=r[1].length?('<div class="tbl-scroll"><table><thead><tr><th>Canal</th><th>Étape</th><th>Objet</th><th>Modifié</th></tr></thead><tbody>'
+      +r[1].map(function(x){
+        return '<tr><td>'+ech(x.canal)+'</td><td>'+ech(x.etape)+'</td><td>'
+          +ech(String(x.sujet||'').slice(0,42))+'</td><td>'+date(x.maj_le)+'</td></tr>';}).join('')
+      +'</tbody></table></div>')
+      :vide('Modèles par défaut','Aucun modèle enregistré : le moteur utilise les textes du code.');
+    h+='</div></div>';
+    h+='<div class="panneau"><header><h2>Maison</h2></header><div class="corps">'
+      +'<div class="bascule"><div><b>ONIQ SOFTWARE</b><div style="color:var(--faible);font-size:13px">'
+      +'SAS · SIRET 103 508 263 00011 · Marsanne (26)</div></div></div>'
+      +'<div class="bascule"><div><b>Sauvegarde de la base</b>'
+      +'<div style="color:var(--faible);font-size:13px">Aucune sauvegarde automatique à ce jour. '
+      +'Un export manuel depuis Supabase une fois par semaine coûte cinq minutes et évite de tout reperdre.</div></div></div>'
+      +'</div></div>';
+    $('#vue').innerHTML=h;
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+
+/* ══ Ressources de marque ════════════════════════════════════════════
+   Tout est fabriqué ici, dans la page. Aucun fichier à héberger, aucun
+   dossier à retrouver dans six mois : les images sont dessinées à la
+   demande et téléchargées au clic, toujours identiques. */
+
+/* La marque, un seul jeu de valeurs dont tout le reste découle. */
+var MARQUE={
+  nom:'ONIQ',
+  bapteme:'Logiciels et applications sur mesure',
+  ancre:'#0B0E13', encre:'#EAEDF2', signal:'#7FA8FF', signalClair:'#2B5FD9',
+  papier:'#FAFAFB', gris:'#8B94A5', signalR:'127,168,255',
+  titre:'"Instrument Sans", system-ui, sans-serif'
+};
+
+/* ── Le symbole ──────────────────────────────────────────────────────
+   ONIQ se termine par un Q, et un Q est un O qui déborde. Le symbole
+   est donc cette lettre-là : un anneau à graisse modulée, plus fin en
+   haut qu'en bas comme dans une vraie typographie, ouvert en bas à
+   droite par une entaille nette, que traverse une queue effilée.
+   L'anneau dit la rigueur, la queue dit que l'on sort du cadre.
+
+   Un seul jeu de tracés sert partout : le SVG les pose tels quels, le
+   canevas les rejoue avec Path2D. L'image téléchargée et l'image à
+   l'écran ne peuvent donc jamais diverger. */
+var TRACE={
+  /* Anneau : cercle extérieur, cercle intérieur remonté de huit
+     unités. La graisse est donc plus fine en haut qu'en bas, comme
+     dans une lettre dessinée. Rempli en règle pair-impair, le second
+     tracé creuse le premier. */
+  anneau:'M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 Z'
+        +'M137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z',
+  queue:'M366,315.6 C416,338 456,392 474,458 C424,424 376,396 315.6,366 Z'
+};
+
+function symboleSVG(fond,trait,accent,taille,cle){
+  var t=taille||512, id=cle||('g'+Math.round(t*97));
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="'+t+'" height="'+t+'">'
+    +'<defs>'
+    +'<linearGradient id="a'+id+'" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="'+trait+'"/>'
+      +'<stop offset="1" stop-color="'+trait+'" stop-opacity=".72"/></linearGradient>'
+    +'<linearGradient id="q'+id+'" x1="0" y1="0" x2="1" y2="1">'
+      +'<stop offset="0" stop-color="'+accent+'" stop-opacity=".55"/>'
+      +'<stop offset="1" stop-color="'+accent+'"/></linearGradient>'
+    +'</defs>'
+    +(fond?'<rect width="512" height="512" rx="116" fill="'+fond+'"/>':'')
+    +'<path d="'+TRACE.anneau+'" fill="url(#a'+id+')" fill-rule="evenodd"/>'
+    +'<path d="'+TRACE.queue+'" fill="url(#q'+id+')"/>'
+    +'</svg>';
+}
+/* Silhouette pleine : sert de masque aux effets, jamais d'export. */
+function symboleMasque(part){
+  var d='';
+  if(part!=='queue') d+='<path d="'+TRACE.anneau+'" fill="#000" fill-rule="evenodd"/>';
+  if(part!=='anneau') d+='<path d="'+TRACE.queue+'" fill="#000"/>';
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">'+d+'</svg>');
+}
+/* ── Le logotype ─────────────────────────────────────────────────────
+   Les quatre lettres sont dessinées, aucune n'est composée. Toutes
+   partagent la même boîte : hauteur de capitale de 80 à 432, graisse
+   de 57 unités pour les fûts, anneau modulé de 49 en haut à 65 en bas.
+   Le mot ne dépend donc d'aucune police : il s'affiche à l'identique
+   partout, y compris ouvert dans un logiciel de dessin ou chez un
+   imprimeur qui n'a pas Instrument Sans. */
+var LETTRES={
+  O:{d:TRACE.anneau, avance:352},
+  /* Le N : deux fûts et une diagonale de même graisse, les arêtes de
+     la diagonale décalées de 96 unités en hauteur pour retrouver 57
+     mesurés perpendiculairement. */
+  N:{d:'M80,80 H137 L323,336 V80 H380 V432 H323 L137,176 V432 H80 Z', avance:300},
+  I:{d:'M80,80 H137 V432 H80 Z', avance:57},
+  Q:{d:TRACE.anneau, q:TRACE.queue, avance:352}
+};
+var CHASSE=100;                  /* l'approche entre deux lettres */
+var LARGEUR_MOT=352+CHASSE+300+CHASSE+57+CHASSE+352;   /* 1361 unités */
+
+function motSVG(gauche,ligneBase,cap,encre,accent){
+  var s=cap/352, x=gauche, out='';
+  'ONIQ'.split('').forEach(function(c){
+    var L=LETTRES[c];
+    out+='<g transform="translate('+(x-80*s).toFixed(2)+','+(ligneBase-432*s).toFixed(2)+') '
+      +'scale('+s.toFixed(5)+')"><path d="'+L.d+'" fill="'+encre+'" fill-rule="evenodd"/>'
+      +(L.q?'<path d="'+L.q+'" fill="'+accent+'"/>':'')+'</g>';
+    x+=(L.avance+CHASSE)*s;
+  });
+  return out;
+}
+function largeurMot(cap){ return LARGEUR_MOT*cap/352; }
+
+function logoSVG(fond,encre,accent){
+  var cap=58;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">'
+    +(fond?'<rect width="600" height="200" fill="'+fond+'"/>':'')
+    +motSVG(40,110,cap,encre,accent)
+    +'<text x="42" y="162" font-family="Instrument Sans, Helvetica, Arial, sans-serif" font-size="19" '
+    +'letter-spacing="1.3" fill="'+MARQUE.gris+'">Logiciels et applications sur mesure</text>'
+    +'</svg>';
+}
+/* Le mot seul, cadré au plus juste : c'est cette version qui part dans
+   les en-têtes de site et les signatures. */
+function motSVGSeul(encre,accent){
+  var cap=352, l=largeurMot(cap)+42;   /* la queue du Q deborde de sa chasse */
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 76 '+Math.round(l)+' 386" '
+    +'width="'+Math.round(l)+'" height="386">'+motSVG(80,432,cap,encre,accent)+'</svg>';
+}
+
+/* Dessin des images matricielles. Le texte passe par le canevas et non
+   par le SVG : la police y est celle réellement chargée, donc le rendu
+   est identique à celui du site. */
+function peindre(l,h,fn){
+  var c=document.createElement('canvas');
+  var d=Math.min(2,window.devicePixelRatio||1);
+  c.width=l*d; c.height=h*d;
+  var x=c.getContext('2d'); x.scale(d,d);
+  fn(x,l,h);
+  return c;
+}
+function fondSombre(x,l,h){
+  var f=x.createLinearGradient(0,0,l,h);
+  f.addColorStop(0,'#0E1218'); f.addColorStop(.55,MARQUE.ancre); f.addColorStop(1,'#080A0E');
+  x.fillStyle=f; x.fillRect(0,0,l,h);
+  x.strokeStyle='rgba(255,255,255,.035)'; x.lineWidth=1;
+  for(var i=32;i<l;i+=32){ x.beginPath(); x.moveTo(i+.5,0); x.lineTo(i+.5,h); x.stroke(); }
+  /* Une lueur froide dans l'angle, comme sur la vitrine. */
+  var lu=x.createRadialGradient(l*.82,0,0,l*.82,0,h*1.5);
+  lu.addColorStop(0,'rgba('+MARQUE.signalR+',.13)'); lu.addColorStop(1,'rgba('+MARQUE.signalR+',0)');
+  x.fillStyle=lu; x.fillRect(0,0,l,h);
+}
+/* Le symbole au canevas, exactement les mêmes tracés qu'en SVG. */
+function symboleCanevas(x,cx,cy,r,trait,accent){
+  var e=r/176;                       /* r = rayon extérieur voulu */
+  x.save(); x.translate(cx-256*e,cy-256*e); x.scale(e,e);
+  var ga=x.createLinearGradient(0,80,0,432);
+  ga.addColorStop(0,trait); ga.addColorStop(1,teinter(trait,.72));
+  x.fillStyle=ga; x.fill(new Path2D(TRACE.anneau),'evenodd');
+  var gq=x.createLinearGradient(340,322,474,458);
+  gq.addColorStop(0,teinter(accent,.55)); gq.addColorStop(1,accent);
+  x.fillStyle=gq; x.fill(new Path2D(TRACE.queue));
+  x.restore();
+}
+function teinter(hex,opacite){
+  var n=parseInt(hex.slice(1),16);
+  return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+opacite+')';
+}
+/* Le meme logotype au canevas : memes traces, meme boite, donc le PNG
+   telecharge et le SVG sont superposables au pixel pres. */
+function motCanevas(x,px,ligneBase,taille,encre,accent,centre){
+  var cap=taille*0.72, s=cap/352;
+  var largeur=largeurMot(cap);
+  var d=centre?px-largeur/2:px;
+  'ONIQ'.split('').forEach(function(c){
+    var L=LETTRES[c];
+    x.save(); x.translate(d-80*s,ligneBase-432*s); x.scale(s,s);
+    var ga=x.createLinearGradient(0,80,0,432);
+    ga.addColorStop(0,encre); ga.addColorStop(1,teinter(encre,.86));
+    x.fillStyle=ga; x.fill(new Path2D(L.d),'evenodd');
+    if(L.q){
+      var gq=x.createLinearGradient(340,322,474,458);
+      gq.addColorStop(0,teinter(accent,.72)); gq.addColorStop(1,accent);
+      x.fillStyle=gq; x.fill(new Path2D(L.q));
+    }
+    x.restore();
+    d+=(L.avance+CHASSE)*s;
+  });
+  return largeur;
+}
+
+var IMAGES={
+  favicon:function(t){ return peindre(t,t,function(x,l){
+    var f=x.createLinearGradient(0,0,l,l);
+    f.addColorStop(0,'#12171F'); f.addColorStop(1,MARQUE.ancre);
+    x.fillStyle=f;
+    if(x.roundRect){ x.beginPath(); x.roundRect(0,0,l,l,l*0.226); x.fill(); }
+    else x.fillRect(0,0,l,l);
+    /* Le symbole occupe le carré entier, queue comprise : à seize
+       pixels, tout retrait le rendrait illisible. */
+    symboleCanevas(x,l*0.478,l*0.472,l*0.368,MARQUE.encre,'#A9C6FF');
+  }); },
+  banniere:function(){ return peindre(600,160,function(x,l,h){
+    fondSombre(x,l,h);
+    var fin=motCanevas(x,40,h/2-2,32,MARQUE.encre,MARQUE.signal);
+    x.fillStyle=teinter(MARQUE.signal,.6); x.fillRect(40,h/2+14,fin,1.5);
+    x.font='400 14px '+MARQUE.titre; x.fillStyle=MARQUE.gris;
+    x.fillText(MARQUE.bapteme,42,h/2+40);
+  }); },
+  apercu:function(){ return peindre(1200,630,function(x,l,h){
+    fondSombre(x,l,h);
+    motCanevas(x,l/2,h/2-4,76,MARQUE.encre,MARQUE.signal,true);
+    x.strokeStyle=teinter(MARQUE.signal,.5); x.lineWidth=1.5;
+    x.beginPath(); x.moveTo(l/2-150,h/2+40); x.lineTo(l/2+150,h/2+40); x.stroke();
+    x.textAlign='center';
+    x.font='400 29px '+MARQUE.titre; x.fillStyle=MARQUE.gris;
+    x.fillText('Agence web nouvelle génération',l/2,h/2+92);
+    x.font='500 21px "JetBrains Mono", monospace'; x.fillStyle=MARQUE.encre;
+    x.fillText('Le sur mesure, quatre fois moins cher',l/2,h/2+146);
+    x.textAlign='start';
+  }); },
+  couverture:function(){ return peindre(1128,191,function(x,l,h){
+    fondSombre(x,l,h);
+    var fin=motCanevas(x,64,h/2+2,42,MARQUE.encre,MARQUE.signal);
+    x.fillStyle=teinter(MARQUE.signal,.55); x.fillRect(64,h/2+18,fin,1.5);
+    x.font='400 19px '+MARQUE.titre; x.fillStyle=MARQUE.gris;
+    x.fillText('Logiciels, applications et automatisations sur mesure',66,h/2+46);
+  }); }
+};
+
+function telecharger(nom,blob){
+  var u=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=u; a.download=nom; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(u);},4000);
+}
+function telechargerCanevas(nom,c){ c.toBlob(function(b){ telecharger(nom,b); },'image/png'); }
+function telechargerTexte(nom,txt,type){ telecharger(nom,new Blob([txt],{type:(type||'text/plain')+';charset=utf-8'})); }
+function copier(txt,bouton){
+  var fini=function(){ var v=bouton.textContent; bouton.textContent='Copié'; bouton.disabled=true;
+    setTimeout(function(){bouton.textContent=v; bouton.disabled=false;},1400); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(fini,function(){});
+  else{ var t=document.createElement('textarea'); t.value=txt; document.body.appendChild(t);
+    t.select(); try{document.execCommand('copy');}catch(e){} t.remove(); fini(); }
+}
+
+/* Les extraits que l'on recolle sans réfléchir, au bon endroit. */
+var EXTRAITS={
+  favicon:'<link rel="icon" href="/favicon.svg" type="image/svg+xml">\n'
+    +'<link rel="icon" href="/favicon-32.png" sizes="32x32">\n'
+    +'<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n'
+    +'<link rel="manifest" href="/site.webmanifest">',
+  partage:'<meta property="og:title" content="ONIQ, agence web nouvelle génération">\n'
+    +'<meta property="og:description" content="Logiciels, applications et automatisations sur mesure, quatre fois moins cher.">\n'
+    +'<meta property="og:image" content="https://oniq.online/apercu.png">\n'
+    +'<meta property="og:url" content="https://oniq.online">\n'
+    +'<meta name="twitter:card" content="summary_large_image">',
+  manifeste:JSON.stringify({name:'ONIQ',short_name:'ONIQ',icons:[
+      {src:'/favicon-192.png',sizes:'192x192',type:'image/png'},
+      {src:'/favicon-512.png',sizes:'512x512',type:'image/png'}],
+    theme_color:'#08090C',background_color:'#08090C',display:'standalone',start_url:'/'},null,2),
+  polices:'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+    +'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">'
+};
+function bandeauCourriel(){
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0B0E13">\n'
+    +'  <tr><td style="padding:26px 30px">\n'
+    +'    <div style="font:700 24px Instrument Sans,Helvetica,Arial,sans-serif;letter-spacing:6px;color:#EAEDF2">ONIQ</div>\n'
+    +'    <div style="height:2px;width:96px;background:#7FA8FF;margin:8px 0 10px"></div>\n'
+    +'    <div style="font:400 14px Helvetica,Arial,sans-serif;color:#8B94A5">'+MARQUE.bapteme+'</div>\n'
+    +'  </td></tr>\n</table>';
+}
+function signatureCourriel(nom,poste,tel,lien){
+  return '<table role="presentation" cellpadding="0" cellspacing="0">\n'
+    +'  <tr><td style="font:600 15px Helvetica,Arial,sans-serif;color:#0B0E13">'+ech(nom)+'</td></tr>\n'
+    +'  <tr><td style="font:400 13px Helvetica,Arial,sans-serif;color:#586274;padding-top:2px">'+ech(poste)+' chez ONIQ</td></tr>\n'
+    +'  <tr><td style="padding:9px 0"><div style="height:2px;width:64px;background:#2B5FD9"></div></td></tr>\n'
+    +'  <tr><td style="font:400 13px Helvetica,Arial,sans-serif;color:#586274">'
+    +(tel?'<a href="tel:'+ech(tel.replace(/\s/g,''))+'" style="color:#2B5FD9;text-decoration:none">'+ech(tel)+'</a> &nbsp;·&nbsp; ':'')
+    +'<a href="https://oniq.online" style="color:#2B5FD9;text-decoration:none">oniq.online</a>'
+    +(lien?' &nbsp;·&nbsp; <a href="'+ech(lien)+'" style="color:#2B5FD9;text-decoration:none">LinkedIn</a>':'')
+    +'</td></tr>\n</table>';
+}
+
+VUES.ressources=function(){
+  var h='';
+
+  /* La scène : le symbole en grand, balayé par une lumière. Le masque
+     découpe la silhouette, le dégradé conique tourne dessous. Aucune
+     image n'est redessinée, la carte graphique fait tout le travail,
+     et l'animation s'arrête si le système demande moins de mouvement. */
+  h+='<div class="panneau scene"><header><h2>Le symbole et le logo</h2>'
+    +'<span class="aide">le même dessin partout, du favicon à la façade</span></header>'
+    +'<div class="corps">'
+    +'<div class="vitrine">'
+      +'<div class="halo"></div>'
+      +'<div class="astre" style="--anneau:url(&quot;'+symboleMasque('anneau')+'&quot;);--queue:url(&quot;'+symboleMasque('queue')+'&quot;)">'
+        +'<div class="chair"></div><div class="eclat"></div><div class="voile"></div><div class="trait"></div></div>'
+      +'<div class="dit"><b>ONI<i>Q</i></b>'
+        +'<span>Un anneau à graisse modulée, plus fin en haut qu’en bas comme dans une '
+        +'lettre dessinée, et la queue du Q en trait effilé qui s’en échappe. '
+        +'La rigueur, et la ligne qui sort du cadre.</span></div>'
+    +'</div>'
+    +'<div class="res">'
+    +'<div class="ress"><div class="apercu sombre">'+symboleSVG(MARQUE.ancre,MARQUE.encre,MARQUE.signal,96,'s1')+'</div>'
+      +'<div class="quoi"><b>Symbole</b><span>Tracé vectoriel pur, sans police ni effet. Net à seize pixels comme à cinq cents.</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="symbole-svg">SVG</button>'
+      +'<button class="btn" data-tel="symbole-512">PNG 512</button></div></div>'
+    +'<div class="ress"><div class="apercu sombre">'+logoSVG(null,MARQUE.encre,MARQUE.signal)+'</div>'
+      +'<div class="quoi"><b>Logo sur fond sombre</b><span>Usage par défaut, site et présentations.</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="logo-sombre">SVG</button></div></div>'
+    +'<div class="ress"><div class="apercu clair">'+logoSVG(null,MARQUE.ancre,MARQUE.signalClair)+'</div>'
+      +'<div class="quoi"><b>Logo sur fond clair</b><span>Devis, factures, documents imprimés.</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="logo-clair">SVG</button></div></div>'
+    +'</div></div></div>';
+
+  h+='<div class="panneau"><header><h2>Favicon</h2>'
+    +'<span class="aide">le site n’en a aucun aujourd’hui, c’est la première chose à poser</span></header><div class="corps">'
+    +'<div class="res">'
+    +'<div class="ress"><div class="apercu sombre petit">'+symboleSVG(MARQUE.ancre,MARQUE.encre,MARQUE.signal,32,'f1')+'</div>'
+      +'<div class="quoi"><b>Onglet du navigateur</b><span>favicon.svg et favicon-32.png</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="fav-svg">SVG</button>'
+      +'<button class="btn" data-tel="fav-32">PNG 32</button></div></div>'
+    +'<div class="ress"><div class="apercu sombre">'+symboleSVG(MARQUE.ancre,MARQUE.encre,MARQUE.signal,72,'f2')+'</div>'
+      +'<div class="quoi"><b>Écran d’accueil et application</b><span>180, 192 et 512 pixels</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="fav-180">180</button>'
+      +'<button class="btn" data-tel="fav-192">192</button>'
+      +'<button class="btn" data-tel="fav-512">512</button></div></div>'
+    +'</div>'
+    +bloc('À coller dans le &lt;head&gt; du site',EXTRAITS.favicon,'k1')
+    +bloc('site.webmanifest, à déposer à la racine',EXTRAITS.manifeste,'k2')
+    +'</div></div>';
+
+  h+='<div class="panneau"><header><h2>Bannières et images de partage</h2></header><div class="corps">'
+    +'<div class="res">'
+    +'<div class="ress large"><canvas class="toile" data-toile="banniere"></canvas>'
+      +'<div class="quoi"><b>Bandeau de campagne</b><span>600 × 160, en tête des emails de prospection.</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="banniere">PNG</button></div></div>'
+    +'<div class="ress large"><canvas class="toile" data-toile="apercu"></canvas>'
+      +'<div class="quoi"><b>Aperçu de partage</b><span>1200 × 630, ce que voient WhatsApp, LinkedIn et Google.</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="apercu">PNG</button></div></div>'
+    +'<div class="ress large"><canvas class="toile" data-toile="couverture"></canvas>'
+      +'<div class="quoi"><b>Couverture LinkedIn</b><span>1128 × 191, page entreprise.</span></div>'
+      +'<div class="actes"><button class="btn" data-tel="couverture">PNG</button></div></div>'
+    +'</div>'
+    +bloc('Bandeau en HTML, préférable à une image dans un email',bandeauCourriel(),'k3')
+    +bloc('Balises de partage, dans le &lt;head&gt;',EXTRAITS.partage,'k4')
+    +'</div></div>';
+
+  /* Signature : elle se remplit avec le compte connecté. */
+  h+='<div class="panneau"><header><h2>Signature email</h2>'
+    +'<span class="aide">une par commercial, même dessin pour tous</span></header><div class="corps">'
+    +'<div class="grille2">'
+    +'<div class="champ"><label for="sg-nom">Nom</label><input id="sg-nom" value=""></div>'
+    +'<div class="champ"><label for="sg-poste">Poste</label><input id="sg-poste" value="Développement commercial"></div>'
+    +'<div class="champ"><label for="sg-tel">Téléphone</label><input id="sg-tel" placeholder="06 24 08 19 10"></div>'
+    +'<div class="champ"><label for="sg-lien">LinkedIn</label><input id="sg-lien" placeholder="https://linkedin.com/in/..."></div>'
+    +'</div><div id="sg-rendu"></div></div></div>';
+
+  h+='<div class="duo">';
+  h+='<div class="panneau"><header><h2>Couleurs</h2><span class="aide">cliquez pour copier</span></header><div class="corps">'
+    +'<div class="nuancier">'
+    +[['Fond','#08090C','le noir bleuté de la maison'],['Surface','#0E1116','cartes et panneaux'],
+      ['Filet','#1B212B','les traits d’un pixel'],['Texte','#EAEDF2',''],['Atténué','#8B94A5','les seconds rôles'],
+      ['Signal','#7FA8FF','sur fond sombre'],['Signal clair','#2B5FD9','sur fond clair'],
+      ['Encaissé','#5FD3A6',''],['Attente','#E0B15C',''],['Retard','#E8796B','']]
+      .map(function(c){
+        return '<button class="teinte" data-copie="'+c[1]+'"><span style="background:'+c[1]+'"></span>'
+          +'<b>'+ech(c[0])+'</b><i class="mono">'+c[1]+'</i>'
+          +(c[2]?'<em>'+ech(c[2])+'</em>':'')+'</button>';}).join('')
+    +'</div></div></div>';
+  h+='<div class="panneau"><header><h2>Typographie</h2></header><div class="corps">'
+    +'<div class="specimen"><div class="gd">Instrument Sans</div>'
+    +'<div class="attn">Titres et textes courants. Graisses 400, 500, 600 et 700.</div>'
+    +'<div class="gd mono" style="font-size:26px;margin-top:18px">JetBrains Mono</div>'
+    +'<div class="attn">Chiffres, références, tout ce qui doit s’aligner.</div></div>'
+    +bloc('Chargement des polices',EXTRAITS.polices,'k5')
+    +'</div></div>';
+  h+='</div>';
+
+  h+='<div class="panneau"><header><h2>Mentions et éléments légaux</h2></header><div class="corps">'
+    +'<div class="res">'
+    +[['Raison sociale','ONIQ SOFTWARE, SAS'],['SIRET','103 508 263 00011'],
+      ['Siège','Marsanne (26)'],['Direction','Ruben, président. Melvyn Charbonnel, directeur général'],
+      ['Site','oniq.online'],['WhatsApp','+33 6 24 08 19 10']]
+      .map(function(m){ return '<button class="ress mention" data-copie="'+ech(m[1])+'">'
+        +'<div class="quoi"><b>'+ech(m[0])+'</b><span>'+ech(m[1])+'</span></div></button>';}).join('')
+    +'</div></div></div>';
+
+  $('#vue').innerHTML=h;
+
+  /* Les toiles se peignent une fois la police disponible, sinon le
+     rendu tombe sur une police de secours et le logo change d’allure. */
+  var peindreToiles=function(){
+    $$('[data-toile]').forEach(function(c){
+      var src=IMAGES[c.dataset.toile]();
+      c.width=src.width; c.height=src.height;
+      c.getContext('2d').drawImage(src,0,0);
+    });
+  };
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(peindreToiles); else peindreToiles();
+
+  var sorties={
+    'symbole-svg':function(){ telechargerTexte('oniq-symbole.svg',symboleSVG(MARQUE.ancre,MARQUE.encre,MARQUE.signal),'image/svg+xml'); },
+    'symbole-512':function(){ telechargerCanevas('oniq-symbole-512.png',IMAGES.favicon(512)); },
+    'logo-sombre':function(){ telechargerTexte('oniq-logo-fond-sombre.svg',logoSVG(null,MARQUE.encre,MARQUE.signal),'image/svg+xml'); },
+    'logo-clair':function(){ telechargerTexte('oniq-logo-fond-clair.svg',logoSVG(null,MARQUE.ancre,MARQUE.signalClair),'image/svg+xml'); },
+    'fav-svg':function(){ telechargerTexte('favicon.svg',symboleSVG(MARQUE.ancre,MARQUE.encre,MARQUE.signal),'image/svg+xml'); },
+    'fav-32':function(){ telechargerCanevas('favicon-32.png',IMAGES.favicon(32)); },
+    'fav-180':function(){ telechargerCanevas('apple-touch-icon.png',IMAGES.favicon(180)); },
+    'fav-192':function(){ telechargerCanevas('favicon-192.png',IMAGES.favicon(192)); },
+    'fav-512':function(){ telechargerCanevas('favicon-512.png',IMAGES.favicon(512)); },
+    'banniere':function(){ telechargerCanevas('oniq-bandeau-600x160.png',IMAGES.banniere()); },
+    'apercu':function(){ telechargerCanevas('oniq-apercu-1200x630.png',IMAGES.apercu()); },
+    'couverture':function(){ telechargerCanevas('oniq-couverture-linkedin.png',IMAGES.couverture()); }
+  };
+  $$('[data-tel]').forEach(function(b){ b.onclick=function(){ (sorties[b.dataset.tel]||function(){})(); }; });
+  $$('[data-copie]').forEach(function(b){ b.onclick=function(){ copier(b.dataset.copie,b); }; });
+  $$('[data-bloc]').forEach(function(b){
+    b.onclick=function(){ copier(document.getElementById('bl-'+b.dataset.bloc).textContent,b); };
+  });
+
+  var rafraichirSignature=function(){
+    var nom=$('#sg-nom').value.trim()||'Votre nom';
+    var code=signatureCourriel(nom,$('#sg-poste').value.trim()||'Développement commercial',
+      $('#sg-tel').value.trim(),$('#sg-lien').value.trim());
+    $('#sg-rendu').innerHTML='<div class="apercu clair" style="padding:22px;justify-content:flex-start">'+code+'</div>'
+      +bloc('Le code, à coller dans les paramètres de la boîte mail',code,'sg');
+    $('#vue').querySelectorAll('[data-bloc="sg"]').forEach(function(b){
+      b.onclick=function(){ copier(document.getElementById('bl-sg').textContent,b); };
+    });
+  };
+  ['sg-nom','sg-poste','sg-tel','sg-lien'].forEach(function(i){ $('#'+i).oninput=rafraichirSignature; });
+  $('#sg-nom').value=(moi||'').split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+  rafraichirSignature();
+};
+function bloc(titre,code,cle){
+  return '<div class="extrait"><header>'+titre+'<button class="btn" data-bloc="'+cle+'">Copier</button></header>'
+    +'<pre id="bl-'+cle+'">'+ech(code)+'</pre></div>';
+}
+/* ══ Démarrage ══════════════════════════════════════════════════════ */
+try{
+  var reprise=JSON.parse(sessionStorage.getItem('oq_adm')||'null');
+  if(reprise&&reprise.j){ jeton=reprise.j; moi=reprise.m; ouvrir(); }
+}catch(e){}
+})();
+</script>
+</body>
+</html>

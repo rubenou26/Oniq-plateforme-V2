@@ -8,6 +8,7 @@ Disallow: /espace
 Disallow: /hub
 Disallow: /team
 Disallow: /admin
+Disallow: /admin.html
 Disallow: /commercial
 Disallow: /support
 Disallow: /api/
