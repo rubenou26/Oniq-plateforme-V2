@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Déclaration d'accessibilité | ONIQ</title>
+<meta name="description" content="Déclaration d'accessibilité du site oniq.online, édité par ONIQ SOFTWARE, SAS basée à Marsanne.">
+<link rel="canonical" href="https://www.oniq.online/accessibilite">
+<meta name="robots" content="index,follow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27116%27%20fill%3D%27%230B0E13%27%2F%3E%3Cg%20transform%3D%27translate(256%2C252)%20scale(0.93)%20translate(-262%2C-258)%27%3E%3Cpath%20d%3D%27M80%2C256%20A176%2C176%200%201%2C0%20432%2C256%20A176%2C176%200%201%2C0%2080%2C256%20ZM137%2C248%20A119%2C119%200%201%2C0%20375%2C248%20A119%2C119%200%201%2C0%20137%2C248%20Z%27%20fill%3D%27%23EAEDF2%27%20fill-rule%3D%27evenodd%27%2F%3E%3Cpath%20d%3D%27M366%2C315.6%20C416%2C338%20456%2C392%20474%2C458%20C424%2C424%20376%2C396%20315.6%2C366%20Z%27%20fill%3D%27%23A9C6FF%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27116%27%20fill%3D%27%230B0E13%27%2F%3E%3Cg%20transform%3D%27translate(256%2C252)%20scale(0.93)%20translate(-262%2C-258)%27%3E%3Cpath%20d%3D%27M80%2C256%20A176%2C176%200%201%2C0%20432%2C256%20A176%2C176%200%201%2C0%2080%2C256%20ZM137%2C248%20A119%2C119%200%201%2C0%20375%2C248%20A119%2C119%200%201%2C0%20137%2C248%20Z%27%20fill%3D%27%23EAEDF2%27%20fill-rule%3D%27evenodd%27%2F%3E%3Cpath%20d%3D%27M366%2C315.6%20C416%2C338%20456%2C392%20474%2C458%20C424%2C424%20376%2C396%20315.6%2C366%20Z%27%20fill%3D%27%23A9C6FF%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#08090C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script>/* L'habillage choisi sur le site suit le visiteur jusqu'ici. */
+(function(){try{var t=localStorage.getItem("oq-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  :root{--fond:#08090C;--surface:#0E1116;--filet:#1B212B;--filet-fort:#2A3341;
+    --texte:#EAEDF2;--attenue:#8B94A5;--faible:#59616F;--signal:#7FA8FF;--signal-r:127,168,255}
+  @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+    --fond:#FAFAFB;--surface:#FFFFFF;--filet:#E5E8ED;--filet-fort:#D1D6DF;
+    --texte:#0B0E13;--attenue:#586274;--faible:#8B94A5;--signal:#2B5FD9;--signal-r:43,95,217}}
+  :root[data-theme="light"]{--fond:#FAFAFB;--surface:#FFFFFF;--filet:#E5E8ED;--filet-fort:#D1D6DF;
+    --texte:#0B0E13;--attenue:#586274;--faible:#8B94A5;--signal:#2B5FD9;--signal-r:43,95,217}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);
+    font:400 16px/1.75 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--signal)}
+  .w{width:min(760px,calc(100% - 44px));margin:0 auto}
+  .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--fond) 82%,transparent);
+    backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid var(--filet)}
+  .top .w{display:flex;align-items:center;justify-content:space-between;gap:18px;height:70px;
+    width:min(1100px,calc(100% - 44px))}
+  .logo{display:inline-flex;align-items:center;text-decoration:none;color:var(--texte)}
+  .logo .mot{height:24px;width:auto;display:block}
+  .logo .mot .q{fill:var(--signal)}
+  .retour{font-size:13.5px;color:var(--attenue);text-decoration:none}
+  .retour:hover{color:var(--texte)}
+  header.page{padding:64px 0 26px;border-bottom:1px solid var(--filet)}
+  .fil{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--faible);margin:0 0 14px}
+  h1{font-size:clamp(30px,4.6vw,44px);font-weight:600;letter-spacing:-.03em;line-height:1.1;margin:0 0 12px}
+  .maj{color:var(--faible);font-size:13.5px;margin:0}
+  main{padding:14px 0 72px}
+  section{padding:34px 0;border-bottom:1px solid var(--filet)}
+  section:last-child{border-bottom:none}
+  h2{font-size:19px;font-weight:600;letter-spacing:-.015em;margin:0 0 14px}
+  p{margin:0 0 14px;color:var(--attenue);font-size:15px}
+  ul{margin:0 0 14px;padding-left:20px;color:var(--attenue);font-size:15px}
+  li{margin-bottom:6px}
+  .autres{border-top:1px solid var(--filet);padding:34px 0 12px}
+  .autres b{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--faible);font-weight:500;margin-bottom:14px;font-family:"JetBrains Mono",monospace}
+  .autres nav{display:flex;flex-wrap:wrap;gap:9px}
+  .autres a{font-size:13.5px;text-decoration:none;color:var(--attenue);
+    border:1px solid var(--filet);border-radius:999px;padding:7px 14px;transition:color .18s,border-color .18s}
+  .autres a:hover{color:var(--texte);border-color:var(--filet-fort)}
+  .autres a[aria-current]{color:var(--texte);border-color:var(--signal)}
+  footer{border-top:1px solid var(--filet);padding:26px 0 44px;color:var(--faible);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="w">
+    <a class="logo" href="/" aria-label="ONIQ"><svg class="mot" viewBox="80 76 1407 386" aria-hidden="true"><g><path d="M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 ZM137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z" fill="currentColor" fill-rule="evenodd"/></g><g transform="translate(452,0)"><path d="M80,80 H137 L323,336 V80 H380 V432 H323 L137,176 V432 H80 Z" fill="currentColor"/></g><g transform="translate(852,0)"><path d="M80,80 H137 V432 H80 Z" fill="currentColor"/></g><g transform="translate(1009,0)"><path d="M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 ZM137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z" fill="currentColor" fill-rule="evenodd"/><path class="q" d="M366,315.6 C416,338 456,392 474,458 C424,424 376,396 315.6,366 Z"/></g></svg></a>
+    <a class="retour" href="/">Retour au site</a>
+  </div>
+</div>
+
+<header class="page">
+  <div class="w">
+    <p class="fil">Informations légales</p>
+    <h1>Déclaration d'accessibilité</h1>
+    <p class="maj">Dernière mise à jour : août 2026</p>
+  </div>
+</header>
+
+<main>
+  <div class="w">
+    <section>
+      <h2>Engagement d'accessibilité</h2>
+      <p>Oniq Software, SAS au capital de 500 €, immatriculée au RCS de Romans sous le numéro 103 508 263, dont le siège social est situé 18 rue des Coteaux, 26740 Marsanne (France), s'engage à rendre ses services numériques accessibles au plus grand nombre, y compris aux personnes en situation de handicap, conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005 pour l'égalité des droits et des chances, la participation et la citoyenneté des personnes handicapées.</p>
+      <p>Cette politique d'accessibilité s'applique à la plateforme ONIQ, accessible à l'adresse oniq.online, marketplace de logiciels d'intelligence artificielle pour les entreprises (notamment du secteur du bâtiment et des travaux publics), ainsi qu'à ses modules : OniMetri (métré IA et génération de DPGF), BatiManager (gestion de chantier), OniCompta (comptabilité au format Factur-X), OniPilote et OniBoost (CRM et prospection).</p>
+      <p>Notre démarche vise à offrir à chaque utilisateur, quels que soient ses moyens d'accès et ses capacités, une expérience de navigation et d'utilisation de qualité. À ce titre, nous menons les actions suivantes :</p>
+      <ul><li>intégration des exigences d'accessibilité dès la conception de nos interfaces et lors de chaque évolution produit ;</li><li>formation et sensibilisation de nos équipes techniques et de conception aux bonnes pratiques d'accessibilité ;</li><li>réalisation d'audits réguliers et correction progressive des non-conformités identifiées ;</li><li>prise en compte des retours des utilisateurs pour améliorer en continu l'accessibilité de nos services.</li></ul>
+      <p>Le directeur de la publication est Monsieur Ruben Hammarlebiod, Président d'Oniq Software.</p>
+    </section>
+    <section>
+      <h2>Référentiel et normes visées</h2>
+      <p>L'accessibilité de la plateforme ONIQ est évaluée au regard du Référentiel Général d'Amélioration de l'Accessibilité (RGAA) en vigueur, référentiel français de référence qui s'appuie sur les Web Content Accessibility Guidelines (WCAG) publiées par le World Wide Web Consortium (W3C).</p>
+      <p>Le niveau de conformité visé est le niveau AA des WCAG, qui constitue le standard recommandé pour les services numériques accessibles au public. Nos travaux portent en particulier sur les quatre principes fondamentaux de l'accessibilité numérique :</p>
+      <ul><li>la perceptibilité : présentation des informations et des composants d'interface de manière à ce que les utilisateurs puissent les percevoir (alternatives textuelles, contrastes suffisants, structuration de l'information) ;</li><li>l'utilisabilité : possibilité d'utiliser et de naviguer dans l'interface au moyen de différents dispositifs, notamment au clavier ;</li><li>la compréhensibilité : clarté et prévisibilité des informations et du fonctionnement de l'interface ;</li><li>la robustesse : compatibilité du contenu avec une large variété d'agents utilisateurs, y compris les technologies d'assistance.</li></ul>
+      <p>La plateforme ONIQ étant un produit en évolution permanente, le niveau de conformité est apprécié de façon continue et progressive, module par module.</p>
+    </section>
+    <section>
+      <h2>État de conformité</h2>
+      <p>La plateforme ONIQ, accessible à l'adresse oniq.online, est partiellement conforme au Référentiel Général d'Amélioration de l'Accessibilité (RGAA) et aux recommandations WCAG de niveau AA.</p>
+      <p>La mention « partiellement conforme » signifie que certaines sections du service respectent les critères d'accessibilité applicables, tandis que d'autres présentent encore des non-conformités ou n'ont pas fait l'objet d'une vérification exhaustive. Cet état reflète la nature évolutive de notre plateforme, dont les différents modules (OniMetri, BatiManager, OniCompta, OniPilote, OniBoost) connaissent des mises à jour fréquentes et des ajouts de fonctionnalités réguliers.</p>
+      <p>Nous travaillons activement à atteindre une conformité totale et à corriger les écarts identifiés selon un plan d'action priorisé, qui tient compte de l'impact des non-conformités sur l'expérience des utilisateurs en situation de handicap.</p>
+    </section>
+    <section>
+      <h2>Contenus non accessibles et dérogations connues</h2>
+      <p>Malgré nos efforts, certains contenus et fonctionnalités de la plateforme ONIQ ne sont pas encore pleinement accessibles. Les non-conformités et limitations connues à ce jour sont les suivantes :</p>
+      <ul><li>certaines visualisations issues du module OniMetri (plans, métrés, schémas de quantitatifs générés par intelligence artificielle) peuvent ne pas disposer d'alternative textuelle équivalente complète ;</li><li>des tableaux de données complexes et des tableaux de bord interactifs (notamment dans BatiManager et OniPilote) peuvent présenter une structure ou un parcours au clavier perfectibles ;</li><li>certains documents générés ou exportés (devis, DPGF, factures au format Factur-X produites par OniCompta) peuvent ne pas répondre intégralement aux critères d'accessibilité des documents bureautiques ;</li><li>des composants d'interface dynamiques ou récents peuvent présenter des contrastes, des intitulés ou une restitution par les technologies d'assistance encore insuffisants ;</li><li>certains contenus tiers intégrés (par exemple les éléments fournis par notre prestataire de paiement Stripe Payments Europe Ltd.) échappent à notre maîtrise directe et relèvent de la responsabilité de ces tiers.</li></ul>
+      <p>Lorsque la mise en accessibilité d'un contenu représente une charge disproportionnée au sens de la réglementation, une dérogation peut être appliquée de manière temporaire. Dans ce cas, nous nous efforçons de proposer une alternative permettant à l'utilisateur d'accéder à l'information ou au service concerné, sur simple demande adressée à legal@oniq.online.</p>
+    </section>
+    <section>
+      <h2>Technologies utilisées</h2>
+      <p>L'accessibilité de la plateforme ONIQ repose sur l'utilisation des technologies standard du Web, mises en œuvre conformément aux recommandations en vigueur :</p>
+      <ul><li>HTML5 pour la structuration sémantique des contenus ;</li><li>CSS3 pour la présentation et la mise en forme ;</li><li>JavaScript pour les fonctionnalités interactives et dynamiques ;</li><li>les attributs et rôles WAI-ARIA (Accessible Rich Internet Applications) pour améliorer la restitution des composants d'interface auprès des technologies d'assistance.</li></ul>
+      <p>Le respect de ces standards conditionne la compatibilité de la plateforme avec les outils d'aide à la navigation, tels que les lecteurs d'écran, les plages braille, les logiciels d'agrandissement ou les dispositifs de navigation au clavier. Une attention particulière est portée à la compatibilité avec les versions récentes des principaux navigateurs et systèmes d'exploitation.</p>
+    </section>
+    <section>
+      <h2>Hébergement et sécurité des données</h2>
+      <p>Les données traitées dans le cadre de la plateforme ONIQ sont hébergées en France, auprès d'un prestataire d'hébergement certifié ISO 27001, gage du respect des meilleures pratiques en matière de sécurité de l'information.</p>
+      <p>Le traitement des paiements est confié à la société Stripe Payments Europe Ltd., agissant en qualité de sous-traitant au sens du Règlement (UE) 2016/679 (RGPD). Les données à caractère personnel sont traitées dans le respect de la réglementation applicable, sous le contrôle de la Commission Nationale de l'Informatique et des Libertés (CNIL).</p>
+      <p>Pour toute question relative à la protection de vos données personnelles, vous pouvez contacter notre délégué à la protection des données à l'adresse dpo@oniq.online.</p>
+    </section>
+    <section>
+      <h2>Voies de recours</h2>
+      <p>Si vous constatez un défaut d'accessibilité vous empêchant d'accéder à un contenu ou à une fonctionnalité de la plateforme ONIQ, et que vous nous le signalez sans obtenir de réponse satisfaisante de notre part, vous êtes en droit de faire valoir vos droits.</p>
+      <p>La procédure est la suivante :</p>
+      <ul><li>adressez d'abord votre signalement au service compétent d'Oniq Software (voir la rubrique « Signaler un défaut d'accessibilité »), en décrivant le problème rencontré et la page ou le module concerné ;</li><li>si vous n'obtenez pas de réponse de notre part dans un délai raisonnable, ou si la réponse apportée ne vous satisfait pas, vous pouvez saisir le Défenseur des droits.</li></ul>
+      <p>Le Défenseur des droits peut être contacté selon les modalités suivantes :</p>
+      <ul><li>en ligne, via le formulaire de contact disponible sur le site officiel : www.defenseurdesdroits.fr ;</li><li>par l'intermédiaire d'un délégué présent dans votre département ;</li><li>par courrier, sans affranchissement, à l'adresse : Défenseur des droits, Libre réponse 71120, 75342 Paris CEDEX 07.</li></ul>
+    </section>
+    <section>
+      <h2>Signaler un défaut d'accessibilité</h2>
+      <p>Vous pouvez nous signaler tout défaut d'accessibilité rencontré sur la plateforme ONIQ ou nous demander une information sous une forme alternative. Nous nous engageons à étudier votre demande dans les meilleurs délais et à vous proposer, dans la mesure du possible, une solution adaptée.</p>
+      <p>Pour faciliter le traitement de votre signalement, nous vous invitons à préciser :</p>
+      <ul><li>l'adresse de la page ou le module concerné (par exemple OniMetri, BatiManager, OniCompta, OniPilote ou OniBoost) ;</li><li>la nature du problème rencontré et, le cas échéant, le contenu auquel vous n'avez pas pu accéder ;</li><li>le matériel, le navigateur et la technologie d'assistance que vous utilisez.</li></ul>
+      <p>Contacts :</p>
+      <ul><li>pour signaler un défaut d'accessibilité ou demander un contenu sous forme accessible : legal@oniq.online ;</li><li>pour toute question relative à la protection des données personnelles : dpo@oniq.online ;</li><li>pour toute autre demande : contact@oniq.online.</li></ul>
+    </section>
+    <section>
+      <h2>Établissement et mise à jour de la déclaration</h2>
+      <p>La présente déclaration d'accessibilité a été établie le 22 juin 2026.</p>
+      <p>Elle a été mise à jour pour la dernière fois le 22 juin 2026.</p>
+      <p>Cette déclaration sera révisée à chaque évolution significative de la plateforme ONIQ et, en tout état de cause, de manière régulière afin de refléter l'état réel de conformité de nos services. La date de la dernière mise à jour figure systématiquement en tête de cette rubrique.</p>
+      <p>Éditeur : Oniq Software, SAS au capital de 500 €, RCS de Romans n° 103 508 263, SIRET (siège) 103 508 263 00011, TVA intracommunautaire FR59 103 508 263, siège social 18 rue des Coteaux, 26740 Marsanne (France). Directeur de la publication : Ruben Hammarlebiod, Président.</p>
+    </section>
+    <div class="autres">
+      <b>Les autres documents</b>
+      <nav>
+        <a href="/mentions-legales">Mentions légales</a>
+        <a href="/cgv">Conditions générales de vente</a>
+        <a href="/cgu">Conditions générales d’utilisation</a>
+        <a href="/rgpd">Politique de confidentialité</a>
+        <a href="/cookies">Politique cookies</a>
+        <a href="/securite">Sécurité</a>
+        <a href="/accessibilite" aria-current="page">Accessibilité</a>
+        <a href="/dpo">Contact DPO</a>
+      </nav>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="w">
+    <strong style="color:var(--texte)">ONIQ SOFTWARE</strong>, SAS au capital de 500 euros, RCS Romans 103 508 263, siège à Marsanne (26).
+    <a href="mailto:contact@oniq.online">contact@oniq.online</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -109,7 +109,7 @@
     border:1px solid var(--filet);border-radius:50%;background:transparent;color:var(--attenue);
     transition:color .2s,border-color .2s,transform .45s cubic-bezier(.22,1,.36,1)}
   .bascule-theme:hover{color:var(--texte);border-color:var(--filet-fort);transform:rotate(-24deg)}
-  .bascule-theme svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;
+  .bascule-theme svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;
     stroke-linecap:round;grid-area:1/1;transition:opacity .25s,transform .35s cubic-bezier(.22,1,.36,1)}
   .bascule-theme .i-lune{fill:currentColor;stroke:none}
   /* On montre la destination, pas l'etat courant : en clair, la lune. */
@@ -245,6 +245,9 @@
   footer{padding:44px 0 70px;font-size:14px;color:var(--faible);border-top:1px solid var(--filet)}
   footer a{color:var(--attenue);text-decoration:none;transition:color .18s}
   footer a:hover{color:var(--texte)}
+  .pieds.maison a{color:var(--attenue)}
+  .pieds.maison a:hover{color:var(--texte)}
+  .pieds.legal{margin-top:10px;opacity:.72;font-size:12.5px}
   .pieds{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:15px}
 
   .vient{opacity:0;transform:translateY(18px);
@@ -432,9 +435,11 @@
       <a href="#methode" data-aim>Méthode</a>
       <a href="#auto" data-aim>Automatisation</a>
       <a href="#prix" data-aim>Prix</a>
-      <a href="/marketplace" data-aim>Espace client</a>
     </nav>
     <div class="droite">
+      <a class="bascule-theme" href="/admin.html" aria-label="Administration" title="Administration">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 19 6v5.4c0 4.2-2.8 7.6-7 9.4-4.2-1.8-7-5.2-7-9.4V6l7-2.8Z"/><path d="M9.4 12.2l1.9 1.9 3.5-3.6"/></svg>
+      </a>
       <button class="bascule-theme" id="theme" type="button" aria-label="Changer d'habillage">
         <svg viewBox="0 0 24 24" class="i-lune" aria-hidden="true"><path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9Z"/></svg>
         <svg viewBox="0 0 24 24" class="i-soleil" aria-hidden="true"><circle cx="12" cy="12" r="4.1"/><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg>
@@ -740,6 +745,21 @@
       <a href="/logiciel-sur-mesure-pas-cher.html" data-aim>Combien coûte un logiciel sur mesure</a>
       <a href="/erp-sur-mesure-prix.html" data-aim>Prix d'un ERP sur mesure</a>
       <a href="/logiciel-gestion-sur-mesure-pme.html" data-aim>Logiciel de gestion pour PME</a>
+    </div>
+    <div class="pieds maison">
+      <a href="/admin.html">Administration</a>
+      <a href="/espace">Espace client</a>
+      <a href="mailto:contact@oniq.online">contact@oniq.online</a>
+    </div>
+    <div class="pieds legal">
+      <a href="/mentions-legales">Mentions légales</a>
+      <a href="/cgv">CGV</a>
+      <a href="/cgu">CGU</a>
+      <a href="/rgpd">Confidentialité</a>
+      <a href="/cookies">Cookies</a>
+      <a href="/securite">Sécurité</a>
+      <a href="/accessibilite">Accessibilité</a>
+      <a href="/dpo">Contact DPO</a>
     </div>
   </div>
 </footer>

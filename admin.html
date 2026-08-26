@@ -688,8 +688,11 @@ function formulaire(titre,champs,onValide){
       var ctrl;
       if(c.type==='select')
         ctrl='<select id="c-'+c.id+'">'+c.options.map(function(o){
-          return '<option value="'+ech(o[0])+'">'+ech(o[1])+'</option>';}).join('')+'</select>';
-      else if(c.type==='textarea') ctrl='<textarea id="c-'+c.id+'" rows="3"></textarea>';
+          var pris=(c.valeur!=null&&String(c.valeur)===String(o[0]))?' selected':'';
+          return '<option value="'+ech(o[0])+'"'+pris+'>'+ech(o[1])+'</option>';}).join('')+'</select>';
+      else if(c.type==='textarea')
+        ctrl='<textarea id="c-'+c.id+'" rows="3"'+(c.aide?' placeholder="'+ech(c.aide)+'"':'')+'>'
+          +ech(c.valeur==null?'':c.valeur)+'</textarea>';
       else ctrl='<input id="c-'+c.id+'" type="'+(c.type||'text')+'"'
         +(c.valeur!=null?' value="'+ech(c.valeur)+'"':'')
         +(c.aide?' placeholder="'+ech(c.aide)+'"':'')+'>';
@@ -788,14 +791,39 @@ VUES.projets=async function(){
     var p=await lire('oq_projets','select=*&order=cree_le.desc&limit=200');
     var nom={}; clients.forEach(function(c){nom[c.id]=c.entreprise;});
     $('#vue').innerHTML='<div class="panneau">'
-      +(p.length?('<div class="tbl-scroll"><table><thead><tr><th>Projet</th><th>Client</th><th>Type</th><th>Étape</th><th class="n">Budget</th><th>Publiable</th></tr></thead><tbody>'
+      +(p.length?('<div class="tbl-scroll"><table><thead><tr><th>Projet</th><th>Client</th><th>Type</th><th>Étape</th><th class="n">Budget</th><th>Publiable</th><th></th></tr></thead><tbody>'
       +p.map(function(x){
         return '<tr><td><b>'+ech(x.titre)+'</b></td><td>'+ech(nom[x.client_id]||'—')+'</td><td>'
           +ech(x.type||'—')+'</td><td>'+etat(x.statut,x.statut==='livre'?'ok':'neu')+'</td><td class="n">'
           +(x.budget_ht?euro(x.budget_ht):'—')+'</td><td>'
-          +(x.publiable?etat('oui','ok'):etat('non','neu'))+'</td></tr>';}).join('')+'</tbody></table></div>')
+          +(x.publiable?etat('oui','ok'):etat('non','neu'))+'</td>'
+          +'<td class="n"><button class="btn" data-suivi="'+x.id+'">Suivi client</button></td></tr>';}).join('')+'</tbody></table></div>')
       :vide('Aucun projet','Chaque projet livré et marqué « publiable » devient une référence pour le site. C’est ce qui vous manque le plus aujourd’hui.'))
       +'</div>';
+    /* ── Ce que le client lira dans son espace ──────────────────────
+       Sans ces quatre champs, l'espace client affiche une etape et
+       rien d'autre. Le point de la semaine est le plus important des
+       quatre : c'est lui qui remplace l'appel « ou en est mon projet ». */
+    $$('[data-suivi]').forEach(function(b){
+      b.onclick=function(){
+        var x=p.filter(function(y){return y.id===b.dataset.suivi;})[0];
+        formulaire('Suivi de « '+x.titre+' »',[
+          {id:'statut',nom:'Étape en cours',type:'select',options:[
+            ['cadrage','Cadrage'],['maquette','Maquette'],['construction','Construction'],
+            ['recette','Vérification'],['livre','Livré']],valeur:x.statut},
+          {id:'avancement',nom:'Avancement en %',type:'number',valeur:x.avancement},
+          {id:'prochaine_le',nom:'Prochaine échéance',type:'date',valeur:x.prochaine_le},
+          {id:'lien_maquette',nom:'Lien de la maquette',valeur:x.lien_maquette,aide:'https://…'},
+          {id:'point_semaine',nom:'Le point de la semaine',type:'textarea',large:true,
+           valeur:x.point_semaine,aide:'Ce que vous diriez au client s’il appelait aujourd’hui'}
+        ],async function(v){
+          if(v.statut==='livre'&&!x.livre_le)v.livre_le=new Date().toISOString().slice(0,10);
+          await modifier('oq_projets','id=eq.'+x.id,v);
+          await tracer('projet.suivi',x.titre,x.id);
+          VUES.projets();
+        });
+      };
+    });
   }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
 };
 

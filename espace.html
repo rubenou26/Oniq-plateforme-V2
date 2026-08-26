@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Espace client | ONIQ</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27116%27%20fill%3D%27%230B0E13%27%2F%3E%3Cg%20transform%3D%27translate(256%2C252)%20scale(0.93)%20translate(-262%2C-258)%27%3E%3Cpath%20d%3D%27M80%2C256%20A176%2C176%200%201%2C0%20432%2C256%20A176%2C176%200%201%2C0%2080%2C256%20ZM137%2C248%20A119%2C119%200%201%2C0%20375%2C248%20A119%2C119%200%201%2C0%20137%2C248%20Z%27%20fill%3D%27%23EAEDF2%27%20fill-rule%3D%27evenodd%27%2F%3E%3Cpath%20d%3D%27M366%2C315.6%20C416%2C338%20456%2C392%20474%2C458%20C424%2C424%20376%2C396%20315.6%2C366%20Z%27%20fill%3D%27%23A9C6FF%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#08090C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script>/* L'habillage choisi sur le site suit le client jusqu'ici. */
+(function(){try{var t=localStorage.getItem("oq-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<style>
+  /* ══════════════════════════════════════════════════════════════════
+     ONIQ, espace client.
+     Un client qui doit telephoner pour savoir ou en est son projet a
+     deja une mauvaise impression de l'agence. Cet ecran repond aux
+     quatre questions qu'il se pose vraiment : ou en est-on, qu'est-ce
+     qui se passe cette semaine, quand est la prochaine echeance, et
+     combien reste-t-il a payer. Le reste est du decor.
+     Aucune bibliotheque, la securite est appliquee par la base.
+     ══════════════════════════════════════════════════════════════════ */
+  :root{
+    --fond:#08090C; --surface:#0E1116; --surface-2:#141922;
+    --filet:#1B212B; --filet-fort:#2A3341;
+    --texte:#EAEDF2; --attenue:#8B94A5; --faible:#59616F;
+    --signal:#7FA8FF; --signal-r:127,168,255;
+    --ok:#5FD3A6; --attente:#E0B15C; --retard:#E8796B;
+  }
+  @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+    --fond:#FAFAFB; --surface:#FFFFFF; --surface-2:#F3F4F7;
+    --filet:#E5E8ED; --filet-fort:#D1D6DF;
+    --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+    --signal:#2B5FD9; --signal-r:43,95,217;
+    --ok:#17805C; --attente:#9A6B12; --retard:#B03A2B;
+  }}
+  :root[data-theme="light"]{
+    --fond:#FAFAFB; --surface:#FFFFFF; --surface-2:#F3F4F7;
+    --filet:#E5E8ED; --filet-fort:#D1D6DF;
+    --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+    --signal:#2B5FD9; --signal-r:43,95,217;
+    --ok:#17805C; --attente:#9A6B12; --retard:#B03A2B;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);
+    font:400 16px/1.7 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--signal)}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .w{width:min(1000px,calc(100% - 44px));margin:0 auto}
+
+  .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--fond) 82%,transparent);
+    backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid var(--filet)}
+  .top .w{display:flex;align-items:center;justify-content:space-between;gap:18px;height:70px}
+  .logo{display:inline-flex;align-items:center;text-decoration:none;color:var(--texte)}
+  .logo .mot{height:24px;width:auto;display:block}
+  .logo .mot .q{fill:var(--signal)}
+  .top .qui{display:flex;align-items:center;gap:14px;font-size:13.5px;color:var(--attenue)}
+  .lien-sec{background:none;border:1px solid var(--filet);border-radius:9px;padding:8px 14px;
+    font:inherit;font-size:13px;color:var(--attenue);cursor:pointer;text-decoration:none;
+    transition:color .2s,border-color .2s}
+  .lien-sec:hover{color:var(--texte);border-color:var(--filet-fort)}
+
+  /* ── La porte ── */
+  .porte{min-height:calc(100vh - 70px);display:grid;place-items:center;padding:40px 22px}
+  .carte-porte{width:min(430px,100%);background:var(--surface);border:1px solid var(--filet);
+    border-radius:16px;padding:34px 30px}
+  .carte-porte h1{font-size:24px;font-weight:600;letter-spacing:-.02em;margin:0 0 6px}
+  .carte-porte .pt{color:var(--faible);font-size:14px;margin:0 0 26px;line-height:1.6}
+  label{display:block;font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--faible);margin:0 0 7px}
+  input{width:100%;font:inherit;font-size:15px;color:var(--texte);background:var(--surface-2);
+    border:1px solid var(--filet);border-radius:11px;padding:12px 14px;outline:none;margin-bottom:16px;
+    transition:border-color .2s,box-shadow .2s}
+  input:focus{border-color:var(--signal);box-shadow:0 0 0 3px rgba(var(--signal-r),.16)}
+  .plein{width:100%;cursor:pointer;font:inherit;font-size:14.5px;font-weight:600;
+    background:var(--texte);color:var(--fond);border:1px solid var(--texte);border-radius:11px;
+    padding:13px;transition:opacity .2s,transform .15s}
+  .plein:hover{opacity:.9;transform:translateY(-1px)}
+  .plein:disabled{opacity:.5;transform:none;cursor:default}
+  .erreur{color:var(--retard);font-size:13px;margin:14px 0 0;line-height:1.6}
+  .aide-porte{margin:20px 0 0;color:var(--faible);font-size:12.5px;line-height:1.7}
+
+  /* ── Le tableau du client ── */
+  .app{display:none}
+  .app.ouvert{display:block}
+  main{padding:44px 0 80px}
+  .titre-h{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:-.03em;margin:0 0 6px}
+  .titre-s{color:var(--faible);font-size:14.5px;margin:0 0 34px}
+
+  .bloc{background:var(--surface);border:1px solid var(--filet);border-radius:15px;margin-bottom:18px;
+    overflow:hidden}
+  .bloc > header{display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:18px 22px;border-bottom:1px solid var(--filet)}
+  .bloc > header h2{font-size:15px;font-weight:600;margin:0}
+  .bloc > header .aide{font-size:12.5px;color:var(--faible)}
+  .bloc .corps{padding:22px}
+
+  /* Le chemin du projet : cinq etapes, celle du moment mise en avant. */
+  .chemin{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+  .pas-p{border:1px solid var(--filet);border-radius:11px;padding:12px 13px;background:var(--surface-2)}
+  .pas-p .n{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;color:var(--faible)}
+  .pas-p .l{font-size:13px;font-weight:500;margin-top:4px}
+  .pas-p.fait{border-color:rgba(var(--signal-r),.35)}
+  .pas-p.fait .l{color:var(--attenue)}
+  .pas-p.ici{border-color:var(--signal);background:rgba(var(--signal-r),.09)}
+  .pas-p.ici .n{color:var(--signal)}
+  @media(max-width:760px){ .chemin{grid-template-columns:repeat(2,1fr)} }
+
+  .jauge{height:8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--filet);
+    overflow:hidden;margin-bottom:10px}
+  .jauge i{display:block;height:100%;border-radius:6px;
+    background:linear-gradient(90deg,rgba(var(--signal-r),.6),var(--signal));
+    transition:width 1s cubic-bezier(.22,1,.36,1)}
+  .sous-jauge{display:flex;justify-content:space-between;font-size:12.5px;color:var(--faible);
+    margin-bottom:22px}
+
+  .faits{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+  .fait{border:1px solid var(--filet);border-radius:11px;padding:13px 15px;background:var(--surface-2)}
+  .fait span{display:block;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--faible);margin-bottom:5px}
+  .fait b{font-size:15px;font-weight:600}
+  .note-sem{border-left:2px solid var(--signal);padding:2px 0 2px 16px;color:var(--attenue);
+    font-size:14.5px;line-height:1.7}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:13px 22px;text-align:left;border-bottom:1px solid var(--filet)}
+  th{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--faible);font-weight:500}
+  tr:last-child td{border-bottom:none}
+  td.n,th.n{text-align:right;font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+  .tbl-scroll{overflow-x:auto}
+  .etat{display:inline-block;font-size:11px;letter-spacing:.05em;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--filet-fort);color:var(--attenue)}
+  .e-ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 42%,transparent)}
+  .e-att{color:var(--attente);border-color:color-mix(in srgb,var(--attente) 42%,transparent)}
+  .e-ret{color:var(--retard);border-color:color-mix(in srgb,var(--retard) 42%,transparent)}
+
+  .vide{padding:38px 22px;text-align:center;color:var(--faible)}
+  .vide .g{color:var(--attenue);font-size:15px;margin-bottom:6px}
+  .vide .p{font-size:13.5px;line-height:1.7;max-width:44ch;margin:0 auto}
+
+  .duo{display:grid;gap:18px}
+  @media(min-width:900px){ .duo{grid-template-columns:1.6fr 1fr} }
+  .contact p{margin:0 0 16px;color:var(--attenue);font-size:14.5px;line-height:1.7}
+  .contact .b{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-size:14px;
+    border:1px solid var(--filet);border-radius:11px;padding:11px 16px;color:var(--texte);
+    margin:0 8px 8px 0;transition:border-color .2s,transform .15s}
+  .contact .b:hover{border-color:var(--filet-fort);transform:translateY(-1px)}
+  .contact .b.fort{background:var(--texte);color:var(--fond);border-color:var(--texte);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="w">
+    <a class="logo" href="/" aria-label="ONIQ">
+      <svg class="mot" viewBox="80 76 1407 386" aria-hidden="true">
+        <g><path d="M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 ZM137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z" fill="currentColor" fill-rule="evenodd"/></g>
+        <g transform="translate(452,0)"><path d="M80,80 H137 L323,336 V80 H380 V432 H323 L137,176 V432 H80 Z" fill="currentColor"/></g>
+        <g transform="translate(852,0)"><path d="M80,80 H137 V432 H80 Z" fill="currentColor"/></g>
+        <g transform="translate(1009,0)"><path d="M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 ZM137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z" fill="currentColor" fill-rule="evenodd"/><path class="q" d="M366,315.6 C416,338 456,392 474,458 C424,424 376,396 315.6,366 Z"/></g>
+      </svg>
+    </a>
+    <div class="qui">
+      <span id="qui-suis-je"></span>
+      <button class="lien-sec" id="sortir" style="display:none">Se déconnecter</button>
+      <a class="lien-sec" href="/">Retour au site</a>
+    </div>
+  </div>
+</div>
+
+<div class="porte" id="porte">
+  <form class="carte-porte" id="form-porte">
+    <h1>Votre espace</h1>
+    <p class="pt">Suivez l'avancement de votre projet, vos devis et vos factures. Connectez-vous avec l'adresse que vous nous avez communiquée.</p>
+    <label for="mail">Adresse email</label>
+    <input id="mail" type="email" autocomplete="email" placeholder="vous@societe.fr" required>
+    <label for="mdp">Mot de passe</label>
+    <input id="mdp" type="password" autocomplete="current-password" required>
+    <button class="plein" type="submit" id="btn-porte">Entrer</button>
+    <div id="err-porte"></div>
+    <p class="aide-porte">Première visite ? Saisissez votre adresse et le mot de passe de votre choix, puis cliquez sur Entrer : votre compte se crée et vous recevrez un email de confirmation. Un souci ? Écrivez à <a href="mailto:contact@oniq.online">contact@oniq.online</a>.</p>
+  </form>
+</div>
+
+<div class="app" id="app">
+  <main>
+    <div class="w">
+      <h1 class="titre-h" id="bonjour">Bonjour.</h1>
+      <p class="titre-s" id="sous-titre"></p>
+      <div id="vue"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var URL_BASE='https://kxdxxhepewziazfnfnkq.supabase.co';
+var CLE='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZHh4aGVwZXd6aWF6Zm5mbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjkyMDMsImV4cCI6MjA4OTIwNTIwM30.erlLC8zLX3rucPE7-CzJyLGwCljWpzIeGwa6oWXfbMM';
+var jeton=null, moi=null;
+
+var $=function(s,r){return (r||document).querySelector(s);};
+
+function entetes(){
+  return {'apikey':CLE,'Authorization':'Bearer '+(jeton||CLE),'Content-Type':'application/json'};
+}
+async function lire(table,requete){
+  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?'+requete,{headers:entetes()});
+  if(!r.ok)throw new Error(table+' : '+r.status);
+  return r.json();
+}
+
+var fEuro=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+var euro=function(n){return fEuro.format(n||0);};
+function date(d){ if(!d)return '—'; try{return new Date(d).toLocaleDateString('fr-FR');}catch(e){return '—';} }
+function ech(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+/* Les etats sortent de la base dans le vocabulaire de la base. Le client,
+   lui, lit du francais. */
+var MOTS={brouillon:'Brouillon',envoye:'Envoyé',envoyee:'Envoyée',accepte:'Accepté',
+  refuse:'Refusé',payee:'Payée',retard:'En retard',actif:'Actif',arrete:'Arrêté',
+  cadrage:'Cadrage',maquette:'Maquette',construction:'Construction',
+  recette:'Vérification',livre:'Livré'};
+function etat(t,g){return '<span class="etat '+(g?'e-'+g:'')+'">'+ech(MOTS[t]||t)+'</span>';}
+
+function vide(g,p){return '<div class="vide"><div class="g">'+ech(g)+'</div><div class="p">'+ech(p)+'</div></div>';}
+
+/* ══ La porte ═══════════════════════════════════════════════════════
+   Une seule action : on tente d'entrer, et si le compte n'existe pas
+   encore on le cree dans la foulee. Demander au client de choisir
+   entre « connexion » et « inscription » est une question d'informaticien,
+   pas de client. */
+$('#form-porte').addEventListener('submit',async function(e){
+  e.preventDefault();
+  var b=$('#btn-porte'); b.disabled=true; b.textContent='Un instant…';
+  $('#err-porte').innerHTML='';
+  var mail=$('#mail').value.trim(), mdp=$('#mdp').value;
+  try{
+    var r=await fetch(URL_BASE+'/auth/v1/token?grant_type=password',{
+      method:'POST',headers:{'apikey':CLE,'Content-Type':'application/json'},
+      body:JSON.stringify({email:mail,password:mdp})});
+    var j=await r.json();
+
+    if(!r.ok||!j.access_token){
+      var c=await fetch(URL_BASE+'/auth/v1/signup',{
+        method:'POST',headers:{'apikey':CLE,'Content-Type':'application/json'},
+        body:JSON.stringify({email:mail,password:mdp})});
+      var k=await c.json();
+      if(!c.ok) throw new Error(k.msg||k.error_description||'Connexion impossible');
+      if(!k.access_token){
+        $('#err-porte').innerHTML='<p class="erreur">Compte créé. Confirmez l’adresse depuis l’email que nous venons de vous envoyer, puis revenez ici.</p>';
+        b.disabled=false; b.textContent='Entrer'; return;
+      }
+      j=k;
+    }
+    jeton=j.access_token; moi=(j.user&&j.user.email)||mail;
+    try{ sessionStorage.setItem('oq_espace',JSON.stringify({j:jeton,m:moi})); }catch(x){}
+    ouvrir();
+  }catch(err){
+    $('#err-porte').innerHTML='<p class="erreur">'+ech(err.message)+'</p>';
+    b.disabled=false; b.textContent='Entrer';
+  }
+});
+$('#sortir').addEventListener('click',function(){
+  try{ sessionStorage.removeItem('oq_espace'); }catch(e){}
+  location.reload();
+});
+
+/* ══ Le tableau ═════════════════════════════════════════════════════ */
+var ETAPES=[
+  ['cadrage','Cadrage'],['maquette','Maquette'],['construction','Construction'],
+  ['recette','Vérification'],['livre','Livré']
+];
+
+function chemin(statut,avancement){
+  var i=ETAPES.map(function(e){return e[0];}).indexOf(statut||'cadrage');
+  if(i<0)i=0;
+  var pct=(avancement!=null&&avancement>0)?avancement:Math.round((i+0.5)/ETAPES.length*100);
+  var h='<div class="chemin">'+ETAPES.map(function(e,n){
+    var cl=(n<i)?'fait':(n===i?'ici':'');
+    return '<div class="pas-p '+cl+'"><div class="n">'+('0'+(n+1))+'</div><div class="l">'+e[1]+'</div></div>';
+  }).join('')+'</div>';
+  h+='<div class="jauge"><i style="width:'+pct+'%"></i></div>';
+  h+='<div class="sous-jauge"><span>'+ETAPES[i][1]+' en cours</span><span class="mono">'+pct+' %</span></div>';
+  return h;
+}
+
+async function ouvrir(){
+  $('#porte').style.display='none';
+  $('#app').classList.add('ouvert');
+  $('#qui-suis-je').textContent=moi||'';
+  $('#sortir').style.display='';
+
+  try{
+    var cl=await lire('oq_clients','select=*&limit=1');
+    var client=cl[0];
+    if(!client){
+      $('#bonjour').textContent='Bonjour.';
+      $('#vue').innerHTML='<div class="bloc"><div class="corps">'
+        +vide('Nous ne trouvons pas encore votre dossier',
+          'Votre compte est bien créé, mais cette adresse n’est pas encore rattachée à un client chez nous. Écrivez-nous à contact@oniq.online et nous faisons le lien dans la journée.')
+        +'</div></div>';
+      return;
+    }
+    $('#bonjour').textContent='Bonjour '+(client.contact?client.contact.split(' ')[0]:client.entreprise)+'.';
+    $('#sous-titre').textContent=client.entreprise+(client.ville?' · '+client.ville:'');
+
+    var r=await Promise.all([
+      lire('oq_projets','select=*&order=cree_le.desc'),
+      lire('oq_devis','select=*&order=cree_le.desc'),
+      lire('oq_factures','select=*&order=cree_le.desc'),
+      lire('oq_abonnements','select=*&order=cree_le.desc')
+    ]);
+    var projets=r[0], devis=r[1], factures=r[2], abos=r[3];
+
+    var h='';
+
+    /* ── Le projet en cours, la question numero un ── */
+    var actif=projets.filter(function(p){return p.statut!=='livre';})[0]||projets[0];
+    if(actif){
+      h+='<div class="bloc"><header><h2>'+ech(actif.titre)+'</h2>'
+        +'<span class="aide">'+(actif.type?ech(actif.type):'')+'</span></header><div class="corps">'
+        +chemin(actif.statut,actif.avancement);
+      var faits=[];
+      if(actif.prochaine_le)faits.push(['Prochaine échéance',date(actif.prochaine_le)]);
+      if(actif.demarre_le)faits.push(['Démarré le',date(actif.demarre_le)]);
+      if(actif.livre_le)faits.push(['Livré le',date(actif.livre_le)]);
+      if(actif.budget_ht)faits.push(['Budget validé',euro(actif.budget_ht)+' HT']);
+      if(faits.length)h+='<div class="faits">'+faits.map(function(f){
+        return '<div class="fait"><span>'+ech(f[0])+'</span><b>'+ech(f[1])+'</b></div>';}).join('')+'</div>';
+      if(actif.point_semaine)h+='<p class="note-sem">'+ech(actif.point_semaine)+'</p>';
+      if(actif.lien_maquette)h+='<p style="margin-top:18px"><a href="'+ech(actif.lien_maquette)+'" target="_blank" rel="noopener">Ouvrir la maquette interactive</a></p>';
+      h+='</div></div>';
+    }
+
+    var autres=projets.filter(function(p){return !actif||p.id!==actif.id;});
+    if(autres.length){
+      h+='<div class="bloc"><header><h2>Vos autres projets</h2></header><div class="tbl-scroll"><table>'
+        +'<thead><tr><th>Projet</th><th>Étape</th><th class="n">Budget</th></tr></thead><tbody>'
+        +autres.map(function(p){
+          return '<tr><td>'+ech(p.titre)+'</td><td>'+etat(p.statut,p.statut==='livre'?'ok':'')+'</td>'
+            +'<td class="n">'+(p.budget_ht?euro(p.budget_ht):'—')+'</td></tr>';}).join('')
+        +'</tbody></table></div></div>';
+    }
+
+    h+='<div class="duo">';
+
+    /* ── L'argent, dit clairement ── */
+    var auj=new Date().toISOString().slice(0,10);
+    factures.forEach(function(f){ if(f.statut==='envoyee'&&f.echeance_le&&f.echeance_le<auj)f.statut='retard'; });
+    var ttc=function(f){return (+f.montant_ht||0)*(1+(+f.tva||0)/100);};
+    var du=factures.filter(function(f){return f.statut!=='payee';}).reduce(function(a,f){return a+ttc(f);},0);
+    var g={brouillon:'',envoyee:'att',payee:'ok',retard:'ret'};
+
+    h+='<div class="bloc"><header><h2>Vos factures</h2>'
+      +'<span class="aide">'+(du>0?('reste à régler '+euro(du)):'tout est réglé')+'</span></header>';
+    h+=factures.length?('<div class="tbl-scroll"><table><thead><tr><th>Numéro</th><th>Objet</th>'
+      +'<th>Échéance</th><th class="n">TTC</th><th>État</th></tr></thead><tbody>'
+      +factures.map(function(f){
+        return '<tr><td class="mono">'+ech(f.numero||'—')+'</td><td>'+ech(f.objet||'—')+'</td>'
+          +'<td>'+date(f.echeance_le)+'</td><td class="n">'+euro(ttc(f))+'</td>'
+          +'<td>'+etat(f.statut,g[f.statut])+'</td></tr>';}).join('')
+      +'</tbody></table></div>')
+      :vide('Aucune facture','Elles apparaîtront ici dès la première échéance de votre projet.');
+    h+='</div>';
+
+    /* ── Devis et abonnement ── */
+    h+='<div>';
+    h+='<div class="bloc"><header><h2>Vos devis</h2></header>';
+    h+=devis.length?('<div class="tbl-scroll"><table><tbody>'
+      +devis.map(function(d){
+        var ge={brouillon:'',envoye:'att',accepte:'ok',refuse:'ret'};
+        return '<tr><td>'+ech(d.objet)+'<div style="color:var(--faible);font-size:12px" class="mono">'
+          +ech(d.numero||'')+'</div></td><td class="n">'+euro(d.montant_ht)+'</td>'
+          +'<td>'+etat(d.statut,ge[d.statut])+'</td></tr>';}).join('')
+      +'</tbody></table></div>')
+      :vide('Aucun devis','Votre premier devis apparaîtra ici.');
+    h+='</div>';
+
+    if(abos.length){
+      var actifs=abos.filter(function(a){return a.statut==='actif';});
+      var mrr=actifs.reduce(function(s,a){return s+(+a.montant_mois||0);},0);
+      h+='<div class="bloc"><header><h2>Votre abonnement</h2></header><div class="corps">'
+        +'<div class="faits" style="margin:0">'
+        +'<div class="fait"><span>Par mois</span><b>'+euro(mrr)+'</b></div>'
+        +actifs.map(function(a){
+          return '<div class="fait"><span>'+ech(a.libelle)+'</span><b>depuis le '+date(a.debut_le)+'</b></div>';
+        }).join('')
+        +'</div></div></div>';
+    }
+    h+='</div></div>';
+
+    /* ── Le bon interlocuteur, toujours visible ── */
+    h+='<div class="bloc contact"><header><h2>Une question ?</h2></header><div class="corps">'
+      +'<p>Vous n’avez pas à passer par un formulaire ni par un numéro de dossier. Écrivez-nous, nous répondons dans la journée ouvrée.</p>'
+      +'<a class="b fort" href="https://wa.me/33624081910">Nous écrire sur WhatsApp</a>'
+      +'<a class="b" href="mailto:contact@oniq.online">contact@oniq.online</a>'
+      +'</div></div>';
+
+    $('#vue').innerHTML=h;
+  }catch(e){
+    $('#vue').innerHTML='<div class="bloc"><div class="corps">'
+      +vide('Lecture impossible','Votre espace n’a pas pu charger vos données ('+ech(e.message)
+      +'). Écrivez-nous à contact@oniq.online, nous regardons tout de suite.')+'</div></div>';
+  }
+}
+
+/* Reprise de session : le client qui revient d'un onglet n'a pas a se
+   reconnecter a chaque fois. */
+try{
+  var reprise=JSON.parse(sessionStorage.getItem('oq_espace')||'null');
+  if(reprise&&reprise.j){ jeton=reprise.j; moi=reprise.m; ouvrir(); }
+}catch(e){}
+})();
+</script>
+</body>
+</html>
