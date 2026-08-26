@@ -8,7 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script>/* L'habillage choisi est applique avant le rendu : sans cela l'ecran
+   clignote une fraction de seconde dans l'autre habillage. */
+(function(){try{var t=localStorage.getItem("oq-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
+
   /* ══════════════════════════════════════════════════════════════════
      ONIQ, administration.
      Meme langage que la vitrine : fond bleu-noir, filets d'un pixel,
@@ -96,6 +100,23 @@
   .menu a .badge{margin-left:auto;font-size:11px;background:var(--surface-2);
     border:1px solid var(--filet);border-radius:20px;padding:1px 7px;color:var(--attenue)}
   .pied{padding:14px 18px;border-top:1px solid var(--filet);font-size:12.5px;color:var(--faible)}
+  .habit{display:flex;align-items:center;gap:9px;width:100%;margin-top:10px;cursor:pointer;
+    background:transparent;border:1px solid var(--filet);border-radius:9px;padding:8px 11px;
+    font:inherit;font-size:12.5px;color:var(--attenue);text-align:left;
+    transition:color .2s,border-color .2s}
+  .habit:hover{color:var(--texte);border-color:var(--filet-fort)}
+  .habit svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;
+    stroke-linecap:round;grid-area:1/1}
+  .habit .i-lune{fill:currentColor;stroke:none}
+  /* On annonce la destination, pas l'etat courant. */
+  .habit .i-lune{display:none}
+  :root[data-theme="light"] .habit .i-lune{display:block}
+  :root[data-theme="light"] .habit .i-soleil{display:none}
+  @media (prefers-color-scheme:light){
+    :root:not([data-theme="dark"]) .habit .i-lune{display:block}
+    :root:not([data-theme="dark"]) .habit .i-soleil{display:none}
+  }
+
   .pied button{background:none;border:none;color:var(--attenue);cursor:pointer;padding:0;font-size:12.5px}
   .pied button:hover{color:var(--texte)}
 
@@ -323,6 +344,11 @@
     <nav class="menu" id="menu"></nav>
     <div class="pied">
       <div id="qui-suis-je">…</div>
+      <button id="btn-habit" class="habit" type="button">
+        <svg viewBox="0 0 24 24" class="i-lune" aria-hidden="true"><path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9Z"/></svg>
+        <svg viewBox="0 0 24 24" class="i-soleil" aria-hidden="true"><circle cx="12" cy="12" r="4.1"/><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg>
+        <span>Mode nuit</span>
+      </button>
       <button id="btn-sortir">Se déconnecter</button>
     </div>
   </aside>
@@ -418,6 +444,25 @@ $('#form-connexion').addEventListener('submit',async function(e){
     b.disabled=false; b.textContent='Se connecter';
   }
 });
+/* ══ Jour ou nuit ═══════════════════════════════════════════════════
+   Le meme reglage que sur le site public, sous la meme cle. */
+(function(){
+  var b=$('#btn-habit'); if(!b)return;
+  var racine=document.documentElement;
+  function courant(){
+    var t=racine.getAttribute('data-theme');
+    if(t)return t;
+    return (window.matchMedia&&window.matchMedia('(prefers-color-scheme:light)').matches)?'light':'dark';
+  }
+  function dire(){ $('span',b).textContent=(courant()==='dark')?'Mode jour':'Mode nuit'; }
+  dire();
+  b.addEventListener('click',function(){
+    var vers=courant()==='dark'?'light':'dark';
+    racine.setAttribute('data-theme',vers);
+    try{ localStorage.setItem('oq-theme',vers); }catch(e){}
+    dire();
+  });
+})();
 $('#btn-sortir').addEventListener('click',function(){
   try{ sessionStorage.removeItem('oq_adm'); }catch(e){}
   location.reload();

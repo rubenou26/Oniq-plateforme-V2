@@ -105,6 +105,11 @@
     transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.22,.7,.3,1)}
   .logo:hover:after{transform:scaleX(1)}
   .droite{display:flex;align-items:center;gap:14px}
+  /* Un client qui revient doit trouver sa porte sans chercher : le lien
+     reste visible jusque sur telephone, contrairement au menu. */
+  .lien-espace{font-size:13.5px;color:var(--attenue);text-decoration:none;white-space:nowrap;
+    transition:color .18s}
+  .lien-espace:hover{color:var(--texte)}
   .bascule-theme{width:34px;height:34px;flex:none;display:grid;place-items:center;cursor:pointer;
     border:1px solid var(--filet);border-radius:50%;background:transparent;color:var(--attenue);
     transition:color .2s,border-color .2s,transform .45s cubic-bezier(.22,1,.36,1)}
@@ -112,6 +117,20 @@
   .bascule-theme svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;
     stroke-linecap:round;grid-area:1/1;transition:opacity .25s,transform .35s cubic-bezier(.22,1,.36,1)}
   .bascule-theme .i-lune{fill:currentColor;stroke:none}
+  @media(max-width:760px){
+    /* Sur telephone, l'en-tete doit rester lisible : le bouclier de
+       l'administration n'interesse que l'equipe, il reste en pied de page. */
+    .lien-admin{display:none}
+  }
+  @media(max-width:520px){
+    /* Trois elements et un logo dans 375 pixels : tout maigrit un peu,
+       plutot que de sacrifier l'acces a l'espace client. */
+    .logo .mot{height:20px}
+    .droite{gap:9px}
+    .lien-espace{font-size:12.5px}
+    .cta-s{padding:9px 13px;font-size:12.5px}
+    .bascule-theme{width:30px;height:30px}
+  }
   /* On montre la destination, pas l'etat courant : en clair, la lune. */
   :root[data-theme="dark"] .bascule-theme .i-lune,
   :root:not([data-theme="light"]) .bascule-theme .i-lune{opacity:0;transform:scale(.6) rotate(-40deg)}
@@ -437,7 +456,8 @@
       <a href="#prix" data-aim>Prix</a>
     </nav>
     <div class="droite">
-      <a class="bascule-theme" href="/admin.html" aria-label="Administration" title="Administration">
+      <a class="lien-espace" href="/espace" data-aim>Espace client</a>
+      <a class="bascule-theme lien-admin" href="/admin.html" aria-label="Administration" title="Administration">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 19 6v5.4c0 4.2-2.8 7.6-7 9.4-4.2-1.8-7-5.2-7-9.4V6l7-2.8Z"/><path d="M9.4 12.2l1.9 1.9 3.5-3.6"/></svg>
       </a>
       <button class="bascule-theme" id="theme" type="button" aria-label="Changer d'habillage">
