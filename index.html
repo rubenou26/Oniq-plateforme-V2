@@ -104,7 +104,9 @@
   .logo:after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:var(--signal);
     transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.22,.7,.3,1)}
   .logo:hover:after{transform:scaleX(1)}
-  .droite{display:flex;align-items:center;gap:14px}
+  .droite{display:flex;align-items:center;gap:16px}
+  .droite .cta-s{margin-left:-6px}
+  .ronds{display:flex;align-items:center;gap:9px;margin-left:2px}
   /* Un client qui revient doit trouver sa porte sans chercher : le lien
      reste visible jusque sur telephone, contrairement au menu. */
   .lien-espace{font-size:13.5px;color:var(--attenue);text-decoration:none;white-space:nowrap;
@@ -457,14 +459,16 @@
     </nav>
     <div class="droite">
       <a class="lien-espace" href="/espace" data-aim>Espace client</a>
-      <a class="bascule-theme lien-admin" href="/admin.html" aria-label="Administration" title="Administration">
+      <a class="cta-s magnet" href="#demande" data-aim data-maquette>Maquette offerte</a>
+      <span class="ronds">
+        <a class="bascule-theme lien-admin" href="/admin.html" aria-label="Administration" title="Administration">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 19 6v5.4c0 4.2-2.8 7.6-7 9.4-4.2-1.8-7-5.2-7-9.4V6l7-2.8Z"/><path d="M9.4 12.2l1.9 1.9 3.5-3.6"/></svg>
       </a>
-      <button class="bascule-theme" id="theme" type="button" aria-label="Changer d'habillage">
+        <button class="bascule-theme" id="theme" type="button" aria-label="Changer d'habillage">
         <svg viewBox="0 0 24 24" class="i-lune" aria-hidden="true"><path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9Z"/></svg>
         <svg viewBox="0 0 24 24" class="i-soleil" aria-hidden="true"><circle cx="12" cy="12" r="4.1"/><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg>
       </button>
-      <a class="cta-s magnet" href="#demande" data-aim data-maquette>Maquette offerte</a>
+      </span>
     </div>
   </div>
 </div>
