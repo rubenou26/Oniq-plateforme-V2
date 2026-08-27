@@ -418,5 +418,46 @@ try{
 }catch(e){}
 })();
 </script>
+<script>
+/* ══ Le battement ═══════════════════════════════════════════════════
+   Toutes les vingt secondes, l'onglet ouvert signale qu'il est la.
+   C'est ce qui alimente le compteur « en ce moment » de notre
+   administration. Aucun mouchard tiers, aucune donnee personnelle :
+   un jeton tire au hasard dans l'onglet, la page regardee, la
+   provenance. Le jeton meurt avec l'onglet.
+   Le battement s'arrete quand l'onglet passe en arriere-plan : un
+   onglet oublie ne doit pas gonfler le chiffre. */
+(function(){
+  var BASE='https://kxdxxhepewziazfnfnkq.supabase.co';
+  var CLE='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4ZHh4aGVwZXd6aWF6Zm5mbmtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MjkyMDMsImV4cCI6MjA4OTIwNTIwM30.erlLC8zLX3rucPE7-CzJyLGwCljWpzIeGwa6oWXfbMM';
+  var jeton;
+  try{
+    jeton=sessionStorage.getItem('oq-jeton');
+    if(!jeton){ jeton=Math.random().toString(36).slice(2)+Date.now().toString(36);
+      sessionStorage.setItem('oq-jeton',jeton); }
+  }catch(e){ jeton='x'+Math.random().toString(36).slice(2); }
+
+  var source='';
+  try{
+    var r=document.referrer;
+    if(r && r.indexOf(location.host)<0) source=new URL(r).hostname;
+  }catch(e){}
+
+  function battre(){
+    if(document.hidden)return;
+    try{
+      fetch(BASE+'/rest/v1/oq_presence',{
+        method:'POST',keepalive:true,
+        headers:{'apikey':CLE,'Authorization':'Bearer '+CLE,
+          'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({jeton:jeton,page:location.pathname,source:source||null})
+      }).catch(function(){});
+    }catch(e){}
+  }
+  battre();
+  setInterval(battre,20000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden)battre(); });
+})();
+</script>
 </body>
 </html>

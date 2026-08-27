@@ -81,46 +81,86 @@
   /* ── Charpente ─────────────────────────────────────────────────── */
   .app{display:none;min-height:100vh}
   .app.ouvert{display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
-  .rail{border-right:1px solid var(--filet);background:var(--surface);
-    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
-  .marque{padding:20px 22px 16px;border-bottom:1px solid var(--filet);
-    display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .marque b{font-size:19px;font-weight:700;letter-spacing:.2em}
-  .pastille{width:7px;height:7px;border-radius:50%;background:var(--ok);
-    box-shadow:0 0 10px rgba(var(--ok-r),.8)}
-  .menu{padding:14px 12px;flex:1}
-  .groupe{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faible);
-    padding:16px 10px 7px}
-  .menu a{display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:8px;
-    color:var(--attenue);font-size:14px;transition:background .14s,color .14s}
+  /* ══ Le rail ═══════════════════════════════════════════════════════
+     Onze entrees, quatre familles, une seule colonne. Ce qui les rend
+     lisibles n'est pas la separation mais le repere : une icone par
+     entree, un liseré et une teinte pour celle qui est ouverte. */
+  .rail{border-right:1px solid var(--filet);position:sticky;top:0;height:100vh;
+    display:flex;flex-direction:column;overflow-y:auto;
+    background:linear-gradient(180deg,var(--surface),var(--fond) 62%)}
+  .rail::-webkit-scrollbar{width:6px}
+  .rail::-webkit-scrollbar-thumb{background:var(--filet-fort);border-radius:3px}
+
+  .marque{padding:22px 20px 18px;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;border-bottom:1px solid var(--filet)}
+  .marque .mot{height:19px;width:auto;color:var(--texte);display:block}
+  .marque .mot .q{fill:var(--signal)}
+  .etat-moteur{display:inline-flex;align-items:center;gap:6px;flex:none;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--faible);
+    border:1px solid var(--filet);border-radius:20px;padding:3px 8px}
+  .pastille{width:6px;height:6px;border-radius:50%;background:var(--ok);flex:none;
+    box-shadow:0 0 0 0 rgba(var(--ok-r),.6);animation:respire 2.6s ease-out infinite}
+  @keyframes respire{
+    0%{box-shadow:0 0 0 0 rgba(var(--ok-r),.5)}
+    70%{box-shadow:0 0 0 7px rgba(var(--ok-r),0)}
+    100%{box-shadow:0 0 0 0 rgba(var(--ok-r),0)}
+  }
+
+  .menu{padding:8px 12px 18px;flex:1}
+  .groupe{display:flex;align-items:center;gap:9px;margin-top:16px;padding:14px 8px 8px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--faible)}
+  .groupe:first-child{margin-top:0}
+  .groupe:after{content:"";flex:1;height:1px;
+    background:linear-gradient(90deg,var(--filet),transparent)}
+
+  .menu a{position:relative;display:flex;align-items:center;gap:12px;padding:9px 11px;
+    border-radius:10px;color:var(--attenue);font-size:14px;border:1px solid transparent;
+    transition:background .16s,color .16s,border-color .16s}
+  .menu a .ico{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;
+    stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.62;
+    transition:opacity .16s,color .16s,transform .3s cubic-bezier(.22,1,.36,1)}
+  .menu a .lib{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .menu a:hover{background:var(--survol);color:var(--texte)}
-  .menu a.actif{background:rgba(var(--signal-r),.13);color:var(--texte)}
-  .menu a .p{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.42;flex:none}
-  .menu a.actif .p{background:var(--signal);opacity:1}
-  .menu a .badge{margin-left:auto;font-size:11px;background:var(--surface-2);
-    border:1px solid var(--filet);border-radius:20px;padding:1px 7px;color:var(--attenue)}
-  .pied{padding:14px 18px;border-top:1px solid var(--filet);font-size:12.5px;color:var(--faible)}
-  .habit{display:flex;align-items:center;gap:9px;width:100%;margin-top:10px;cursor:pointer;
-    background:transparent;border:1px solid var(--filet);border-radius:9px;padding:8px 11px;
-    font:inherit;font-size:12.5px;color:var(--attenue);text-align:left;
-    transition:color .2s,border-color .2s}
-  .habit:hover{color:var(--texte);border-color:var(--filet-fort)}
+  .menu a:hover .ico{opacity:1;transform:scale(1.08)}
+
+  /* L'ecran ouvert : fond teinte, liseré a gauche, icone au signal. */
+  .menu a.actif{color:var(--texte);font-weight:500;
+    border-color:rgba(var(--signal-r),.22);
+    background:linear-gradient(90deg,rgba(var(--signal-r),.16),rgba(var(--signal-r),.04))}
+  .menu a.actif:before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;
+    border-radius:0 3px 3px 0;background:var(--signal);
+    box-shadow:0 0 12px rgba(var(--signal-r),.65)}
+  .menu a.actif .ico{opacity:1;color:var(--signal)}
+
+  .menu a .badge{flex:none;font-size:11px;font-variant-numeric:tabular-nums;
+    background:rgba(var(--signal-r),.16);border:1px solid rgba(var(--signal-r),.32);
+    border-radius:20px;padding:1px 8px;color:var(--signal)}
+  .menu a .badge:empty{display:none}
+
+  .pied{padding:14px 14px 16px;border-top:1px solid var(--filet);font-size:12.5px;
+    color:var(--faible);display:flex;flex-direction:column;gap:9px}
+  .carte-moi{display:flex;align-items:center;gap:10px;min-width:0;
+    background:var(--surface-2);border:1px solid var(--filet);border-radius:11px;padding:9px 11px}
+  .carte-moi .rond{width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;
+    font-size:12px;font-weight:600;color:var(--fond);background:var(--signal)}
+  .carte-moi span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    color:var(--attenue);font-size:12.5px}
+  .pied button{width:100%;cursor:pointer;font:inherit;font-size:12.5px;text-align:left;
+    color:var(--attenue);background:transparent;border:1px solid var(--filet);
+    border-radius:9px;padding:8px 11px;transition:color .2s,border-color .2s}
+  .pied button:hover{color:var(--texte);border-color:var(--filet-fort)}
+  .habit{display:flex;align-items:center;gap:9px}
   .habit svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;
-    stroke-linecap:round;grid-area:1/1}
-  .habit .i-lune{fill:currentColor;stroke:none}
-  /* On annonce la destination, pas l'etat courant. */
-  .habit .i-lune{display:none}
+    stroke-linecap:round}
+  .habit .i-lune{fill:currentColor;stroke:none;display:none}
   :root[data-theme="light"] .habit .i-lune{display:block}
   :root[data-theme="light"] .habit .i-soleil{display:none}
   @media (prefers-color-scheme:light){
     :root:not([data-theme="dark"]) .habit .i-lune{display:block}
     :root:not([data-theme="dark"]) .habit .i-soleil{display:none}
   }
-
-  .pied button{background:none;border:none;color:var(--attenue);cursor:pointer;padding:0;font-size:12.5px}
-  .pied button:hover{color:var(--texte)}
-
-  main{min-width:0}
   .barre{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--fond) 84%,transparent);
     backdrop-filter:blur(12px);border-bottom:1px solid var(--filet);
     padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px}
@@ -135,6 +175,47 @@
   .vue{padding:28px}
 
   /* ── Blocs ─────────────────────────────────────────────────────── */
+  /* ── Le direct ─────────────────────────────────────────────────────
+     Le seul endroit de l'ecran ou quelque chose bouge tout seul. Il est
+     donc pose en haut, et il est le seul a porter la couleur du signal. */
+  .panneau.vif{border-color:rgba(var(--signal-r),.28);
+    background:linear-gradient(140deg,rgba(var(--signal-r),.07),transparent 62%),var(--surface)}
+  .panneau.vif h2{display:flex;align-items:center;gap:10px}
+  .battement{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none;
+    box-shadow:0 0 0 0 rgba(var(--ok-r),.6);animation:pulse-d 2.4s ease-out infinite}
+  @keyframes pulse-d{
+    0%{box-shadow:0 0 0 0 rgba(var(--ok-r),.55)}
+    70%{box-shadow:0 0 0 10px rgba(var(--ok-r),0)}
+    100%{box-shadow:0 0 0 0 rgba(var(--ok-r),0)}
+  }
+  .direct-grille{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;
+    padding-bottom:22px;border-bottom:1px solid var(--filet);margin-bottom:20px}
+  .gros-chiffre .n{font-size:clamp(44px,6vw,68px);font-weight:600;letter-spacing:-.04em;
+    line-height:1;font-variant-numeric:tabular-nums}
+  .gros-chiffre .l{color:var(--attenue);font-size:13.5px;margin-top:6px}
+  .barres{position:relative;display:flex;align-items:flex-end;gap:5px;height:74px;padding-bottom:18px}
+  .barres i{flex:1;border-radius:4px 4px 2px 2px;min-height:6px;
+    background:linear-gradient(180deg,rgba(var(--signal-r),.85),rgba(var(--signal-r),.28));
+    transition:height .6s cubic-bezier(.22,1,.36,1)}
+  .barres .legende{position:absolute;left:0;right:0;bottom:0;display:flex;
+    justify-content:space-between;font-family:"JetBrains Mono",monospace;
+    font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faible)}
+  .faits-d{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .fait-d{border:1px solid var(--filet);border-radius:11px;padding:12px 14px;background:var(--surface-2)}
+  .fait-d span{display:block;font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--faible);margin-bottom:5px}
+  .fait-d b{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+  .fait-d.vif{border-color:rgba(var(--signal-r),.35)}
+  .fait-d.vif b{color:var(--signal)}
+  .pages-d{margin-top:18px}
+  .pages-d .lab{display:block;font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--faible);margin-bottom:9px}
+  .pages-d div{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:7px 0;border-bottom:1px solid var(--filet);font-size:13.5px}
+  .pages-d div:last-child{border-bottom:none}
+  .pages-d b{font-weight:400;color:var(--attenue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pages-d i{font-style:normal;font-family:"JetBrains Mono",monospace;color:var(--texte);flex:none}
+  @media(max-width:720px){ .direct-grille{grid-template-columns:1fr;gap:18px} }
   .kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-bottom:26px}
   .kpi{background:var(--surface);border:1px solid var(--filet);border-radius:12px;padding:18px}
   .kpi .lib{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible)}
@@ -181,6 +262,13 @@
   .journal .qd{color:var(--faible);font-size:12px;white-space:nowrap;min-width:82px}
   .journal .qui{color:var(--attenue)}
 
+  /* Une ligne d'ecran : un texte a gauche, une commande a droite. */
+  .rangee{display:flex;align-items:center;justify-content:space-between;gap:18px;
+    padding:15px 0;border-bottom:1px solid var(--filet)}
+  .rangee:last-child{border-bottom:none;padding-bottom:0}
+  .rangee > div{min-width:0}
+  .rangee b{font-size:14px}
+  /* L'interrupteur, lui, reste un interrupteur. */
   .bascule{position:relative;width:38px;height:21px;border-radius:20px;background:var(--filet-fort);
     border:none;cursor:pointer;transition:background .18s;flex:none}
   .bascule:after{content:"";position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;
@@ -340,10 +428,13 @@
 
 <div class="app" id="app">
   <aside class="rail">
-    <div class="marque"><b>ONIQ</b><span class="pastille" title="Moteur en service"></span></div>
+    <div class="marque">
+      <svg class="mot" viewBox="80 76 1407 386" aria-hidden="true"><g><path d="M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 ZM137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z" fill="currentColor" fill-rule="evenodd"/></g><g transform="translate(452,0)"><path d="M80,80 H137 L323,336 V80 H380 V432 H323 L137,176 V432 H80 Z" fill="currentColor"/></g><g transform="translate(852,0)"><path d="M80,80 H137 V432 H80 Z" fill="currentColor"/></g><g transform="translate(1009,0)"><path d="M80,256 A176,176 0 1,0 432,256 A176,176 0 1,0 80,256 ZM137,248 A119,119 0 1,0 375,248 A119,119 0 1,0 137,248 Z" fill="currentColor" fill-rule="evenodd"/><path class="q" d="M366,315.6 C416,338 456,392 474,458 C424,424 376,396 315.6,366 Z"/></g></svg>
+      <span class="etat-moteur" title="Le moteur de prospection passe toutes les cinq minutes"><span class="pastille"></span>En service</span>
+    </div>
     <nav class="menu" id="menu"></nav>
     <div class="pied">
-      <div id="qui-suis-je">…</div>
+      <div class="carte-moi"><span class="rond" id="initiale">·</span><span id="qui-suis-je">…</span></div>
       <button id="btn-habit" class="habit" type="button">
         <svg viewBox="0 0 24 24" class="i-lune" aria-hidden="true"><path d="M20.5 14.4A8.6 8.6 0 0 1 9.6 3.5a8.6 8.6 0 1 0 10.9 10.9Z"/></svg>
         <svg viewBox="0 0 24 24" class="i-soleil" aria-hidden="true"><circle cx="12" cy="12" r="4.1"/><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8"/></svg>
@@ -471,22 +562,22 @@ $('#btn-sortir').addEventListener('click',function(){
 /* ══ Navigation ═════════════════════════════════════════════════════ */
 var SECTIONS=[
   {g:'Pilotage'},
-  {id:'pilotage',   nom:'Tableau de bord', sous:'La photo du jour, sur données réelles'},
-  {id:'activite',   nom:'Activité',        sous:'Qui a fait quoi, et quand'},
+  {id:'pilotage',   nom:'Tableau de bord', sous:'La photo du jour, sur données réelles', ico:'<rect x="3.2" y="3.2" width="7" height="7" rx="1.6"/><rect x="13.8" y="3.2" width="7" height="7" rx="1.6"/><rect x="3.2" y="13.8" width="7" height="7" rx="1.6"/><rect x="13.8" y="13.8" width="7" height="7" rx="1.6"/>'},
+  {id:'activite',   nom:'Activité',        sous:'Qui a fait quoi, et quand', ico:'<path d="M3 12.4h4.1l2.3-6 3.4 11.6 2.4-8 1.6 2.4H21"/>'},
   {g:'Acquisition'},
-  {id:'prospection',nom:'Prospection',     sous:'Ce que la machine produit toute seule'},
-  {id:'demandes',   nom:'Demandes',        sous:'Formulaires reçus depuis le site'},
+  {id:'prospection',nom:'Prospection',     sous:'Ce que la machine produit toute seule', ico:'<circle cx="11" cy="11" r="6.4"/><path d="M20.8 20.8 15.6 15.6"/>'},
+  {id:'demandes',   nom:'Demandes',        sous:'Formulaires reçus depuis le site', ico:'<path d="M3.4 13.6h4.2l1.6 2.6h5.6l1.6-2.6h4.2"/><path d="M5.8 4.6h12.4l2.4 9v4.2a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2v-4.2Z"/>'},
   {g:'Affaires'},
-  {id:'clients',    nom:'Clients',         sous:'Le portefeuille'},
-  {id:'projets',    nom:'Projets',         sous:'Ce qui est en cours de construction'},
-  {id:'devis',      nom:'Devis',           sous:'Propositions envoyées et décidées'},
-  {id:'factures',   nom:'Factures',        sous:'Encaissé, en attente, en retard'},
-  {id:'abonnements',nom:'Abonnements',     sous:'Le revenu récurrent'},
+  {id:'clients',    nom:'Clients',         sous:'Le portefeuille', ico:'<circle cx="9.2" cy="8" r="3.4"/><path d="M3 19.4a6.2 6.2 0 0 1 12.4 0"/><path d="M16.4 5.2a3.2 3.2 0 0 1 0 6.2M17.6 14.2a5.6 5.6 0 0 1 3.6 5.2"/>'},
+  {id:'projets',    nom:'Projets',         sous:'Ce qui est en cours de construction', ico:'<path d="m12 3.2 8.6 4.6L12 12.4 3.4 7.8Z"/><path d="m3.4 12.2 8.6 4.6 8.6-4.6"/><path d="m3.4 16.6 8.6 4.6 8.6-4.6"/>'},
+  {id:'devis',      nom:'Devis',           sous:'Propositions envoyées et décidées', ico:'<path d="M13.4 3.2H7a2 2 0 0 0-2 2v13.6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.8Z"/><path d="M13.4 3.2v5.6H19"/><path d="M8.6 13h6.8M8.6 16.6h4.4"/>'},
+  {id:'factures',   nom:'Factures',        sous:'Encaissé, en attente, en retard', ico:'<path d="M5.4 3.4h13.2v17.2l-2.6-1.6-2.6 1.6-2.6-1.6-2.6 1.6-2.8-1.6Z"/><path d="M14.6 8.2H9.8a1.9 1.9 0 0 0 0 3.8h3.2a1.9 1.9 0 0 1 0 3.8H8.8"/>'},
+  {id:'abonnements',nom:'Abonnements',     sous:'Le revenu récurrent', ico:'<path d="M20.4 11.4a8.4 8.4 0 0 0-14.6-5"/><path d="M3.6 12.6a8.4 8.4 0 0 0 14.6 5"/><path d="M3.6 6.4v5h5M20.4 17.6v-5h-5"/>'},
   {g:'Maison'},
-  {id:'automatisations',nom:'Automatisations',sous:'Ce que la maison fait tourner seule'},
-  {id:'reglages',   nom:'Réglages',        sous:'Expéditeurs et modèles de messages'},
+  {id:'automatisations',nom:'Automatisations',sous:'Ce que la maison fait tourner seule', ico:'<path d="M13.4 2.6 4.6 13.8h6.2l-1.2 7.6 8.8-11.2h-6.2Z"/>'},
+  {id:'reglages',   nom:'Réglages',        sous:'Expéditeurs et modèles de messages', ico:'<path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h7M15 17h5"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="13" cy="17" r="2"/>'},
   {g:'Marque'},
-  {id:'ressources', nom:'Ressources',      sous:'Logo, favicon, bannières et éléments de marque'}
+  {id:'ressources', nom:'Ressources',      sous:'Logo, favicon, bannières et éléments de marque', ico:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.4v3.4M12 17.2v3.4M3.4 12h3.4M17.2 12h3.4"/>'}
 ];
 var courante='pilotage';
 
@@ -495,7 +586,9 @@ function dessinerMenu(){
   SECTIONS.forEach(function(s){
     if(s.g){ h+='<div class="groupe">'+s.g+'</div>'; return; }
     h+='<a href="#'+s.id+'" data-id="'+s.id+'" class="'+(s.id===courante?'actif':'')+'">'
-      +'<span class="p"></span>'+ech(s.nom)+'<span class="badge" id="b-'+s.id+'"></span></a>';
+      +'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+(s.ico||'')+'</svg>'
+      +'<span class="lib">'+ech(s.nom)+'</span>'
+      +'<span class="badge" id="b-'+s.id+'"></span></a>';
   });
   $('#menu').innerHTML=h;
 }
@@ -515,6 +608,7 @@ function ouvrir(){
   $('#porte').style.display='none';
   $('#app').classList.add('ouvert');
   $('#qui-suis-je').textContent=moi||'';
+  $('#initiale').textContent=(moi||'?').trim().charAt(0).toUpperCase();
   dessinerMenu();
   aller((location.hash||'#pilotage').slice(1));
   compteurs();
@@ -566,7 +660,7 @@ VUES.pilotage=async function(){
     var taux    =envoyes?Math.round(100*gagnes/envoyes):0;
     var partRec =(encaisse+mrr*12)>0?Math.round(100*(mrr*12)/(encaisse+mrr*12)):0;
 
-    var h='<div class="kpis">'
+    var h='<div id="direct"></div><div class="kpis">'
       +kpi('Encaissé',euro(encaisse),'vert',fac.filter(function(f){return f.statut==='payee';}).length+' facture(s) réglée(s)')
       +kpi('En attente',euro(attente),'ambre','factures envoyées, non réglées')
       +kpi('En retard',euro(retard),retard>0?'rouge':'', retard>0?'à relancer aujourd’hui':'rien en souffrance')
@@ -607,9 +701,68 @@ VUES.pilotage=async function(){
     h+='</div></div>';
 
     $('#vue').innerHTML=h;
+    direct();
+    /* Le direct se rafraichit tant qu'on reste sur le tableau de bord,
+       et s'arrete des qu'on le quitte : rien ne tourne dans le vide. */
+    clearInterval(window.__battement);
+    window.__battement=setInterval(function(){
+      if(courante!=='pilotage'){ clearInterval(window.__battement); return; }
+      if(document.hidden)return;      /* onglet en arriere-plan : on se tait */
+      direct();
+    },20000);
   }catch(e){ $('#vue').innerHTML='<div class="erreur">Lecture impossible : '+ech(e.message)
     +'<br>Avez-vous exécuté <b>oniq-admin-schema.sql</b> ?</div>'; }
 };
+/* ── Le direct ──────────────────────────────────────────────────────
+   Un tableau de bord qui ne montre que des cumuls est un bilan
+   comptable. Ce qui donne envie de l'ouvrir le matin, c'est ce qui
+   bouge : qui est sur le site maintenant, ce que la machine a envoyé
+   depuis minuit, la dernière demande arrivée. Les chiffres viennent de
+   nos propres tables, aucun mouchard tiers n'est branché. */
+async function direct(){
+  var z=$('#direct'); if(!z)return;
+  try{
+    /* Une seule requete, quelques centaines d'octets en retour : c'est la
+       base qui compte, pas le navigateur. Rafraichi toutes les vingt
+       secondes, et seulement si l'onglet est au premier plan. */
+    var r=await fetch(URL_BASE+'/rest/v1/rpc/oq_direct',{method:'POST',headers:entetes(),body:'{}'});
+    if(!r.ok)throw new Error('oq_direct : '+r.status);
+    var d=await r.json();
+    if(!d)throw new Error('accès refusé');
+
+    var barres=d.barres||[], haut=Math.max(1,Math.max.apply(null,barres.concat([1])));
+    z.innerHTML='<div class="panneau vif"><header>'
+      +'<h2><span class="battement"></span>En ce moment</h2>'
+      +'<span class="aide">actualisé toutes les vingt secondes</span></header><div class="corps">'
+      +'<div class="direct-grille">'
+        +'<div class="gros-chiffre"><div class="n">'+nb(d.maintenant)+'</div>'
+          +'<div class="l">'+(d.maintenant>1?'personnes sur le site':'personne sur le site')+'</div></div>'
+        +'<div class="barres" aria-hidden="true">'
+          +barres.map(function(v){
+            return '<i style="height:'+Math.max(6,Math.round(v/haut*100))+'%" title="'+v+'"></i>';}).join('')
+          +'<div class="legende"><span>il y a 30 min</span><span>maintenant</span></div></div>'
+      +'</div>'
+      +'<div class="faits-d">'
+        +fait('Visiteurs aujourd’hui',nb(d.jour))
+        +fait('Pages vues',nb(d.vues))
+        +fait('Messages partis',nb(d.messages))
+        +fait('Demandes reçues',nb(d.demandes),d.demandes>0)
+      +'</div>'
+      +((d.pages&&d.pages.length)?('<div class="pages-d"><span class="lab">Les pages regardées aujourd’hui</span>'
+        +d.pages.map(function(p){
+          return '<div><b>'+ech(p.page)+'</b><i>'+nb(p.n)+'</i></div>';}).join('')+'</div>'):'')
+      +'</div></div>';
+  }catch(e){
+    z.innerHTML='<div class="panneau"><div class="corps">'
+      +vide('Le direct n’est pas encore branché',
+        'Exécutez oniq-presence.sql dans Supabase, puis publiez la vitrine : le compteur se remplit tout seul dès la première visite.')
+      +'</div></div>';
+  }
+}
+function fait(l,v,vif){
+  return '<div class="fait-d'+(vif?' vif':'')+'"><span>'+ech(l)+'</span><b>'+ech(v)+'</b></div>';
+}
+
 function kpi(lib,val,genre,note){
   return '<div class="kpi '+(genre||'')+'"><div class="lib">'+ech(lib)+'</div>'
     +'<div class="val">'+ech(val)+'</div>'+(note?'<div class="note">'+ech(note)+'</div>':'')+'</div>';
@@ -1035,7 +1188,7 @@ VUES.automatisations=async function(){
     h+=a.length?a.map(function(x){
       var total=(x.succes||0)+(x.echecs||0);
       var fiab=total?Math.round(100*(x.succes||0)/total)+' % de réussite':'pas encore de passage';
-      return '<div class="bascule"><div><b>'+ech(x.nom)+'</b>'
+      return '<div class="rangee"><div><b>'+ech(x.nom)+'</b>'
         +'<div style="color:var(--faible);font-size:13px">'+ech(x.description||'')+'</div>'
         +'<div class="mono" style="color:var(--faible);font-size:12px">'+ech(x.cadence||'')
         +' · '+fiab+(x.derniere_le?' · dernier passage '+depuis(x.derniere_le):'')+'</div></div>'
@@ -1080,9 +1233,9 @@ VUES.reglages=async function(){
       :vide('Modèles par défaut','Aucun modèle enregistré : le moteur utilise les textes du code.');
     h+='</div></div>';
     h+='<div class="panneau"><header><h2>Maison</h2></header><div class="corps">'
-      +'<div class="bascule"><div><b>ONIQ SOFTWARE</b><div style="color:var(--faible);font-size:13px">'
+      +'<div class="rangee"><div><b>ONIQ SOFTWARE</b><div style="color:var(--faible);font-size:13px">'
       +'SAS · SIRET 103 508 263 00011 · Marsanne (26)</div></div></div>'
-      +'<div class="bascule"><div><b>Sauvegarde de la base</b>'
+      +'<div class="rangee"><div><b>Sauvegarde de la base</b>'
       +'<div style="color:var(--faible);font-size:13px">Aucune sauvegarde automatique à ce jour. '
       +'Un export manuel depuis Supabase une fois par semaine coûte cinq minutes et évite de tout reperdre.</div></div></div>'
       +'</div></div>';

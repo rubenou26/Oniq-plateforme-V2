@@ -219,11 +219,6 @@ h1,h2{line-height:1.14 !important}
         "@type": "Organization",
         "name": "ONIQ",
         "url": "https://www.oniq.online"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "12"
       }
     },
     {
@@ -245,11 +240,6 @@ h1,h2{line-height:1.14 !important}
         "@type": "Organization",
         "name": "ONIQ",
         "url": "https://www.oniq.online"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "8"
       }
     },
     {
@@ -267,8 +257,7 @@ h1,h2{line-height:1.14 !important}
         "billingIncrement": "P1M",
         "priceValidUntil": "2026-12-31"
       },
-      "publisher": {"@type": "Organization", "name": "ONIQ", "url": "https://www.oniq.online"},
-      "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.7", "ratingCount": "5"}
+      "publisher": {"@type": "Organization", "name": "ONIQ", "url": "https://www.oniq.online"}
     },
     {
       "@type": "SoftwareApplication",
@@ -4814,11 +4803,6 @@ const Marketplace=({user,setUser,software,setView,onAuth})=>{
         </div>
       </div>
 
-      {/* Preuve sociale — ligne fixe discrète */}
-      <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:22,fontFamily:SS,fontSize:13,color:C.stone,flexWrap:'wrap'}}>
-        <span style={{width:7,height:7,borderRadius:'50%',background:'#3F7A52',boxShadow:'0 0 8px rgba(63,122,82,0.5)',flexShrink:0}}/>
-        <span><strong style={{color:C.ink,fontWeight:700}}>+12 entreprises</strong> nous ont rejoints cette semaine&nbsp;·&nbsp; <strong style={{color:C.ink,fontWeight:700}}>47 codes d'essai</strong> disponibles aujourd'hui</span>
-      </div>
 
 
       {/* IA */}
@@ -8016,7 +8000,7 @@ const Apropos=({onAuth})=>(
         <div style={{fontFamily:SF,fontSize:18,fontWeight:700,color:C.ivory,marginBottom:10}}>Notre mission</div>
         <div style={{fontFamily:SS,fontSize:13,color:"rgba(255,255,255,0.45)",lineHeight:1.8,marginBottom:20}}>ONIQ démocratise l'accès aux logiciels professionnels pour les TPE et indépendants. Abonnement mensuel sans engagement, essai gratuit sur chaque logiciel.</div>
         <div style={{display:"flex",gap:24}}>
-          {[["500+","Professionnels"],["8+","Logiciels"],["4.8★","Note moy."]].map(([v,l])=>(
+          {[["5","Logiciels métier"],["100 %","Hébergé en France"],["2026","Année de création"]].map(([v,l])=>(
             <div key={l}><div style={{fontFamily:SF,fontSize:20,fontWeight:700,color:C.gold}}>{v}</div><div style={{fontFamily:SS,fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:3}}>{l}</div></div>
           ))}
         </div>
