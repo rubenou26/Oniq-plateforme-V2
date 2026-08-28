@@ -2096,6 +2096,7 @@ VUES.prospection=async function(){
    la file d'envoi (oq_envois) et le moteur l'expédie dans les cinq
    minutes avec l'adresse @oniq.online du commercial. Aucune clé, aucun
    mot de passe, aucune messagerie à ouvrir. */
+var filtreBoite='recus';   /* 'recus' ou 'envoyes' */
 VUES.boite=async function(){
   try{
     bouton('Écrire un email',ecrireEmail);
@@ -2115,27 +2116,47 @@ VUES.boite=async function(){
       if(vus[k]==null){ vus[k]=fils.length; fils.push({p:fiches[m.prospect_id]||null,liste:[]}); }
       fils[vus[k]].liste.push(m);
     });
+    /* Deux mondes : les conversations ou le prospect a ecrit (le vrai
+       travail), et le courrier sorti (prospection, relances, reponses). */
+    var aRecu=function(fl){ return fl.liste.some(function(m){return m.sens==='in';}); };
+    var recus=fils.filter(aRecu);
+    var envoyes=fils.filter(function(fl){return !aRecu(fl);});
     var nonLus=msgs.filter(function(m){return m.sens==='in'&&m.lu===false;}).length;
-    var h='<div class="panneau"><header><h2>Conversations</h2><span class="aide">'
-      +(nonLus?nb(nonLus)+' non lu'+(nonLus>1?'s':''):'tout est lu')+'</span></header>';
-    if(!fils.length){
-      h+='<div class="corps">'+vide('Aucun message pour le moment',
-        'Quand un prospect répond à un email, la conversation apparaît ici. Vous répondez sur place, avec votre adresse @oniq.online.')+'</div></div>';
-      $('#vue').innerHTML=h; return;
+
+    var h='<div class="segment" style="margin-bottom:14px">'
+      +'<button data-boite="recus" class="'+(filtreBoite==='recus'?'actif':'')+'">Boîte de réception'
+        +(nonLus?' <i>'+nb(nonLus)+'</i>':' <i>'+nb(recus.length)+'</i>')+'</button>'
+      +'<button data-boite="envoyes" class="'+(filtreBoite==='envoyes'?'actif':'')+'">Envoyés <i>'+nb(envoyes.length)+'</i></button>'
+      +'</div>';
+
+    var liste=(filtreBoite==='recus')?recus:envoyes;
+    h+='<div class="panneau"><header><h2>'+(filtreBoite==='recus'?'Conversations':'Courrier sorti')+'</h2>'
+      +'<span class="aide">'+(filtreBoite==='recus'
+        ?(nonLus?nb(nonLus)+' non lu'+(nonLus>1?'s':''):'tout est lu')
+        :'prospection, relances et vos envois')+'</span></header>';
+    if(!liste.length){
+      h+='<div class="corps">'+(filtreBoite==='recus'
+        ?vide('Aucune réponse pour le moment','Quand un prospect répond à un email, la conversation apparaît ici. Vous répondez sur place, avec votre adresse @oniq.online.')
+        :vide('Rien d’envoyé pour le moment','Les emails de prospection et vos messages apparaîtront ici dès leur départ.'))
+        +'</div></div>';
+      $('#vue').innerHTML=h;
+      $$('#vue [data-boite]').forEach(function(b){ b.onclick=function(){ filtreBoite=b.dataset.boite; VUES.boite(); }; });
+      return;
     }
     h+='<div class="tbl-scroll"><table><thead><tr><th>Entreprise</th><th>Dernier message</th><th>Quand</th><th></th></tr></thead><tbody>'
-      +fils.map(function(fl,i2){
-        var d=fl.liste[0], neuf=fl.liste.some(function(m){return m.sens==='in'&&m.lu===false;});
+      +liste.map(function(fl,i2){
+        var dm=fl.liste[0], neuf=fl.liste.some(function(m){return m.sens==='in'&&m.lu===false;});
         return '<tr'+(neuf?' style="font-weight:600"':'')+'><td>'
           +(neuf?'<span style="color:var(--signal)">&#9679;</span> ':'')
           +ech((fl.p&&fl.p.entreprise)||'Sans fiche')+'</td>'
-          +'<td style="color:var(--attenue)">'+(d.sens==='in'?'&larr; ':'&rarr; ')
-          +ech(String(d.contenu||d.sujet||'').slice(0,70))+'</td>'
-          +'<td style="white-space:nowrap;color:var(--faible)">'+depuis(d.created_at)+'</td>'
+          +'<td style="color:var(--attenue)">'+(dm.sens==='in'?'&larr; ':'&rarr; ')
+          +ech(String(dm.contenu||dm.sujet||'').slice(0,70))+'</td>'
+          +'<td style="white-space:nowrap;color:var(--faible)">'+depuis(dm.created_at)+'</td>'
           +'<td class="n"><button class="btn" data-fil="'+i2+'">Ouvrir</button></td></tr>';
       }).join('')+'</tbody></table></div></div>';
     $('#vue').innerHTML=h;
-    $$('#vue [data-fil]').forEach(function(b){ b.onclick=function(){ ouvrirFil(fils[+b.dataset.fil]); }; });
+    $$('#vue [data-boite]').forEach(function(b){ b.onclick=function(){ filtreBoite=b.dataset.boite; VUES.boite(); }; });
+    $$('#vue [data-fil]').forEach(function(b){ b.onclick=function(){ ouvrirFil(liste[+b.dataset.fil]); }; });
   }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
 };
 
@@ -2244,7 +2265,7 @@ function habilleApercu(texte,e,avecBouton){
     +(contact.length?'<div style="font-size:12px;padding-top:8px">'+contact.join(' <span style="color:#C6CFE0">·</span> ')+'</div>':'')
     +'</td></tr>'
     +'<tr><td style="background:#F5F7FB;padding:12px 30px;font-family:'+sans+';font-size:10.5px;color:#8A93A5;line-height:1.5">'
-    +'Vous recevez ce message car votre entreprise est inscrite au registre public des sociétés. Répondez <strong>STOP</strong> pour ne plus jamais être contacté.</td></tr>'
+    +'Répondez <strong>STOP</strong> pour ne plus jamais être contacté.</td></tr>'
     +'</table></td></tr></table></body></html>';
 }
 
