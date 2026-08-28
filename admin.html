@@ -349,9 +349,11 @@
     animation:pulser 9s cubic-bezier(.45,0,.55,1) infinite}
   @keyframes pulser{0%,100%{filter:drop-shadow(0 0 10px rgba(var(--signal-r),.34))}
     50%{filter:drop-shadow(0 0 22px rgba(var(--signal-r),.62))}}
-  .vitrine .dit b{display:block;font-size:29px;font-weight:600;letter-spacing:.22em}
+  /* La carte est sombre quel que soit l'habillage : son texte l'est donc
+     aussi, sinon il devient illisible en mode jour. */
+  .vitrine .dit b{display:block;font-size:29px;font-weight:600;letter-spacing:.22em;color:#EAEDF2}
   .vitrine .dit b i{font-style:normal;color:var(--signal)}
-  .vitrine .dit span{display:block;margin-top:10px;max-width:52ch;color:var(--attenue);
+  .vitrine .dit span{display:block;margin-top:10px;max-width:52ch;color:rgba(234,237,242,.62);
     font-size:13.5px;line-height:1.7}
   @media(max-width:760px){
     .vitrine{grid-template-columns:1fr;justify-items:center;text-align:center;gap:22px;padding:28px 20px}
@@ -361,7 +363,170 @@
     .astre,.astre .eclat,.astre .voile,.astre .trait,.vitrine .halo{animation:none}
     .astre .eclat{opacity:.45}
   }
-  .dossier-d .tete-d{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  /* Une campagne se lit comme une consigne : qui, quoi, où, quelle taille. */
+  .camp{border:1px solid var(--filet);border-radius:13px;padding:16px 18px;margin-bottom:12px;
+    background:var(--surface-2)}
+  .camp.vive{border-color:rgba(var(--signal-r),.28);
+    background:linear-gradient(120deg,rgba(var(--signal-r),.07),transparent 60%),var(--surface-2)}
+  .camp-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+  .camp-tete b{font-size:15px}
+  .camp-qui{color:var(--faible);font-size:12.5px;margin-top:2px}
+  .camp-cible{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+  .camp-cible span{font-size:12px;color:var(--attenue);background:var(--fond);
+    border:1px solid var(--filet);border-radius:20px;padding:4px 11px}
+  .camp-actes{display:flex;gap:8px;flex-wrap:wrap}
+
+
+  /* ── L'objectif du jour ─
+───────────────────────────────────────────
+     Un anneau plutot qu'une barre : on y lit ce qui reste autant que ce
+     qui est fait, et c'est ce qui reste qui fait decrocher le telephone. */
+  /* Le visage : quatre expressions, tracees au trait comme les icones du
+     rail. Il ne remplace pas le chiffre, il le fait ressentir. */
+  .visage{flex:none}
+  .visage .tete{fill:none;stroke:var(--filet-fort);stroke-width:2}
+  .visage .traits{fill:currentColor;stroke:currentColor;stroke-width:2.4;
+    stroke-linecap:round;stroke-linejoin:round}
+  .visage .traits path{fill:none}
+  .visage.v-rayonne{color:var(--ok)}
+  .visage.v-rayonne .tete{stroke:color-mix(in srgb,var(--ok) 55%,transparent)}
+  .visage.v-content{color:var(--signal)}
+  .visage.v-content .tete{stroke:color-mix(in srgb,var(--signal) 45%,transparent)}
+  .visage.v-neutre{color:var(--attenue)}
+  .visage.v-soucieux{color:var(--attente)}
+  .visage.v-soucieux .tete{stroke:color-mix(in srgb,var(--attente) 45%,transparent)}
+  .obj-anneau{display:flex;align-items:center;gap:14px}
+  .moi-grille{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+  .moi-visage{flex:none}
+  .moi-dit{flex:1;min-width:240px}
+  .obj-faits b i{font-style:normal;font-size:12px;margin-left:6px}
+  .obj-faits b i.up{color:var(--ok)}
+  .obj-faits b i.down{color:var(--attente)}
+  /* La conversion : un seul chiffre, et ce qu'il vaut. */
+  .conv{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .conv-n{font-size:clamp(34px,5vw,50px);font-weight:600;letter-spacing:-.04em;
+    font-variant-numeric:tabular-nums}
+  .conv-a{color:var(--faible);font-size:13.5px}
+  .conv-p{color:var(--faible);font-size:13px;line-height:1.8;max-width:70ch;margin:0}
+  .objectif .corps{padding:26px 28px}
+  .obj-grille{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+  .anneau{flex:none;transform:rotate(-90deg)}
+  .anneau .piste-a{fill:none;stroke:var(--filet);stroke-width:9}
+  .anneau .trace-a{fill:none;stroke:var(--signal);stroke-width:9;stroke-linecap:round;
+    transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);
+    filter:drop-shadow(0 0 8px rgba(var(--signal-r),.45))}
+  .anneau text{transform:rotate(90deg);transform-origin:center;text-anchor:middle;
+    font-family:"Instrument Sans",system-ui,sans-serif;fill:var(--texte)}
+  .anneau .a-n{font-size:34px;font-weight:600;letter-spacing:-.03em}
+  .anneau .a-l{font-size:12px;fill:var(--faible)}
+  .obj-dit{flex:1;min-width:220px}
+  .obj-titre{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9.5px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--faible);margin-bottom:8px}
+  .obj-mot{font-size:19px;font-weight:600;letter-spacing:-.02em;margin-bottom:18px}
+  .obj-faits{display:flex;gap:26px;flex-wrap:wrap}
+  .obj-faits span{display:block;font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--faible);margin-bottom:4px}
+  .obj-faits b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+
+  /* La progression pendant la session : discrete, toujours visible. */
+  .jauge-obj{position:relative;height:26px;border:1px solid var(--filet);border-radius:9px;
+    background:var(--surface);overflow:hidden;margin-bottom:16px}
+  .jauge-obj i{display:block;height:100%;
+    background:linear-gradient(90deg,rgba(var(--signal-r),.35),rgba(var(--signal-r),.7));
+    transition:width .7s cubic-bezier(.22,1,.36,1)}
+  .jauge-obj span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.06em;color:var(--texte)}
+
+  /* Le palier franchi : une ligne, trois secondes, puis plus rien. */
+  .bravo{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);z-index:9500;
+    background:var(--texte);color:var(--fond);font-size:14px;font-weight:600;
+    padding:12px 22px;border-radius:11px;box-shadow:0 18px 40px rgba(0,0,0,.35);
+    animation:monte-b .4s cubic-bezier(.22,1,.36,1);transition:opacity .5s,transform .5s}
+  .bravo.parti{opacity:0;transform:translateX(-50%) translateY(10px)}
+  @keyframes monte-b{from{opacity:0;transform:translateX(-50%) translateY(14px)}}
+
+  /* ── Session d'appels ─
+─────────────────────────────────────────────
+     Un ecran qui ne demande qu'une chose a la fois. Le numero est le
+     plus gros element de la page : c'est lui qu'on lit en decrochant. */
+  .depart{text-align:center}
+  .depart .corps{padding:44px 24px 40px}
+  .gd-titre{font-size:clamp(24px,3.4vw,34px);font-weight:600;letter-spacing:-.03em;margin-bottom:12px}
+  .gd-sous{color:var(--faible);font-size:14.5px;line-height:1.8;max-width:56ch;margin:0 auto 26px}
+  .gros-btn{font-size:15.5px;padding:14px 30px;border-radius:12px}
+  .rappel-clavier{margin-top:20px;font-family:"JetBrains Mono",monospace;font-size:11px;
+    color:var(--faible);letter-spacing:.04em}
+  .rappel-clavier b{display:inline-block;min-width:18px;text-align:center;color:var(--attenue);
+    border:1px solid var(--filet);border-radius:5px;padding:1px 5px;margin-right:3px}
+
+  .duree-dit{margin-top:14px;color:var(--faible);font-size:13px}
+  .chrono b{font-variant-numeric:tabular-nums}
+  .rythme{font-size:12px;border:1px solid var(--filet);border-radius:20px;padding:3px 10px}
+  .rythme.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+  .rythme.mou{color:var(--attente);border-color:color-mix(in srgb,var(--attente) 40%,transparent)}
+  /* Le trait vertical sur la jauge : ou l'on devrait en etre a cet
+     instant. Etre devant est visible sans qu'on ait a le dire. */
+  .jauge-obj em{position:absolute;top:0;bottom:0;width:2px;background:var(--filet-fort);
+    transition:left 1s linear}
+  .bilan{padding:30px 28px}
+  .bilan-tete{display:flex;align-items:center;gap:20px;margin-bottom:22px;flex-wrap:wrap}
+  .bilan-actes{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .bandeau-session{
+display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:16px;
+    padding:12px 18px;border:1px solid var(--filet);border-radius:12px;background:var(--surface);
+    font-size:13px;color:var(--faible)}
+  .bandeau-session b{color:var(--texte);font-size:16px;font-variant-numeric:tabular-nums;margin-right:4px}
+  .bandeau-session button{margin-left:auto}
+
+  .fiche-appel{background:var(--surface);border:1px solid var(--filet);border-radius:16px;
+    background-image:linear-gradient(150deg,rgba(var(--signal-r),.06),transparent 55%)}
+  .fiche-appel .corps{padding:26px 28px 24px}
+  .tete-f{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+  .tete-f .ent{font-size:22px;font-weight:600;letter-spacing:-.02em}
+  .tete-f .meta{color:var(--faible);font-size:13.5px;margin-top:4px}
+  .numero{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:clamp(28px,4vw,38px);
+    letter-spacing:.02em;color:var(--texte);text-decoration:none;
+    border-bottom:2px solid rgba(var(--signal-r),.45);padding-bottom:3px;margin-bottom:20px}
+  .numero:hover{border-bottom-color:var(--signal)}
+  .script{border-left:2px solid var(--signal);padding:4px 0 4px 16px;margin-bottom:18px;
+    color:var(--attenue);font-size:14.5px;line-height:1.75}
+  .script .lab,.signaux .lab{display:block;font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--faible);margin-bottom:6px}
+  .signaux{margin-bottom:18px;color:var(--faible);font-size:13px;line-height:1.7}
+  .liens-f{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;font-size:13.5px}
+  .liens-f a{color:var(--signal);text-decoration:none}
+  .liens-f a:hover{text-decoration:underline}
+
+  .resultats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .res{position:relative;cursor:pointer;font:inherit;text-align:left;color:var(--texte);
+    background:var(--surface-2);border:1px solid var(--filet);border-radius:12px;padding:13px 14px;
+    transition:border-color .16s,transform .16s,background .16s}
+  .res:hover{transform:translateY(-2px);border-color:var(--filet-fort)}
+  .res b{display:block;font-size:14px;font-weight:600;margin-bottom:3px}
+  .res span{display:block;font-size:11.5px;color:var(--faible);line-height:1.5}
+  .res i{position:absolute;top:10px;right:11px;font-style:normal;font-family:"JetBrains Mono",monospace;
+    font-size:10px;color:var(--faible);border:1px solid var(--filet);border-radius:5px;padding:0 5px}
+  .res.r-ok:hover{border-color:color-mix(in srgb,var(--ok) 55%,transparent)}
+  .res.r-att:hover{border-color:color-mix(in srgb,var(--attente) 55%,transparent)}
+  .res.r-ret:hover{border-color:color-mix(in srgb,var(--retard) 55%,transparent)}
+  .champ-note input{width:100%;font:inherit;font-size:13.5px;color:var(--texte);
+    background:var(--fond);border:1px solid var(--filet);border-radius:10px;padding:10px 13px;outline:none}
+  .champ-note input:focus{border-color:var(--signal)}
+
+  /* Un segment plutot qu'une liste deroulante : deux choix se montrent,
+     ils ne se cherchent pas. */
+  .segment{display:inline-flex;gap:4px;padding:4px;margin-bottom:16px;
+    border:1px solid var(--filet);border-radius:11px;background:var(--surface)}
+  .segment button{cursor:pointer;font:inherit;font-size:13px;color:var(--attenue);
+    background:transparent;border:0;border-radius:8px;padding:7px 14px;
+    display:inline-flex;align-items:center;gap:7px;transition:background .16s,color .16s}
+  .segment button:hover{color:var(--texte)}
+  .segment button.actif{background:var(--surface-2);color:var(--texte)}
+  .segment button i{font-style:normal;font-family:"JetBrains Mono",monospace;font-size:11px;
+    color:var(--faible)}
+  .segment button.actif i{color:var(--signal)}
+  .dossier-d .tete-d{
+display:flex;align-items:center;justify-content:space-between;gap:14px;
     padding-bottom:12px;border-bottom:1px solid var(--filet);margin-bottom:14px;font-size:14px}
   .dossier-d .tete-d a{color:var(--signal);text-decoration:none}
   .dossier-d .faits{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:14px}
@@ -372,7 +537,13 @@
     border:1px solid var(--filet);white-space:pre-wrap;font:400 13.5px/1.7 inherit;color:var(--attenue)}
   .dossier-d .actes{display:flex;gap:9px;flex-wrap:wrap}
 
-  /* ── Ressources de marque ─────────────────────────────────────────── */
+  function brancherFiltre(){
+  $$('[data-filtre]').forEach(function(b){
+    b.onclick=function(){ filtreDemandes=b.dataset.filtre; VUES.demandes(); };
+  });
+}
+
+/* ── Ressources de marque─────────────────────────────────────────── */
   .res{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
   .ress{border:1px solid var(--filet);border-radius:12px;background:var(--surface-2);
     padding:14px;display:flex;flex-direction:column;gap:12px;text-align:left;font:inherit;color:inherit}
@@ -390,6 +561,15 @@
   .toile{width:100%;height:auto;border-radius:10px;border:1px solid var(--filet);display:block}
   button.ress{cursor:pointer}
   button.ress:hover{border-color:var(--filet-fort);background:var(--survol)}
+  .apercu-mail{background:var(--fond);border-radius:12px;padding:0;overflow:hidden}
+  .jetons{margin-top:18px;border-top:1px solid var(--filet);padding-top:16px}
+  .jetons .lab{display:block;font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--faible);margin-bottom:10px}
+  .jetons div{display:flex;align-items:baseline;gap:12px;padding:5px 0;font-size:13px}
+  .jetons code{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--signal);
+    background:rgba(var(--signal-r),.1);border:1px solid rgba(var(--signal-r),.22);
+    border-radius:6px;padding:2px 7px;flex:none}
+  .jetons span{color:var(--faible)}
   .extrait{min-width:0;border:1px solid var(--filet);border-radius:12px;margin-top:14px;overflow:hidden}
   .extrait header{display:flex;align-items:center;justify-content:space-between;gap:12px;
     padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--filet);
@@ -565,8 +745,16 @@ var SECTIONS=[
   {id:'pilotage',   nom:'Tableau de bord', sous:'La photo du jour, sur données réelles', ico:'<rect x="3.2" y="3.2" width="7" height="7" rx="1.6"/><rect x="13.8" y="3.2" width="7" height="7" rx="1.6"/><rect x="3.2" y="13.8" width="7" height="7" rx="1.6"/><rect x="13.8" y="13.8" width="7" height="7" rx="1.6"/>'},
   {id:'activite',   nom:'Activité',        sous:'Qui a fait quoi, et quand', ico:'<path d="M3 12.4h4.1l2.3-6 3.4 11.6 2.4-8 1.6 2.4H21"/>'},
   {g:'Acquisition'},
-  {id:'prospection',nom:'Prospection',     sous:'Ce que la machine produit toute seule', ico:'<circle cx="11" cy="11" r="6.4"/><path d="M20.8 20.8 15.6 15.6"/>'},
-  {id:'demandes',   nom:'Demandes',        sous:'Formulaires reçus depuis le site', ico:'<path d="M3.4 13.6h4.2l1.6 2.6h5.6l1.6-2.6h4.2"/><path d="M5.8 4.6h12.4l2.4 9v4.2a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2v-4.2Z"/>'},
+  {id:'prospection',nom:'Campagnes',        sous:'Qui la machine démarche, et comment le régler',
+   ico:'<circle cx="11" cy="11" r="6.4"/><path d="M20.8 20.8 15.6 15.6"/>'},
+  {id:'appels',     nom:'Session d’appels', sous:'Vous cliquez sur Commencer, la machine fait le reste',
+   ico:'<path d="M7.6 3.6H4.4a1.7 1.7 0 0 0-1.7 1.9c.6 6.7 5.9 12 12.6 12.6a1.7 1.7 0 0 0 1.9-1.7v-3.2l-3.6-1.2-1.7 1.7a13 13 0 0 1-4.6-4.6l1.7-1.7Z"/><path d="M15.2 4.2a5.6 5.6 0 0 1 4.6 4.6"/>'},
+  {id:'pipeline',   nom:'Pipeline',         sous:'Qui a répondu, qui attend une relance',
+   ico:'<path d="M3.4 5.4h17.2l-6.6 7.6v5.4l-4 2v-7.4Z"/>'},
+  {id:'demandes',   nom:'Demandes',         sous:'Formulaires reçus depuis le site',
+   ico:'<path d="M3.4 13.6h4.2l1.6 2.6h5.6l1.6-2.6h4.2"/><path d="M5.8 4.6h12.4l2.4 9v4.2a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2v-4.2Z"/>'},
+  {id:'performance',nom:'Performance',      sous:'Combien d’appels, et ce que ça donne',
+   ico:'<path d="M4 20V9.6M10 20V4M16 20v-7M22 20H2"/>'},
   {g:'Affaires'},
   {id:'clients',    nom:'Clients',         sous:'Le portefeuille', ico:'<circle cx="9.2" cy="8" r="3.4"/><path d="M3 19.4a6.2 6.2 0 0 1 12.4 0"/><path d="M16.4 5.2a3.2 3.2 0 0 1 0 6.2M17.6 14.2a5.6 5.6 0 0 1 3.6 5.2"/>'},
   {id:'projets',    nom:'Projets',         sous:'Ce qui est en cours de construction', ico:'<path d="m12 3.2 8.6 4.6L12 12.4 3.4 7.8Z"/><path d="m3.4 12.2 8.6 4.6 8.6-4.6"/><path d="m3.4 16.6 8.6 4.6 8.6-4.6"/>'},
@@ -681,8 +869,7 @@ VUES.pilotage=async function(){
       h+=kpi(e[0],nb(e[1]),'',conv);
     });
     h+='</div></div></div>';
-
-    h+='<div class="duo">';
+  h+='<div class="duo">';
     h+='<div class="panneau"><header><h2>Projets en cours</h2>'
       +'<a href="#projets" class="aide">tout voir</a></header>';
     h+=projets.length?('<div class="tbl-scroll"><table><thead><tr><th>Projet</th><th>Étape</th><th class="n">Budget</th></tr></thead><tbody>'
@@ -781,17 +968,644 @@ VUES.activite=async function(){
   }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
 };
 
-/* ── Prospection ───────────────────────────────────────────────────── */
+/* ══ Commercial ═════════════════════════════════════════════════════
+   Trois écrans pour la personne qui décroche le téléphone. Le principe
+   tient en une phrase : elle ne doit rien préparer, rien chercher et
+   rien saisir. Elle clique sur Commencer, elle appelle, elle clique sur
+   ce qui s'est passé, la fiche suivante arrive. */
+
+var RESULTATS=[
+  {id:'interesse',    lab:'Intéressé',      touche:'1', genre:'ok',  aide:'passe en client potentiel'},
+  {id:'rappeler',     lab:'Rappeler',       touche:'2', genre:'att', aide:'revient dans la file à la date choisie'},
+  {id:'absent',       lab:'Absent',         touche:'3', genre:'',    aide:'repropose dans trois jours'},
+  {id:'pas_interesse',lab:'Pas intéressé',  touche:'4', genre:'ret', aide:'sort de la file'},
+  {id:'faux_numero',  lab:'Faux numéro',    touche:'5', genre:'ret', aide:'retire le numéro de la fiche'}
+];
+
+/* La session vit en mémoire : on ne veut pas d'un compteur qui repart à
+   zéro parce que le commercial a changé d'onglet. */
+/* Une heure : la duree pendant laquelle un commercial garde de la voix
+   et de l'attention. Deux blocs d'une heure font la journee. */
+var DUREE_SESSION=60*60*1000;
+var SESSION=null, MINUTEUR=null;
+
+function resteSession(){
+  if(!SESSION)return 0;
+  return Math.max(0,DUREE_SESSION-(Date.now()-SESSION.debut));
+}
+function mmss(ms){
+  var s=Math.round(ms/1000), m=Math.floor(s/60);
+  return m+' min'+(m<5?' '+String(s%60).padStart(2,'0')+' s':'');
+}
+
+/* ── L'objectif du jour ─────────────────────────────────────────────
+   Un commercial sans objectif chiffré appelle jusqu'à ce qu'il en ait
+   assez. Avec un objectif visible, il appelle jusqu'à l'avoir atteint.
+   Trois ressorts, et pas un de plus : une jauge qui se remplit, une
+   série de jours tenus qu'on ne veut pas casser, et sa propre moyenne
+   à battre. Aucun classement entre commerciaux : se comparer aux autres
+   pousse à bâcler pour faire du chiffre. */
+  /* ── Le visage ──────────────────────────────────────────────────────
+   Un chiffre se lit, un visage se ressent. Il n'y a pas de classement
+   entre commerciaux : chacun se compare à lui-même, à sa propre moyenne
+   et à son objectif. La comparaison aux autres pousse à bâcler pour
+   faire du chiffre, la comparaison à soi pousse à recommencer demain.
+
+   Quatre expressions, quatre seuils, et rien entre les deux. */
+function visage(part,taille){
+  var t=taille||64, r=t/2-3, c=t/2;
+  var etat = part>=1 ? 'rayonne' : part>=0.75 ? 'content'
+           : part>=0.4 ? 'neutre' : 'soucieux';
+  var bouche = {
+    rayonne : 'M'+(c-13)+' '+(c+4)+' Q'+c+' '+(c+18)+' '+(c+13)+' '+(c+4),
+    content : 'M'+(c-11)+' '+(c+5)+' Q'+c+' '+(c+13)+' '+(c+11)+' '+(c+5),
+    neutre  : 'M'+(c-10)+' '+(c+8)+' L'+(c+10)+' '+(c+8),
+    soucieux: 'M'+(c-11)+' '+(c+11)+' Q'+c+' '+(c+2)+' '+(c+11)+' '+(c+11)
+  }[etat];
+  var oeil = (x)=>'<circle cx="'+x+'" cy="'+(c-6)+'" r="'+(etat==='rayonne'?2.6:2.2)+'"/>';
+  return '<svg class="visage v-'+etat+'" viewBox="0 0 '+t+' '+t+'" width="'+t+'" height="'+t+'" aria-hidden="true">'
+    +'<circle class="tete" cx="'+c+'" cy="'+c+'" r="'+r+'"/>'
+    +'<g class="traits">'+oeil(c-9)+oeil(c+9)+'<path d="'+bouche+'"/></g>'
+    +'</svg>';
+}
+
+/* Deux seuils, parce qu'un taux ne devient pas fiable d'un coup.
+   . moins de 30 appels : deux intéressés sur cinq font 40 %, et ce
+     chiffre ne prédit rien. On n'affiche pas.
+   . de 30 à 100 : une estimation, annoncée comme telle.
+   . au-delà de 100 : l'ordre de grandeur tient, à quelques points près.
+   Avec 40 appels par jour, la barre des 100 tombe le troisième jour :
+   le commercial voit son vrai taux dès le milieu de sa première semaine. */
+var SEUIL_FIABLE=30, SEUIL_SOLIDE=100;
+
+function tauxOuAttente(interesses,appels){
+  if(appels<SEUIL_FIABLE){
+    return {texte:'—',
+      aide:'encore '+(SEUIL_FIABLE-appels)+' appels avant que le taux veuille dire quelque chose'};
+  }
+  var v=(Math.round(1000*interesses/appels)/10)+' %';
+  if(appels<SEUIL_SOLIDE){
+    return {texte:v,aide:'estimation sur '+nb(appels)+' appels, à confirmer vers '+SEUIL_SOLIDE};
+  }
+  return {texte:v,aide:'sur '+nb(appels)+' appels, l’ordre de grandeur tient'};
+}
+
+var OBJ=null;      /* {appels, interesses} du commercial connecté */
+
+async function objectifs(){
+  if(OBJ)return OBJ;
+  OBJ={appels:40,interesses:3};
+  try{
+    var e=await lire('oq_equipe','select=objectif_appels,objectif_interesses&email=eq.'
+      +encodeURIComponent(moi||''));
+    if(e[0]){
+      OBJ.appels=e[0].objectif_appels||40;
+      OBJ.interesses=e[0].objectif_interesses||3;
+    }
+  }catch(x){}
+  return OBJ;
+}
+
+/* La série : le nombre de jours d'affilée où l'objectif a été tenu. On
+   remonte à partir d'hier, aujourd'hui ne compte que s'il est déjà
+   atteint, sinon la série paraîtrait cassée dès le matin. */
+async function serie(cible){
+  try{
+    var d0=new Date(); d0.setDate(d0.getDate()-30); d0.setHours(0,0,0,0);
+    var app=await lire('oq_appels','select=created_at&owner_email=eq.'
+      +encodeURIComponent(moi||'')+'&created_at=gte.'+d0.toISOString()+'&limit=3000');
+    var parJour={};
+    app.forEach(function(a){ var j=String(a.created_at).slice(0,10); parJour[j]=(parJour[j]||0)+1; });
+    var n=0, d=new Date();
+    if((parJour[d.toISOString().slice(0,10)]||0)<cible) d.setDate(d.getDate()-1);
+    for(var i=0;i<30;i++){
+      var k=d.toISOString().slice(0,10);
+      if((parJour[k]||0)>=cible){ n++; d.setDate(d.getDate()-1); } else break;
+    }
+    return n;
+  }catch(x){ return 0; }
+}
+
+/* L'anneau : plus lisible qu'une barre pour un objectif à atteindre,
+   parce qu'on voit ce qui reste autant que ce qui est fait. */
+function anneau(fait,cible,taille){
+  var t=taille||132, r=(t/2)-9, c=2*Math.PI*r;
+  var part=Math.max(0,Math.min(1,cible?fait/cible:0));
+  return '<svg class="anneau" viewBox="0 0 '+t+' '+t+'" width="'+t+'" height="'+t+'">'
+    +'<circle cx="'+(t/2)+'" cy="'+(t/2)+'" r="'+r+'" class="piste-a"/>'
+    +'<circle cx="'+(t/2)+'" cy="'+(t/2)+'" r="'+r+'" class="trace-a" '
+      +'stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-part)).toFixed(1)+'"/>'
+    +'<text x="'+(t/2)+'" y="'+(t/2-2)+'" class="a-n">'+nb(fait)+'</text>'
+    +'<text x="'+(t/2)+'" y="'+(t/2+16)+'" class="a-l">sur '+nb(cible)+'</text>'
+    +'</svg>';
+}
+
+function mot(fait,cible){
+  if(!fait)return 'La première est toujours la plus dure. Après, ça roule.';
+  if(fait>=cible)return 'Objectif tenu. Chaque appel de plus est du bonus.';
+  var reste=cible-fait;
+  if(reste<=3)return 'Plus que '+reste+' pour tenir la journée.';
+  if(fait/cible>=0.5)return 'La moitié est faite, la seconde va plus vite.';
+  return 'Encore '+reste+' appels. À votre rythme.';
+}
+
+VUES.appels=async function(){
+  if(!SESSION){ ecranDepart(); return; }
+  ecranSession();
+};
+
+async function ecranDepart(){
+  try{
+    var r=await Promise.all([
+      compter('oq_prospects','tel=not.is.null&appel_resultat=is.null'),
+      compter('oq_prospects','rappel_le=lte.'+new Date().toISOString()),
+      compter('oq_appels','owner_email=eq.'+encodeURIComponent(moi||'')+'&created_at=gte.'+jourZero()),
+      compter('oq_prospects','appel_resultat=eq.interesse')
+    ]);
+    var pret=r[0]+r[1];
+    var o=await objectifs();
+    var jours=await serie(o.appels);
+    var faits=r[2];
+
+    /* L'objectif passe avant les compteurs : c'est la seule chose que le
+       commercial doit avoir en tete en decrochant. */
+    var h='<div class="panneau vif objectif"><div class="corps">'
+      +'<div class="obj-grille">'
+        +'<div class="obj-anneau">'+anneau(faits,o.appels)
+          +visage(o.appels?faits/o.appels:0,54)+'</div>'
+        +'<div class="obj-dit">'
+          +'<div class="obj-titre">Votre objectif du jour</div>'
+          +'<div class="obj-mot">'+ech(mot(faits,o.appels))+'</div>'
+          +'<div class="obj-faits">'
+            +'<div><span>Intéressés</span><b>'+nb(r[3]>o.interesses?o.interesses:r[3])+' / '+nb(o.interesses)+'</b></div>'
+            +'<div><span>Série</span><b>'+(jours?nb(jours)+' jour'+(jours>1?'s':''):'à démarrer')+'</b></div>'
+            +'<div><span>Dans la file</span><b>'+nb(pret)+'</b></div>'
+          +'</div>'
+        +'</div>'
+      +'</div></div></div>';
+
+    h+='<div class="kpis">'
+      +kpi('À appeler',nb(r[0]),'','jamais appelés, numéro connu')
+      +kpi('Rappels dus',nb(r[1]),r[1]?'ambre':'','vous aviez promis de rappeler')
+      +kpi('Vos appels du jour',nb(faits),'','depuis minuit')
+      +kpi('Intéressés',nb(r[3]),r[3]?'vert':'','à transformer en maquette')
+      +'</div>';
+
+    h+='<div class="panneau depart"><div class="corps">';
+    if(pret>0){
+      h+='<div class="gd-titre">'+nb(pret)+' entreprise'+(pret>1?'s':'')+' vous attend'+(pret>1?'ent':'')+'.</div>'
+        +'<p class="gd-sous">Vous n’avez rien à préparer. Chaque fiche arrive avec le numéro, '
+        +'le nom du dirigeant quand nous l’avons, et une phrase d’ouverture. '
+        +'Vous appelez, vous cliquez sur ce qui s’est passé, la suivante arrive.</p>'
+        +'<button class="btn fort gros-btn" id="go-session">Commencer une heure d’appels</button>'
+        +'<div class="duree-dit">Une heure, minutée. Vous verrez le temps restant et un bilan à la fin.</div>'
+        +'<div class="rappel-clavier">Raccourcis clavier : '
+        +RESULTATS.map(function(x){return '<b>'+x.touche+'</b> '+x.lab;}).join(' · ')+'</div>';
+    }else{
+      h+=vide('Aucun numéro disponible',
+        'La machine ramasse les numéros sur les sites des entreprises : le registre officiel n’en publie aucun. '
+        +'Lancez une campagne dans Prospection, les fiches avec numéro arriveront ici.');
+    }
+    h+='</div></div>';
+    $('#vue').innerHTML=h;
+    var b=$('#go-session');
+    if(b)b.onclick=function(){
+      SESSION={debut:Date.now(),faits:0,interesses:0,fiche:null,depart:r[2]};
+      clearInterval(MINUTEUR);
+      ecranSession();
+    };
+  }catch(e){
+    $('#vue').innerHTML='<div class="erreur">Lecture impossible : '+ech(e.message)
+      +'<br>Avez-vous exécuté <b>oniq-appels.sql</b> ?</div>';
+  }
+}
+
+function jourZero(){ var d=new Date(); d.setHours(0,0,0,0); return d.toISOString(); }
+
+/* La file : d'abord ce qu'on a promis de rappeler, ensuite les fiches
+   jamais appelées. Une promesse tenue vaut mieux qu'un appel de plus. */
+/* La file : d'abord ce qu'on a promis de rappeler, ensuite les fiches
+   jamais appelees. La colonne de date des prospects s'appelle created_at,
+   pas cree_le : la difference coutait une erreur 400 a chaque appel. */
+async function ficheSuivante(){
+  var due=await lire('oq_prospects',
+    'select=*&tel=not.is.null&rappel_le=lte.'+new Date().toISOString()+'&order=rappel_le.asc&limit=1');
+  if(due.length)return due[0];
+  var neuf=await lire('oq_prospects',
+    'select=*&tel=not.is.null&appel_resultat=is.null&order=created_at.desc&limit=1')
+    .catch(function(){return lire('oq_prospects','select=*&tel=not.is.null&appel_resultat=is.null&limit=1');});
+  return neuf[0]||null;
+}
+
+/* L'ouverture : on ne récite pas un argumentaire, on part de ce que la
+   machine a vu sur leur site. C'est la différence entre un démarchage et
+   un appel qui a une raison d'être. */
+function ouverture(p){
+  var pre=p.dirigeant?String(p.dirigeant).split(' ')[0]:'';
+  var quoi=(p.signaux&&String(p.signaux).trim())
+    ? String(p.signaux).split(/[;,\n]/)[0].trim() : '';
+  return 'Bonjour'+(pre?' '+pre:'')+', '+(moi||'').split('@')[0]+' d’ONIQ. '
+    +'Je vous appelle parce que '+(quoi
+      ? 'j’ai vu que '+quoi.charAt(0).toLowerCase()+quoi.slice(1)
+      : 'nous construisons des logiciels sur mesure pour des entreprises comme la vôtre')
+    +'. Je ne vais pas vous prendre trois minutes : aujourd’hui, qu’est-ce qui vous fait perdre '
+    +'le plus de temps dans votre organisation ?';
+}
+
+/* ── Le bilan de l'heure ────────────────────────────────────────────
+   Une session qui s'arrete sans rien dire ne donne pas envie d'en
+   refaire une. Celle-ci se termine par trois chiffres et une phrase. */
+async function bilanSession(){
+  clearInterval(MINUTEUR);
+  var s=SESSION; SESSION=null;
+  if(!s){ ecranDepart(); return; }
+
+  var o=await objectifs();
+  var cible=Math.max(5,Math.round(o.appels/2));
+  var minutes=Math.max(1,Math.round((Date.now()-s.debut)/60000));
+  var parAppel=s.faits?Math.round(minutes*60/s.faits):0;
+  var part=cible?s.faits/cible:0;
+  var phrase = part>=1 ? 'Heure pleine. C’est exactement le rythme qu’il faut tenir.'
+    : part>=0.7 ? 'Bonne heure. Il manquait peu de choses.'
+    : part>=0.4 ? 'Heure correcte. Le prochain bloc ira plus vite, les fiches sont déjà chaudes.'
+    : s.faits ? 'Petite heure. Ça arrive : les barrages, les absents, les rappels.'
+    : 'Aucun appel enregistré sur cette heure.';
+
+  $('#vue').innerHTML='<div class="panneau vif"><div class="corps bilan">'
+    +'<div class="bilan-tete">'+visage(part,84)
+      +'<div><div class="obj-titre">Bilan de l’heure</div>'
+      +'<div class="obj-mot">'+ech(phrase)+'</div></div></div>'
+    +'<div class="faits-d">'
+      +fait('Appels passés',nb(s.faits))
+      +fait('Intéressés',nb(s.interesses),s.interesses>0)
+      +fait('Durée',nb(minutes)+' min')
+      +fait('Temps par appel',parAppel?(parAppel+' s'):'—')
+    +'</div>'
+    +'<div class="bilan-actes">'
+      +'<button class="btn fort" id="encore">Enchaîner une heure</button>'
+      +'<button class="btn" id="fini">Terminer pour aujourd’hui</button>'
+    +'</div></div></div>';
+
+  $('#encore').onclick=async function(){
+    var r=await compter('oq_appels','owner_email=eq.'+encodeURIComponent(moi||'')
+      +'&created_at=gte.'+jourZero()).catch(function(){return 0;});
+    SESSION={debut:Date.now(),faits:0,interesses:0,fiche:null,depart:r};
+    ecranSession();
+  };
+  $('#fini').onclick=function(){ ecranDepart(); };
+}
+
+async function ecranSession(){
+  $('#vue').innerHTML='<div class="panneau"><div class="corps">'
+    +'<div class="vide"><div class="pt">Recherche de la prochaine fiche…</div></div></div></div>';
+  var p;
+  try{ p=await ficheSuivante(); }
+  catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; return; }
+
+  if(!p){
+    $('#vue').innerHTML='<div class="panneau"><div class="corps">'
+      +vide('La file est vide','Vous avez appelé tout le monde. Lancez une campagne dans Prospection pour en ramener d’autres.')
+      +'</div></div>';
+    bilanSession(); return;
+  }
+  SESSION.fiche=p;
+
+  var o=await objectifs();
+  var cible=Math.max(5,Math.round(o.appels/2));     /* une heure = la moitie du jour */
+  var reste=resteSession();
+  var ecoule=DUREE_SESSION-reste;
+  /* Le rythme attendu a cet instant : sert a dire « dans les temps » ou
+     « il faut accelerer » sans jamais culpabiliser. */
+  var attendu=Math.floor(cible*ecoule/DUREE_SESSION);
+  var avance=SESSION.faits-attendu;
+  var partT=Math.round(100*ecoule/DUREE_SESSION);
+  var partA=Math.min(100,Math.round(100*SESSION.faits/cible));
+
+  var h='<div class="bandeau-session">'
+    +'<span class="chrono"><b id="chrono">'+mmss(reste)+'</b> restantes</span>'
+    +'<span><b>'+nb(SESSION.faits)+'</b> / '+nb(cible)+' appels</span>'
+    +'<span><b>'+nb(SESSION.interesses)+'</b> intéressé'+(SESSION.interesses>1?'s':'')+'</span>'
+    +'<span class="rythme '+(avance>=0?'ok':'mou')+'">'
+      +(SESSION.faits?(avance>=0?'dans les temps':'un peu lent'):'à lancer')+'</span>'
+    +'<button class="btn" id="stop-session">Terminer</button>'
+    +'</div>'
+    +'<div class="jauge-obj"><i style="width:'+partA+'%"></i>'
+      +'<span>'+nb(SESSION.faits)+' / '+nb(cible)+' sur cette heure</span>'
+      +'<em style="left:'+partT+'%"></em></div>';
+
+  h+='<div class="fiche-appel"><div class="corps">'
+    +'<div class="tete-f">'
+      +'<div><div class="ent">'+ech(p.entreprise||'Entreprise inconnue')+'</div>'
+        +'<div class="meta">'+[p.ville,p.dirigeant].filter(Boolean).map(ech).join(' · ')+'</div></div>'
+      +(p.rappel_le?'<span class="etat e-att">rappel promis</span>':'')
+    +'</div>'
+    +'<a class="numero" href="tel:'+ech(String(p.tel).replace(/\s/g,''))+'">'+ech(p.tel)+'</a>'
+    +'<div class="script"><span class="lab">Ce que vous pouvez dire</span>'+ech(ouverture(p))+'</div>'
+    +'<div class="liens-f">'
+      +(p.site?'<a href="'+ech(p.site)+'" target="_blank" rel="noopener">Leur site</a>':'')
+      +(p.linkedin_url?'<a href="'+ech(p.linkedin_url)+'" target="_blank" rel="noopener">LinkedIn</a>':'')
+      +(p.email?'<a href="mailto:'+ech(p.email)+'">'+ech(p.email)+'</a>':'')
+    +'</div>'
+    +(p.signaux?'<div class="signaux"><span class="lab">Ce que la machine a vu</span>'+ech(p.signaux)+'</div>':'')
+    +'<div class="resultats">'
+      +RESULTATS.map(function(x){
+        return '<button class="res '+(x.genre?'r-'+x.genre:'')+'" data-res="'+x.id+'">'
+          +'<b>'+x.lab+'</b><span>'+x.aide+'</span><i>'+x.touche+'</i></button>';}).join('')
+    +'</div>'
+    +'<div class="champ-note"><input id="note-appel" placeholder="Une note, si vous en avez une (facultatif)"></div>'
+  +'</div></div>';
+
+  $('#vue').innerHTML=h;
+  $('#stop-session').onclick=function(){ bilanSession(); };
+
+  /* Le compte a rebours se met a jour tout seul, sans redessiner la fiche :
+     le commercial est peut-etre en train de taper une note. */
+  clearInterval(MINUTEUR);
+  MINUTEUR=setInterval(function(){
+    if(courante!=='appels'||!SESSION){ clearInterval(MINUTEUR); return; }
+    var r=resteSession(), c=$('#chrono');
+    if(c)c.textContent=mmss(r);
+    if(r<=0){ clearInterval(MINUTEUR); bilanSession(); }
+  },1000);
+  $$('[data-res]').forEach(function(b){ b.onclick=function(){ noter(b.dataset.res); }; });
+  var n=$('#note-appel'); if(n)setTimeout(function(){n.focus();},80);
+}
+
+/* Le clavier : les cinq touches valent les cinq boutons. Au bout de
+   trente appels, la main ne quitte plus le pavé numérique. */
+document.addEventListener('keydown',function(e){
+  if(courante!=='appels'||!SESSION||!SESSION.fiche)return;
+  if(e.target&&e.target.tagName==='INPUT'&&e.key!=='Enter')return;
+  var r=RESULTATS.filter(function(x){return x.touche===e.key;})[0];
+  if(r){ e.preventDefault(); noter(r.id); }
+});
+
+async function noter(resultat){
+  var p=SESSION&&SESSION.fiche; if(!p)return;
+  var note=($('#note-appel')||{}).value||'';
+  var rappel=null;
+  if(resultat==='rappeler'){
+    var q=prompt('Rappeler dans combien de jours ?','2');
+    if(q===null)return;
+    var j=parseFloat(q)||2;
+    rappel=new Date(Date.now()+j*86400000).toISOString();
+  }
+  if(resultat==='absent') rappel=new Date(Date.now()+3*86400000).toISOString();
+
+  try{
+    await ecrire('oq_appels',{prospect_id:p.id,owner_email:moi,resultat:resultat,
+      note:note||null,rappel_le:rappel});
+    var maj={appel_resultat:resultat,appel_le:new Date().toISOString(),rappel_le:rappel};
+    if(resultat==='interesse')maj.statut='repondu';
+    if(resultat==='pas_interesse')maj.statut='perdu';
+    if(resultat==='faux_numero')maj.tel=null;
+    await modifier('oq_prospects','id=eq.'+p.id,maj);
+    await tracer('appel.'+resultat,p.entreprise,p.id);
+  }catch(e){
+    alert('Enregistrement impossible : '+e.message);
+    return;
+  }
+  SESSION.faits++;
+  if(resultat==='interesse')SESSION.interesses++;
+  /* Un mot au passage des paliers, jamais deux fois le meme. */
+  var o=await objectifs(), tot=(SESSION.depart||0)+SESSION.faits;
+  SESSION.paliers=SESSION.paliers||{};
+  [[o.appels,'Objectif du jour tenu.'],
+   [Math.ceil(o.appels/2),'La moitié est faite.'],
+   [Math.ceil(o.appels/4),'Un quart de fait.']].forEach(function(p){
+    if(tot>=p[0]&&!SESSION.paliers[p[0]]){ SESSION.paliers[p[0]]=1; bravo(p[1]); }
+  });
+  ecranSession();
+}
+
+/* Une ligne qui monte, trois secondes, et disparait. Ni confettis ni
+   son : le commercial est peut-etre au telephone. */
+function bravo(texte){
+  var d=document.createElement('div');
+  d.className='bravo'; d.textContent=texte;
+  document.body.appendChild(d);
+  setTimeout(function(){ d.classList.add('parti'); },2600);
+  setTimeout(function(){ d.remove(); },3200);
+}
+
+/* ── Pipeline ──────────────────────────────────────────────────────── */
+VUES.pipeline=async function(){
+  try{
+    var etapes=[
+      ['nouveau','Jamais contactés',''],
+      ['en_cours','Contactés',''],
+      ['repondu','Ont répondu','ok'],
+      ['perdu','Sortis','ret']
+    ];
+    var comptes=await Promise.all(etapes.map(function(e){
+      return compter('oq_prospects','statut=eq.'+e[0]);
+    }));
+    var h='<div class="kpis">'+etapes.map(function(e,i){
+      return kpi(e[2],nb(comptes[i]),e[2]==='ok'?'vert':(e[2]==='ret'?'':''),'');
+    }).join('')+'</div>';
+    /* On affiche les fiches qui méritent une action, pas la base entière :
+       mille lignes ne se travaillent pas, dix se rappellent. */
+    var chauds=await lire('oq_prospects',
+      'select=*&statut=eq.repondu&order=appel_le.desc.nullslast&limit=40');
+    h+='<div class="panneau"><header><h2>À traiter en priorité</h2>'
+      +'<span class="aide">ceux qui ont répondu ou se sont dits intéressés</span></header>';
+    h+=chauds.length?('<div class="tbl-scroll"><table><thead><tr><th>Entreprise</th><th>Ville</th>'
+      +'<th>Contact</th><th>Dernier appel</th><th></th></tr></thead><tbody>'
+      +chauds.map(function(p){
+        return '<tr><td><b>'+ech(p.entreprise||'—')+'</b></td><td>'+ech(p.ville||'—')+'</td>'
+          +'<td>'+ech(p.dirigeant||p.email||'—')+'</td>'
+          +'<td>'+(p.appel_le?date(p.appel_le):'—')+'</td>'
+          +'<td class="n">'+(p.tel?'<a class="btn" href="tel:'+ech(String(p.tel).replace(/\s/g,''))+'">Appeler</a>':'')
+          +(p.email?'<a class="btn" href="mailto:'+ech(p.email)+'">Écrire</a>':'')+'</td></tr>';
+      }).join('')+'</tbody></table></div>')
+      :vide('Rien à traiter pour le moment','Les fiches passent ici dès qu’un prospect répond ou se dit intéressé au téléphone.');
+    h+='</div>';
+    $('#vue').innerHTML=h;
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Performance ───────────────────────────────────────────────────── */
+VUES.performance=async function(){
+  try{
+    var r=await Promise.all([
+      lire('oq_appels','select=owner_email,resultat,created_at&order=created_at.desc&limit=4000'),
+      lire('oq_equipe','select=email,nom,objectif_appels,objectif_interesses&order=email')
+        .catch(function(){return [];})
+    ]);
+    var app=r[0], equipe=r[1];
+
+    bouton('Objectifs',function(){
+      if(!equipe.length){ alert('Aucun membre d’équipe enregistré.'); return; }
+      formulaire('Objectifs quotidiens',equipe.map(function(g){
+        return {id:'o_'+g.email.replace(/[^a-z0-9]/gi,'_'),nom:g.email+' — appels par jour',
+          type:'number',valeur:g.objectif_appels||40};
+      }),async function(v){
+        for(var i=0;i<equipe.length;i++){
+          var k='o_'+equipe[i].email.replace(/[^a-z0-9]/gi,'_');
+          if(v[k]!=null)await modifier('oq_equipe','email=eq.'+encodeURIComponent(equipe[i].email),
+            {objectif_appels:v[k]});
+        }
+        await tracer('objectifs.modifies',''); OBJ=null; VUES.performance();
+      });
+    });
+
+    if(!app.length){
+      $('#vue').innerHTML='<div class="panneau"><div class="corps">'
+        +vide('Aucun appel enregistré','Les chiffres apparaîtront dès la première session d’appels.')
+        +'</div></div>';
+      return;
+    }
+
+    var o=await objectifs();
+    var t0=jourZero(), sem=new Date(Date.now()-7*86400000).toISOString(),
+        sem2=new Date(Date.now()-14*86400000).toISOString();
+
+    /* Ce qui me concerne, moi seul : aucune ligne ne compare deux
+       personnes entre elles. */
+    var moiApp=app.filter(function(a){return (a.owner_email||'')===moi;});
+    var jour=moiApp.filter(function(a){return a.created_at>=t0;});
+    var s1=moiApp.filter(function(a){return a.created_at>=sem;});
+    var s0=moiApp.filter(function(a){return a.created_at>=sem2&&a.created_at<sem;});
+    var parJour={};
+    moiApp.forEach(function(a){ var j=String(a.created_at).slice(0,10); parJour[j]=(parJour[j]||0)+1; });
+    var jours=Object.keys(parJour);
+    var record=jours.length?Math.max.apply(null,jours.map(function(k){return parJour[k];})):0;
+    var moyenne=jours.length?Math.round(moiApp.length/jours.length):0;
+    var interS1=s1.filter(function(a){return a.resultat==='interesse';}).length;
+    var tx=tauxOuAttente(interS1,s1.length);
+    var evol=s0.length?Math.round(100*(s1.length-s0.length)/s0.length):null;
+    var part=o.appels?jour.length/o.appels:0;
+
+    var phrase = part>=1 ? 'Objectif tenu aujourd’hui.'
+      : part>=0.75 ? 'Vous y êtes presque.'
+      : part>=0.4 ? 'La journée est lancée, il reste de la marge.'
+      : jour.length ? 'Le plus dur est fait, la première est passée.'
+      : 'Rien de fait aujourd’hui. Une session de vingt minutes suffit à lancer la journée.';
+
+    var h='<div class="panneau vif"><div class="corps">'
+      +'<div class="moi-grille">'
+        +'<div class="moi-visage">'+visage(part,96)+'</div>'
+        +'<div class="moi-dit">'
+          +'<div class="obj-titre">Où vous en êtes</div>'
+          +'<div class="obj-mot">'+ech(phrase)+'</div>'
+          +'<div class="obj-faits">'
+            +'<div><span>Aujourd’hui</span><b>'+nb(jour.length)+' / '+nb(o.appels)+'</b></div>'
+            +'<div><span>Votre moyenne</span><b>'+nb(moyenne)+' par jour</b></div>'
+            +'<div><span>Votre record</span><b>'+nb(record)+'</b></div>'
+            +'<div><span>Cette semaine</span><b>'+nb(s1.length)
+              +(evol!==null?' <i class="'+(evol>=0?'up':'down')+'">'
+                +(evol>=0?'+':'')+evol+' %</i>':'')+'</b></div>'
+          +'</div>'
+        +'</div>'
+      +'</div></div></div>';
+
+    /* Le taux : affiche seulement quand il repose sur assez d'appels. */
+    h+='<div class="panneau"><header><h2>Votre conversion</h2>'
+      +'<span class="aide">sur les sept derniers jours</span></header><div class="corps">'
+      +'<div class="conv">'
+        +'<div class="conv-n">'+ech(tx.texte)+'</div>'
+        +'<div class="conv-a">'+ech(tx.aide)+'</div>'
+      +'</div>'
+      +'<p class="conv-p">Sous '+SEUIL_FIABLE+' appels, un taux ne prédit rien : deux intéressés '
+      +'sur cinq font 40 %, et ce chiffre ne tiendra pas. Il devient solide vers '+SEUIL_SOLIDE+' appels, '
+      +'soit environ trois jours à '+nb(o.appels)+' par jour. Le repère du métier est de 8 intéressés '
+      +'pour 100 appels.</p>'
+      +'</div></div>';
+
+    /* La table de l'équipe : des faits, sans rang ni médaille. */
+    var par={};
+    app.forEach(function(a){
+      var k=a.owner_email||'inconnu';
+      par[k]=par[k]||{jour:0,sem:0,tot:0,interesse:0,joint:0};
+      par[k].tot++;
+      if(a.created_at>=t0)par[k].jour++;
+      if(a.created_at>=sem)par[k].sem++;
+      if(a.resultat==='interesse')par[k].interesse++;
+      if(a.resultat!=='absent'&&a.resultat!=='faux_numero')par[k].joint++;
+    });
+    var obj={}; equipe.forEach(function(g){ obj[g.email]=g.objectif_appels||40; });
+    var noms=Object.keys(par).sort();
+    h+='<div class="panneau"><header><h2>L’équipe</h2>'
+      +'<span class="aide">des faits, pas un classement</span></header>'
+      +'<div class="tbl-scroll"><table><thead><tr><th>Commercial</th><th class="n">Aujourd’hui</th>'
+      +'<th class="n">Objectif</th><th class="n">7 jours</th><th class="n">Total</th>'
+      +'<th class="n">Joints</th><th class="n">Intéressés</th><th class="n">Taux</th></tr></thead><tbody>'
+      +noms.map(function(k){
+        var d=par[k], ob=obj[k]||40, ta=tauxOuAttente(d.interesse,d.tot);
+        return '<tr><td>'+ech(k===moi?k+' (vous)':k)+'</td>'
+          +'<td class="n">'+nb(d.jour)+'</td>'
+          +'<td class="n">'+(d.jour>=ob?etat(nb(ob),'ok'):nb(ob))+'</td>'
+          +'<td class="n">'+nb(d.sem)+'</td><td class="n">'+nb(d.tot)+'</td>'
+          +'<td class="n">'+nb(d.joint)+'</td><td class="n">'+nb(d.interesse)+'</td>'
+          +'<td class="n">'+ech(ta.texte)+'</td></tr>';
+      }).join('')+'</tbody></table></div></div>';
+
+    $('#vue').innerHTML=h;
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+/* ── Campagnes ─────────────────────────────────────────────────────
+   C'est ici que se decide QUI la machine va demarcher. Elle interroge
+   le registre officiel des entreprises : on lui donne un metier, une
+   zone, une taille, et elle pioche, trouve les contacts et enchaine.
+
+   Les quatre reglages ne sont pas decoratifs, ce sont exactement les
+   parametres envoyes au registre a chaque passage. */
+
+var TAILLES=[
+  ['02,03','Très petites, 3 à 9 salariés'],
+  ['11,12','Petites, 10 à 49 salariés'],
+  ['21,22,31','Moyennes, 50 à 249 salariés'],
+  ['32,41,42','Grandes, 250 salariés et plus'],
+  ['02,03,11,12,21,22,31,32,41,42','Toutes tailles, à partir de 3 salariés']
+];
+
+function formulaireCampagne(c,gens,apres){
+  formulaire(c?('Campagne « '+c.nom+' »'):'Nouvelle campagne',[
+    {id:'nom',nom:'Nom de la campagne',requis:true,large:true,valeur:c&&c.nom,
+     aide:'Ex. Charpentiers Drôme Ardèche'},
+    {id:'owner_email',nom:'Commercial',type:'select',valeur:c&&c.owner_email,
+     options:gens.map(function(g){return [g,g];})},
+    {id:'secteur',nom:'Métier recherché',valeur:c&&c.secteur,
+     aide:'charpentier, garage, cabinet comptable…'},
+    {id:'departements',nom:'Départements',valeur:c&&c.departements,
+     aide:'26,07,84 — vide = France entière'},
+    {id:'effectif',nom:'Taille des entreprises',type:'select',valeur:c&&c.effectif,
+     options:TAILLES},
+    {id:'ca_min',nom:'Chiffre d’affaires minimum',type:'number',valeur:c&&c.ca_min,
+     aide:'en euros, laissez vide pour ne pas filtrer'},
+    {id:'naf',nom:'Code NAF précis',valeur:c&&c.naf,
+     aide:'facultatif, remplace le métier recherché'}
+  ],async function(v){
+    v.statut=(c&&c.statut)||'active';
+    if(!c){ v.epuisee=false; v.page_courante=1; v.dep_index=0; }
+    if(c){ await modifier('oq_campagnes','id=eq.'+c.id,v); await tracer('campagne.modifiee',v.nom,c.id); }
+    else { var n=await ecrire('oq_campagnes',v); await tracer('campagne.creee',v.nom,n[0]&&n[0].id); }
+    apres();
+  });
+}
+
 VUES.prospection=async function(){
+  var gens=[];
+  try{
+    var eq=await lire('oq_equipe','select=email&order=email');
+    gens=eq.map(function(x){return x.email;});
+  }catch(e){}
+  if(!gens.length)gens=[moi||'moi@oniq.online'];
+
+  bouton('+ Campagne',function(){ formulaireCampagne(null,gens,VUES.prospection); });
+
   try{
     var r=await Promise.all([
       compter('oq_prospects'), compter('oq_prospects','statut=neq.nouveau'),
       compter('oq_messages','sens=eq.out'), compter('oq_messages','sens=eq.in&auto=is.false'),
       compter('oq_desinscrits'),
-      lire('oq_campagnes','select=nom,secteur,region,statut,owner_email,cree_le&order=cree_le.desc&limit=20')
-        .catch(function(){return lire('oq_campagnes','select=*&limit=20');})
+      lire('oq_campagnes','select=*&order=cree_le.desc')
+        .catch(function(){return lire('oq_campagnes','select=*');})
     ]);
     var tx=r[1]?Math.round(1000*r[3]/r[1])/10:0;
+    var camps=r[5];
+
     var h='<div class="kpis">'
       +kpi('Prospects',nb(r[0]),'','entreprises en base')
       +kpi('Contactés',nb(r[1]),'','au moins un message parti')
@@ -799,17 +1613,71 @@ VUES.prospection=async function(){
       +kpi('Réponses réelles',nb(r[3]),r[3]?'vert':'',tx+' % des contactés')
       +kpi('Désinscrits',nb(r[4]),'','ne seront jamais recontactés')
       +'</div>';
-    h+='<div class="panneau"><header><h2>Campagnes</h2>'
-      +'<a class="aide" href="/commercial/crm">ouvrir le CRM</a></header>';
-    h+=r[5].length?('<div class="tbl-scroll"><table><thead><tr><th>Campagne</th><th>Commercial</th><th>Statut</th></tr></thead><tbody>'
-      +r[5].map(function(c){
-        return '<tr><td>'+ech(c.nom||'—')+'<div style="color:var(--faible);font-size:12px">'
-          +ech((c.secteur||'tous secteurs')+' · '+(c.region||'France'))+'</div></td><td>'
-          +ech(c.owner_email||'—')+'</td><td>'+etat(c.statut||'—',c.statut==='active'?'ok':'neu')+'</td></tr>';
-      }).join('')+'</tbody></table></div>')
-      :vide('Aucune campagne','Lancez-en une depuis le CRM commercial : le moteur pioche ensuite les entreprises tout seul.');
-    h+='</div>';
+
+    h+='<div class="panneau"><header><h2>Qui la machine démarche</h2>'
+      +'<span class="aide">le moteur pioche au registre officiel toutes les cinq minutes</span>'
+      +'</header><div class="corps">';
+
+    if(!camps.length){
+      h+=vide('Aucune campagne',
+        'Créez-en une : donnez un métier, des départements et une taille d’entreprise. La machine se charge du reste, elle trouve les contacts et enchaîne toute seule.');
+    }else{
+      h+=camps.map(function(c){
+        var taille=(TAILLES.filter(function(t){return t[0]===c.effectif;})[0]||[])[1]
+          ||(c.effectif?'sélection personnalisée':'toutes tailles');
+        var cible=[
+          c.naf?('NAF '+c.naf):(c.secteur||'tous métiers'),
+          c.departements?('dép. '+c.departements):'France entière',
+          taille,
+          c.ca_min?('CA ≥ '+euro(c.ca_min)):null
+        ].filter(Boolean);
+        return '<div class="camp'+(c.statut==='active'?' vive':'')+'">'
+          +'<div class="camp-tete">'
+            +'<div><b>'+ech(c.nom||'Sans nom')+'</b>'
+              +'<div class="camp-qui">'+ech(c.owner_email||'—')+'</div></div>'
+            +etat(c.epuisee?'épuisée':(c.statut==='active'?'active':'en pause'),
+                  c.epuisee?'ret':(c.statut==='active'?'ok':'neu'))
+          +'</div>'
+          +'<div class="camp-cible">'+cible.map(function(x){
+              return '<span>'+ech(x)+'</span>';}).join('')+'</div>'
+          +'<div class="camp-actes">'
+            +'<button class="btn" data-mod="'+c.id+'">Modifier la cible</button>'
+            +'<button class="btn" data-bascule="'+c.id+'" data-vers="'
+              +(c.statut==='active'?'pause':'active')+'">'
+              +(c.statut==='active'?'Mettre en pause':'Activer')+'</button>'
+            +(c.epuisee?'<button class="btn" data-relance="'+c.id+'">Repartir du début</button>':'')
+          +'</div></div>';
+      }).join('');
+    }
+    h+='</div></div>';
     $('#vue').innerHTML=h;
+
+    $$('[data-mod]').forEach(function(b){
+      b.onclick=function(){
+        var c=camps.filter(function(x){return x.id===b.dataset.mod;})[0];
+        formulaireCampagne(c,gens,VUES.prospection);
+      };
+    });
+    $$('[data-bascule]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        await modifier('oq_campagnes','id=eq.'+b.dataset.bascule,{statut:b.dataset.vers});
+        await tracer('campagne.'+b.dataset.vers,'');
+        VUES.prospection();
+      };
+    });
+    /* Une campagne « epuisee » a fait le tour de sa zone. La relancer la
+       fait repartir au premier departement : utile quand de nouvelles
+       entreprises ont ete immatriculees depuis. */
+    $$('[data-relance]').forEach(function(b){
+      b.onclick=async function(){
+        b.disabled=true;
+        await modifier('oq_campagnes','id=eq.'+b.dataset.relance,
+          {epuisee:false,page_courante:1,dep_index:0});
+        await tracer('campagne.relancee','');
+        VUES.prospection();
+      };
+    });
   }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
 };
 
@@ -817,6 +1685,7 @@ VUES.prospection=async function(){
    Une demande de maquette n'est pas une ligne de tableau : c'est un
    dossier commercial. On montre donc tout ce que le visiteur a pris la
    peine d'écrire, et l'action qui suit est à un clic. */
+var filtreDemandes='nouveau';   /* 'nouveau' ou 'tout' */
 VUES.demandes=async function(){
   try{
     var d=await lire('demandes_surmesure','select=*&order=created_at.desc&limit=200');
@@ -829,13 +1698,25 @@ VUES.demandes=async function(){
           return t.getMonth()===n.getMonth()&&t.getFullYear()===n.getFullYear();}).length),'','arrivées ce mois')
       +'</div>';
 
-    if(!d.length){
-      h+='<div class="panneau">'+vide('Aucune demande pour le moment',
-        'Le formulaire de la vitrine écrit directement ici. Vérifiez que la page est bien en ligne, puis faites un essai vous-même : la demande doit apparaître dans la minute.')+'</div>';
-      $('#vue').innerHTML=h; return;
+    var vues=(filtreDemandes==='nouveau')
+      ? d.filter(function(x){return (x.statut||'nouveau')==='nouveau';}) : d;
+
+    h+='<div class="segment">'
+      +'<button data-filtre="nouveau" class="'+(filtreDemandes==='nouveau'?'actif':'')+'">'
+        +'À traiter'+(neuves?' <i>'+nb(neuves)+'</i>':'')+'</button>'
+      +'<button data-filtre="tout" class="'+(filtreDemandes==='tout'?'actif':'')+'">'
+        +'Toutes <i>'+nb(d.length)+'</i></button>'
+      +'</div>';
+
+    if(!vues.length){
+      h+='<div class="panneau">'+vide(
+        d.length?'Tout est traité':'Aucune demande pour le moment',
+        d.length?'Aucune demande n’attend de réponse. Basculez sur « Toutes » pour relire les précédentes.'
+        :'Le formulaire de la vitrine écrit directement ici. Vérifiez que la page est bien en ligne, puis faites un essai vous-même : la demande doit apparaître dans la minute.')+'</div>';
+      $('#vue').innerHTML=h; brancherFiltre(); return;
     }
 
-    h+=d.map(function(x,i){
+    h+=vues.map(function(x,i){
       var etat_=(x.statut||'nouveau');
       var lignes=[
         ['Métier',x.sector],['Utilisateurs',x.team_size],['Échéance',x.timeline],
@@ -861,6 +1742,7 @@ VUES.demandes=async function(){
     }).join('');
 
     $('#vue').innerHTML=h;
+    brancherFiltre();
     $$('[data-traite]').forEach(function(b){
       b.onclick=async function(){
         b.disabled=true;
@@ -1504,6 +2386,172 @@ function signatureCourriel(nom,poste,tel,lien){
     +'</td></tr>\n</table>';
 }
 
+/* ── Le cadre d'email ────────────────────────────────────────────────
+   Ce n'est pas un message de prospection : c'est le cadre. L'en-tete,
+   la zone de contenu, la signature, le pied legal. Vous ecrivez dedans.
+
+   Trois contraintes propres a l'email, traitees ici :
+   . les images sont bloquees par defaut chez beaucoup de destinataires,
+     donc le logo a un texte de remplacement mis en forme, qui ressemble
+     au logo quand l'image ne s'affiche pas ;
+   . Outlook ignore les coins arrondis depuis vingt ans, le bouton a donc
+     une version VML pour lui seul ;
+   . le mode sombre du client de messagerie est declare et gere.
+
+   L'interactivite, elle, est reelle mais partielle : le survol et le
+   depliant fonctionnent sur Apple Mail, iOS et Outlook Mac, soit environ
+   la moitie des ouvertures. Gmail les ignore et affiche l'etat par
+   defaut, qui reste lisible. C'est la regle du jeu de l'email : on ne
+   construit jamais sur l'interactivite, on la pose en supplement. */
+function courriel(v){
+  var nom=v.nom||'Votre nom', poste=v.poste||'Développement commercial',
+      tel=v.tel||'', lien=v.lien||'';
+  var telNet=tel.replace(/\s/g,'');
+  return ''
++'<!doctype html>\n'
++'<html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">\n'
++'<head>\n'
++'<meta charset="utf-8">\n'
++'<meta name="viewport" content="width=device-width,initial-scale=1">\n'
++'<meta name="x-apple-disable-message-reformatting">\n'
++'<meta name="color-scheme" content="light dark">\n'
++'<meta name="supported-color-schemes" content="light dark">\n'
++'<title>ONIQ</title>\n'
++'<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch>'
++'</o:OfficeDocumentSettings></xml><![endif]-->\n'
++'<style>\n'
++'  :root{color-scheme:light dark;supported-color-schemes:light dark}\n'
++'  /* Le mode sombre du client de messagerie. */\n'
++'  @media (prefers-color-scheme:dark){\n'
++'    .fond{background:#08090C!important}\n'
++'    .carte{background:#0E1116!important;border-color:#1B212B!important}\n'
++'    .txt{color:#EAEDF2!important}\n'
++'    .gris{color:#8B94A5!important}\n'
++'    .filet{background:#1B212B!important}\n'
++'    .encart{background:#141922!important;border-color:#1B212B!important}\n'
++'  }\n'
++'  /* Le survol : Apple Mail, iOS, Outlook Mac. Ailleurs, sans effet. */\n'
++'  .bouton{transition:transform .18s ease,box-shadow .18s ease}\n'
++'  .bouton:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(11,14,19,.28)!important}\n'
++'  .lien-s{border-bottom:1px solid transparent;transition:border-color .18s}\n'
++'  .lien-s:hover{border-bottom-color:#2B5FD9}\n'
++'  /* Le depliant, sans une ligne de code : une case a cocher masquee.\n'
++'     La ou il ne fonctionne pas, le contenu reste simplement affiche. */\n'
++'  .bascule{display:none}\n'
++'  .repli{max-height:none}\n'
++'  @media screen and (-webkit-min-device-pixel-ratio:0){\n'
++'    .repli{max-height:0;overflow:hidden;transition:max-height .45s ease}\n'
++'    .bascule:checked + .repli{max-height:400px}\n'
++'    .etiquette{cursor:pointer}\n'
++'  }\n'
++'  @media only screen and (max-width:620px){\n'
++'    .colonne{width:100%!important}\n'
++'    .marge{padding-left:22px!important;padding-right:22px!important}\n'
++'  }\n'
++'  a{color:#2B5FD9}\n'
++'</style>\n'
++'</head>\n'
++'<body class="fond" style="margin:0;padding:0;background:#F3F4F7;">\n'
++'<!-- L\'apercu affiche dans la liste des messages, avant l\'ouverture. -->\n'
++'<div style="display:none;font-size:1px;color:#F3F4F7;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">\n'
++'  {apercu} &#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;&#8199;\n'
++'</div>\n'
++'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="fond" style="background:#F3F4F7">\n'
++'<tr><td align="center" style="padding:32px 12px">\n'
++'\n'
++'  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="colonne carte"\n'
++'    style="width:600px;max-width:600px;background:#FFFFFF;border:1px solid #E5E8ED;border-radius:14px;overflow:hidden">\n'
++'\n'
++'    <!-- En-tete : le vrai logo, avec un texte de remplacement mis en forme -->\n'
++'    <tr><td style="background:#0B0E13;padding:24px 32px 22px">\n'
++'      <a href="https://oniq.online" style="text-decoration:none">\n'
++'        <img src="https://www.oniq.online/logo-email.png" width="132" height="36" alt="ONIQ"\n'
++'          style="display:block;border:0;outline:none;width:132px;height:36px;\n'
++'            font:700 22px/36px Helvetica,Arial,sans-serif;letter-spacing:6px;color:#EAEDF2">\n'
++'      </a>\n'
++'      <div style="height:2px;width:96px;background:#7FA8FF;margin:12px 0 9px;font-size:0;line-height:0">&nbsp;</div>\n'
++'      <div style="font:400 12.5px/1.5 Helvetica,Arial,sans-serif;color:#8B94A5">Logiciels et applications sur mesure</div>\n'
++'    </td></tr>\n'
++'\n'
++'    <!-- ▼ VOTRE CONTENU ▼ -->\n'
++'    <tr><td class="marge" style="padding:34px 32px 10px">\n'
++'      <div class="txt" style="font:600 26px/33px Helvetica,Arial,sans-serif;color:#0B0E13;letter-spacing:-.4px;margin:0 0 16px">\n'
++'        {titre}\n'
++'      </div>\n'
++'      <div class="txt" style="font:400 15px/26px Helvetica,Arial,sans-serif;color:#3A4351">\n'
++'        {message}\n'
++'      </div>\n'
++'    </td></tr>\n'
++'\n'
++'    <!-- Le bouton. Version Outlook, puis version moderne avec survol -->\n'
++'    <tr><td class="marge" align="left" style="padding:22px 32px 4px">\n'
++'      <!--[if mso]>\n'
++'      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"\n'
++'        href="{lien-bouton}" style="height:46px;v-text-anchor:middle;width:250px" arcsize="22%" stroke="f" fillcolor="#0B0E13">\n'
++'        <w:anchorlock/><center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:bold">{texte-bouton}</center>\n'
++'      </v:roundrect>\n'
++'      <![endif]-->\n'
++'      <!--[if !mso]><!-- -->\n'
++'      <a class="bouton" href="{lien-bouton}" style="display:inline-block;background:#0B0E13;color:#FFFFFF;\n'
++'        font:600 15px/46px Helvetica,Arial,sans-serif;text-decoration:none;border-radius:10px;\n'
++'        padding:0 28px;mso-hide:all">{texte-bouton}</a>\n'
++'      <!--<![endif]-->\n'
++'    </td></tr>\n'
++'\n'
++'    <!-- Le depliant : facultatif, a retirer si vous n\'en voulez pas -->\n'
++'    <tr><td class="marge" style="padding:20px 32px 0">\n'
++'      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="encart"\n'
++'        style="background:#F7F9FC;border:1px solid #E5E8ED;border-radius:11px">\n'
++'        <tr><td style="padding:14px 18px">\n'
++'          <input type="checkbox" id="d1" class="bascule">\n'
++'          <label for="d1" class="etiquette txt" style="display:block;font:600 14px/22px Helvetica,Arial,sans-serif;color:#0B0E13">\n'
++'            {titre-depliant}\n'
++'          </label>\n'
++'          <div class="repli">\n'
++'            <div class="gris" style="font:400 14px/23px Helvetica,Arial,sans-serif;color:#586274;padding-top:8px">\n'
++'              {contenu-depliant}\n'
++'            </div>\n'
++'          </div>\n'
++'        </td></tr>\n'
++'      </table>\n'
++'    </td></tr>\n'
++'    <!-- ▲ FIN DE VOTRE CONTENU ▲ -->\n'
++'\n'
++'    <!-- La signature -->\n'
++'    <tr><td class="marge" style="padding:26px 32px 30px">\n'
++'      <div class="filet" style="height:1px;background:#E5E8ED;font-size:0;line-height:0;margin-bottom:20px">&nbsp;</div>\n'
++'      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>\n'
++'        <td valign="top" style="padding-right:14px">\n'
++'          <div style="width:42px;height:42px;background:#2B5FD9;border-radius:50%;\n'
++'            font:600 17px/42px Helvetica,Arial,sans-serif;color:#FFFFFF;text-align:center">'+ech((nom.charAt(0)||'O').toUpperCase())+'</div>\n'
++'        </td>\n'
++'        <td valign="top">\n'
++'          <div class="txt" style="font:600 15px/20px Helvetica,Arial,sans-serif;color:#0B0E13">'+ech(nom)+'</div>\n'
++'          <div class="gris" style="font:400 13px/20px Helvetica,Arial,sans-serif;color:#586274">'+ech(poste)+' chez ONIQ</div>\n'
++'          <div style="font:400 13px/22px Helvetica,Arial,sans-serif;color:#586274;padding-top:4px">'
++(tel?'<a class="lien-s" href="tel:'+ech(telNet)+'" style="color:#2B5FD9;text-decoration:none">'+ech(tel)+'</a>&nbsp;·&nbsp;':'')
++'<a class="lien-s" href="https://oniq.online" style="color:#2B5FD9;text-decoration:none">oniq.online</a>'
++(lien?'&nbsp;·&nbsp;<a class="lien-s" href="'+ech(lien)+'" style="color:#2B5FD9;text-decoration:none">LinkedIn</a>':'')
++'</div>\n'
++'        </td>\n'
++'      </tr></table>\n'
++'    </td></tr>\n'
++'  </table>\n'
++'\n'
++'  <!-- Le pied : mentions et desinscription -->\n'
++'  <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="colonne" style="width:600px;max-width:600px">\n'
++'    <tr><td class="marge" style="padding:18px 32px 8px;font:400 11px/19px Helvetica,Arial,sans-serif;color:#8B94A5;text-align:center">\n'
++'      ONIQ SOFTWARE, SAS au capital de 500 euros, RCS Romans 103 508 263, 18 rue des Coteaux, 26740 Marsanne.<br>\n'
++'      <a href="{lien-desinscription}" style="color:#8B94A5">Ne plus recevoir nos messages</a>\n'
++'    </td></tr>\n'
++'  </table>\n'
++'\n'
++'</td></tr>\n'
++'</table>\n'
++'</body>\n'
++'</html>';
+}
+
 VUES.ressources=function(){
   var h='';
 
@@ -1579,6 +2627,26 @@ VUES.ressources=function(){
     +'<div class="champ"><label for="sg-lien">LinkedIn</label><input id="sg-lien" placeholder="https://linkedin.com/in/..."></div>'
     +'</div><div id="sg-rendu"></div></div></div>';
 
+
+    /* Le modèle complet : ce que reçoit vraiment le prospect. */
+  h+='<div class="panneau"><header><h2>Le cadre de nos emails</h2>'
+    +'<span class="aide">en-tête, signature, pied de page : vous n’écrivez que le contenu</span></header>'
+    +'<div class="corps">'
+    +'<div id="courriel-apercu" class="apercu-mail"></div>'
+    +'<div class="actes" style="margin-top:16px">'
+      +'<button class="btn fort" id="copier-mail">Copier le modèle</button>'
+      +'<button class="btn" id="voir-mail">Ouvrir en grand</button>'
+    +'</div>'
+    +'<div class="jetons">'
+      +'<span class="lab">À remplacer dans le code</span>'
+      +[['{titre}','le titre du message'],['{message}','votre texte, en paragraphes'],
+        ['{texte-bouton}','ce que dit le bouton'],['{lien-bouton}','où il mène'],
+        ['{titre-depliant}','la question du dépliant'],['{contenu-depliant}','sa réponse'],
+        ['{apercu}','la phrase visible dans la liste des messages'],
+        ['{lien-desinscription}','le lien de désinscription, obligatoire']]
+        .map(function(j){return '<div><code>'+ech(j[0])+'</code><span>'+ech(j[1])+'</span></div>';}).join('')
+    +'</div></div></div>';
+
   h+='<div class="duo">';
   h+='<div class="panneau"><header><h2>Couleurs</h2><span class="aide">cliquez pour copier</span></header><div class="corps">'
     +'<div class="nuancier">'
@@ -1653,6 +2721,39 @@ VUES.ressources=function(){
     });
   };
   ['sg-nom','sg-poste','sg-tel','sg-lien'].forEach(function(i){ $('#'+i).oninput=rafraichirSignature; });
+
+    /* Le modèle d'email suit les mêmes coordonnées que la signature :
+       on ne saisit rien deux fois. */
+    var modele=function(){
+      return courriel({nom:$('#sg-nom').value.trim(),poste:$('#sg-poste').value.trim(),
+        tel:$('#sg-tel').value.trim(),lien:$('#sg-lien').value.trim()})
+        .replace('{apercu}','La phrase que le destinataire lit avant même d’ouvrir.')
+        .replace('{titre}','Le titre de votre message')
+        .replace('{message}','Bonjour {prenom},<br><br>Ici votre texte. Le cadre s’occupe du reste : l’en-tête, le bouton, votre signature et les mentions obligatoires.<br><br>Écrivez comme vous parlez, en paragraphes courts.')
+        .replace(/\{texte-bouton\}/g,'Le bouton principal')
+        .replace(/\{lien-bouton\}/g,'https://oniq.online')
+        .replace('{titre-depliant}','Une question fréquente, repliée')
+        .replace('{contenu-depliant}','La réponse apparaît au clic sur Apple Mail et sur iPhone. Ailleurs elle est simplement affichée : rien n’est perdu.')
+        .replace('{lien-desinscription}','https://oniq.online');
+    };
+    var peindreMail=function(){
+      var c=$('#courriel-apercu'); if(!c)return;
+      var cadre=document.createElement('iframe');
+      cadre.setAttribute('title','Aperçu du modèle');
+      cadre.style.cssText='width:100%;height:640px;border:1px solid var(--filet);border-radius:12px;background:#F3F4F7';
+      c.innerHTML=''; c.appendChild(cadre);
+      cadre.contentDocument.open(); cadre.contentDocument.write(modele()); cadre.contentDocument.close();
+    };
+    peindreMail();
+  ['sg-nom','sg-poste','sg-tel','sg-lien'].forEach(function(i){
+      $('#'+i).addEventListener('input',peindreMail);
+    });
+    $('#copier-mail').onclick=function(){ copier(modele(),this); };
+    $('#voir-mail').onclick=function(){
+      var f=new Blob([modele()],{type:'text/html;charset=utf-8'});
+      window.open(URL.createObjectURL(f),'_blank');
+    };
+
   $('#sg-nom').value=(moi||'').split('@')[0].replace(/[._]/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
   rafraichirSignature();
 };
