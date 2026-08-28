@@ -666,30 +666,58 @@ var jeton=null, moi=null;
 var $=function(s,r){return (r||document).querySelector(s);};
 var $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
 
+/* La session ne coupe plus au bout d'une heure : le refresh token est
+   garde, le jeton d'acces se renouvelle en silence toutes les 40 min,
+   et tout appel refuse en 401 est rejoue une fois apres renouvellement. */
+var RT=null;
+async function rafraichir(){
+  if(!RT)return false;
+  try{
+    var r=await fetch(URL_BASE+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',headers:{'apikey':CLE,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:RT})});
+    var j=await r.json();
+    if(!r.ok||!j.access_token)return false;
+    jeton=j.access_token; if(j.refresh_token)RT=j.refresh_token;
+    try{ sessionStorage.setItem('oq_adm',JSON.stringify({j:jeton,m:moi,r:RT})); }catch(x){}
+    return true;
+  }catch(e){ return false; }
+}
+setInterval(function(){ if(RT)rafraichir(); },40*60*1000);
+async function appelle(url,opts){
+  opts=opts||{};
+  var r=await fetch(url,opts);
+  if(r.status===401&&await rafraichir()){
+    if(opts.headers)opts.headers['Authorization']='Bearer '+(jeton||CLE);
+    r=await fetch(url,opts);
+  }
+  return r;
+}
+
 function entetes(extra){
   var h={'apikey':CLE,'Authorization':'Bearer '+(jeton||CLE),'Content-Type':'application/json'};
   if(extra)for(var k in extra)h[k]=extra[k];
   return h;
 }
 async function lire(table,requete){
-  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?'+(requete||'select=*'),{headers:entetes()});
+  var r=await appelle(URL_BASE+'/rest/v1/'+table+'?'+(requete||'select=*'),{headers:entetes()});
   if(!r.ok)throw new Error(table+' : '+r.status);
   return r.json();
 }
 async function compter(table,filtre){
-  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?select=id&limit=1'+(filtre?'&'+filtre:''),
+  var r=await appelle(URL_BASE+'/rest/v1/'+table+'?select=id&limit=1'+(filtre?'&'+filtre:''),
     {headers:entetes({'Prefer':'count=exact'})});
   var cr=r.headers.get('content-range')||'0/0';
   return parseInt(cr.split('/')[1],10)||0;
 }
 async function ecrire(table,corps){
-  var r=await fetch(URL_BASE+'/rest/v1/'+table,
+  var r=await appelle(URL_BASE+'/rest/v1/'+table,
     {method:'POST',headers:entetes({'Prefer':'return=representation'}),body:JSON.stringify(corps)});
   if(!r.ok)throw new Error(await r.text());
   return r.json();
 }
 async function modifier(table,filtre,corps){
-  var r=await fetch(URL_BASE+'/rest/v1/'+table+'?'+filtre,
+  var r=await appelle(URL_BASE+'/rest/v1/'+table+'?'+filtre,
     {method:'PATCH',headers:entetes(),body:JSON.stringify(corps)});
   if(!r.ok)throw new Error(await r.text());
 }
@@ -727,7 +755,8 @@ $('#form-connexion').addEventListener('submit',async function(e){
     var j=await r.json();
     if(!r.ok||!j.access_token) throw new Error(j.error_description||j.msg||'Identifiants refusés');
     jeton=j.access_token; moi=(j.user&&j.user.email)||$('#mail').value.trim();
-    try{ sessionStorage.setItem('oq_adm',JSON.stringify({j:jeton,m:moi})); }catch(x){}
+    RT=j.refresh_token||null;
+    try{ sessionStorage.setItem('oq_adm',JSON.stringify({j:jeton,m:moi,r:RT})); }catch(x){}
     ouvrir();
   }catch(err){
     $('#err-connexion').innerHTML='<div class="erreur">'+ech(err.message)+'</div>';
@@ -815,6 +844,58 @@ function aller(id){
 }
 window.addEventListener('hashchange',function(){aller((location.hash||'#pilotage').slice(1));});
 
+/* Le portail de premiere connexion : sans fiche expediteur (nom +
+   alias), les emails automatiques n'ont pas de signature et attendent.
+   Alors on la demande d'office, une seule fois, avant d'entrer. */
+function accueilExpediteur(suite){
+  var f=document.createElement('div');
+  f.className='fond-modale';
+  f.innerHTML='<div class="modale" role="dialog" aria-modal="true"><header>'
+    +'<h3>Bienvenue. Une minute, et tout est prêt.</h3></header><div class="corps">'
+    +'<p style="margin:0 0 14px;color:var(--faible);font-size:13.5px;line-height:1.6">'
+    +'Les emails que la machine envoie pour vous (démonstration, confirmation de '
+    +'rendez-vous, rappel de la veille) partent signés à votre nom. '
+    +'Remplissez votre fiche une fois, et tout part tout seul ensuite.</p>'
+    +'<div id="err-modale"></div><div class="grille2">'
+    +'<div class="champ"><label for="c-pnom">Votre nom complet</label>'
+      +'<input id="c-pnom" placeholder="Prénom Nom"></div>'
+    +'<div class="champ"><label for="c-palias">Votre adresse d’envoi</label>'
+      +'<input id="c-palias" placeholder="prenom@oniq.online"></div>'
+    +'<div class="champ"><label for="c-pposte">Votre poste</label>'
+      +'<input id="c-pposte" placeholder="Conseiller logiciels"></div>'
+    +'<div class="champ"><label for="c-ptel">Votre téléphone</label>'
+      +'<input id="c-ptel" placeholder="06 12 34 56 78"></div>'
+    +'</div></div><footer>'
+    +'<button class="btn fort" data-ok>C’est parti</button></footer></div>';
+  document.body.appendChild(f);
+  var ok=f.querySelector('[data-ok]');
+  ok.onclick=async function(){
+    var nom=f.querySelector('#c-pnom').value.trim(),
+        alias=f.querySelector('#c-palias').value.trim().toLowerCase(),
+        poste=f.querySelector('#c-pposte').value.trim(),
+        tel=f.querySelector('#c-ptel').value.trim(),
+        err=f.querySelector('#err-modale');
+    if(!nom){ err.innerHTML='<div class="erreur">Votre nom, pour signer les emails.</div>'; return; }
+    if(!/^[a-z0-9._-]+@oniq\.online$/.test(alias)){
+      err.innerHTML='<div class="erreur">L’adresse d’envoi doit finir par @oniq.online '
+        +'(par exemple '+ech((nom.split(' ')[0]||'prenom').toLowerCase())+'@oniq.online).</div>'; return; }
+    ok.disabled=true; ok.textContent='Enregistrement…';
+    try{
+      var r=await appelle(URL_BASE+'/rest/v1/oq_expediteurs?on_conflict=owner_email',
+        {method:'POST',headers:entetes({'Prefer':'resolution=merge-duplicates'}),
+         body:JSON.stringify({owner_email:moi,from_nom:nom,from_alias:alias,
+           poste:poste||null,telephone:tel||null})});
+      if(!r.ok)throw new Error(await r.text());
+      NOM_PARLE=null;
+      await tracer('expediteur.premiere',moi);
+      f.remove(); suite();
+    }catch(e2){
+      err.innerHTML='<div class="erreur">'+ech(String(e2.message||e2).slice(0,200))+'</div>';
+      ok.disabled=false; ok.textContent='C’est parti';
+    }
+  };
+}
+
 async function ouvrir(){
   $('#porte').style.display='none';
   $('#app').classList.add('ouvert');
@@ -822,8 +903,18 @@ async function ouvrir(){
   $('#initiale').textContent=(moi||'?').trim().charAt(0).toUpperCase();
   try{ var ro=await rpc('oq_mon_role'); if(ro)ROLE=ro; }catch(e){}
   dessinerMenu();
-  aller((location.hash||(ROLE==='direction'?'#pilotage':'#appels')).slice(1));
-  compteurs();
+  var entrer=function(){
+    aller((location.hash||(ROLE==='direction'?'#pilotage':'#appels')).slice(1));
+    compteurs();
+  };
+  /* Premiere connexion : la fiche expediteur d'abord, le CRM ensuite.
+     Si la lecture echoue (reseau), on n'enferme personne dehors. */
+  try{
+    var exp=await lire('oq_expediteurs',
+      'select=from_nom,from_alias&owner_email=eq.'+encodeURIComponent(moi||'')+'&limit=1');
+    if(!exp.length||!exp[0].from_nom||!exp[0].from_alias){ accueilExpediteur(entrer); return; }
+  }catch(e){}
+  entrer();
 }
 
 /* Pastilles du menu : ce qui attend une action. */
@@ -933,7 +1024,7 @@ VUES.pilotage=async function(){
 /* Appel d'une fonction posee cote base : c'est elle qui compte, qui
    verrouille, qui tranche. Le navigateur ne fait que demander. */
 async function rpc(nom,corps){
-  var r=await fetch(URL_BASE+'/rest/v1/rpc/'+nom,
+  var r=await appelle(URL_BASE+'/rest/v1/rpc/'+nom,
     {method:'POST',headers:entetes(),body:JSON.stringify(corps||{})});
   if(!r.ok)throw new Error(nom+' : '+r.status);
   return r.json();
@@ -953,7 +1044,7 @@ async function direct(){
     /* Une seule requete, quelques centaines d'octets en retour : c'est la
        base qui compte, pas le navigateur. Rafraichi toutes les vingt
        secondes, et seulement si l'onglet est au premier plan. */
-    var r=await fetch(URL_BASE+'/rest/v1/rpc/oq_direct',{method:'POST',headers:entetes(),body:'{}'});
+    var r=await appelle(URL_BASE+'/rest/v1/rpc/oq_direct',{method:'POST',headers:entetes(),body:'{}'});
     if(!r.ok)throw new Error('oq_direct : '+r.status);
     var d=await r.json();
     if(!d)throw new Error('accès refusé');
@@ -1655,7 +1746,7 @@ async function annulerDernier(){
   if(!h)return;
   try{
     if(h.appel){
-      var r=await fetch(URL_BASE+'/rest/v1/oq_appels?id=eq.'+h.appel,
+      var r=await appelle(URL_BASE+'/rest/v1/oq_appels?id=eq.'+h.appel,
         {method:'DELETE',headers:entetes()});
       if(!r.ok)throw new Error('oq_appels : '+r.status);
     }
@@ -2462,7 +2553,7 @@ function ficheExpediteur(x){
   ],async function(v){
     if(!/@oniq\.online$/i.test(v.from_alias||''))
       throw new Error('L’alias doit finir par @oniq.online, sinon Brevo refusera l’envoi.');
-    var r=await fetch(URL_BASE+'/rest/v1/oq_expediteurs?on_conflict=owner_email',
+    var r=await appelle(URL_BASE+'/rest/v1/oq_expediteurs?on_conflict=owner_email',
       {method:'POST',headers:entetes({'Prefer':'resolution=merge-duplicates'}),
        body:JSON.stringify(v)});
     if(!r.ok)throw new Error(await r.text());
@@ -3139,7 +3230,11 @@ function bloc(titre,code,cle){
 /* ══ Démarrage ══════════════════════════════════════════════════════ */
 try{
   var reprise=JSON.parse(sessionStorage.getItem('oq_adm')||'null');
-  if(reprise&&reprise.j){ jeton=reprise.j; moi=reprise.m; ouvrir(); }
+  if(reprise&&reprise.j){
+    jeton=reprise.j; moi=reprise.m; RT=reprise.r||null;
+    if(RT)rafraichir().then(function(){ouvrir();});
+    else ouvrir();
+  }
 }catch(e){}
 })();
 </script>
