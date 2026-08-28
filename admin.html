@@ -556,11 +556,6 @@ display:flex;align-items:center;justify-content:space-between;gap:14px;
     border:1px solid var(--filet);white-space:pre-wrap;font:400 13.5px/1.7 inherit;color:var(--attenue)}
   .dossier-d .actes{display:flex;gap:9px;flex-wrap:wrap}
 
-  function brancherFiltre(){
-  $$('[data-filtre]').forEach(function(b){
-    b.onclick=function(){ filtreDemandes=b.dataset.filtre; VUES.demandes(); };
-  });
-}
 
 /* ── Ressources de marque─────────────────────────────────────────── */
   .res{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
@@ -799,6 +794,10 @@ var SECTIONS=[
    ico:'<path d="M7.6 3.6H4.4a1.7 1.7 0 0 0-1.7 1.9c.6 6.7 5.9 12 12.6 12.6a1.7 1.7 0 0 0 1.9-1.7v-3.2l-3.6-1.2-1.7 1.7a13 13 0 0 1-4.6-4.6l1.7-1.7Z"/><path d="M15.2 4.2a5.6 5.6 0 0 1 4.6 4.6"/>'},
   {id:'pipeline',   nom:'Pipeline',         sous:'Qui a répondu, qui attend une relance',
    ico:'<path d="M3.4 5.4h17.2l-6.6 7.6v5.4l-4 2v-7.4Z"/>'},
+  {id:'boite',      nom:'Boîte mail',       sous:'Les réponses des prospects, et vos réponses à vous',
+   ico:'<path d="M3.4 5.4h17.2v13.2H3.4Z"/><path d="m3.4 6.4 8.6 6.8 8.6-6.8"/>'},
+  {id:'agenda',     nom:'Agenda',           sous:'Vos rendez-vous, avec leur lien visio',
+   ico:'<rect x="3.4" y="4.8" width="17.2" height="15.8" rx="2"/><path d="M3.4 9.6h17.2M8 2.6v4M16 2.6v4"/>'},
   {id:'demandes',   nom:'Demandes',         sous:'Formulaires reçus depuis le site',
    ico:'<path d="M3.4 13.6h4.2l1.6 2.6h5.6l1.6-2.6h4.2"/><path d="M5.8 4.6h12.4l2.4 9v4.2a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2v-4.2Z"/>'},
   {id:'performance',nom:'Performance',      sous:'Combien d’appels, et ce que ça donne',
@@ -926,6 +925,11 @@ async function compteurs(){
   try{
     var f=await compter('oq_factures','statut=eq.retard');
     if(f)$('#b-factures').textContent=f;
+  }catch(e){}
+  try{
+    var nl=await compter('oq_messages','sens=eq.in&lu=is.false'
+      +(ROLE==='direction'?'':'&owner_email=eq.'+encodeURIComponent(moi||'')));
+    if(nl)$('#b-boite').textContent=nl;
   }catch(e){}
 }
 
@@ -2086,7 +2090,282 @@ VUES.prospection=async function(){
    Une demande de maquette n'est pas une ligne de tableau : c'est un
    dossier commercial. On montre donc tout ce que le visiteur a pris la
    peine d'écrire, et l'action qui suit est à un clic. */
+/* ── Boîte mail ──────────────────────────────────────────────────────
+   Les réponses des prospects arrivent ici, rangées par le moteur avec
+   le bon commercial. On répond sur place : la réponse est posée dans
+   la file d'envoi (oq_envois) et le moteur l'expédie dans les cinq
+   minutes avec l'adresse @oniq.online du commercial. Aucune clé, aucun
+   mot de passe, aucune messagerie à ouvrir. */
+VUES.boite=async function(){
+  try{
+    bouton('Écrire un email',ecrireEmail);
+    var filtre=(ROLE==='direction')?'':'&owner_email=eq.'+encodeURIComponent(moi||'');
+    var msgs=await lire('oq_messages','select=*&canal=eq.email'+filtre+'&order=created_at.desc&limit=300')
+      .catch(function(){return lire('oq_messages','select=*&canal=eq.email'+filtre+'&limit=300');});
+    var ids=[]; msgs.forEach(function(m){ if(m.prospect_id&&ids.indexOf(m.prospect_id)<0)ids.push(m.prospect_id); });
+    var fiches={};
+    if(ids.length){
+      var ps=await lire('oq_prospects','select=id,entreprise,dirigeant,email,tel&id=in.('+ids.slice(0,90).join(',')+')')
+        .catch(function(){return [];});
+      ps.forEach(function(p){fiches[p.id]=p;});
+    }
+    var fils=[], vus={};
+    msgs.forEach(function(m){
+      var k=m.prospect_id||('x'+m.id);
+      if(vus[k]==null){ vus[k]=fils.length; fils.push({p:fiches[m.prospect_id]||null,liste:[]}); }
+      fils[vus[k]].liste.push(m);
+    });
+    var nonLus=msgs.filter(function(m){return m.sens==='in'&&m.lu===false;}).length;
+    var h='<div class="panneau"><header><h2>Conversations</h2><span class="aide">'
+      +(nonLus?nb(nonLus)+' non lu'+(nonLus>1?'s':''):'tout est lu')+'</span></header>';
+    if(!fils.length){
+      h+='<div class="corps">'+vide('Aucun message pour le moment',
+        'Quand un prospect répond à un email, la conversation apparaît ici. Vous répondez sur place, avec votre adresse @oniq.online.')+'</div></div>';
+      $('#vue').innerHTML=h; return;
+    }
+    h+='<div class="tbl-scroll"><table><thead><tr><th>Entreprise</th><th>Dernier message</th><th>Quand</th><th></th></tr></thead><tbody>'
+      +fils.map(function(fl,i2){
+        var d=fl.liste[0], neuf=fl.liste.some(function(m){return m.sens==='in'&&m.lu===false;});
+        return '<tr'+(neuf?' style="font-weight:600"':'')+'><td>'
+          +(neuf?'<span style="color:var(--signal)">&#9679;</span> ':'')
+          +ech((fl.p&&fl.p.entreprise)||'Sans fiche')+'</td>'
+          +'<td style="color:var(--attenue)">'+(d.sens==='in'?'&larr; ':'&rarr; ')
+          +ech(String(d.contenu||d.sujet||'').slice(0,70))+'</td>'
+          +'<td style="white-space:nowrap;color:var(--faible)">'+depuis(d.created_at)+'</td>'
+          +'<td class="n"><button class="btn" data-fil="'+i2+'">Ouvrir</button></td></tr>';
+      }).join('')+'</tbody></table></div></div>';
+    $('#vue').innerHTML=h;
+    $$('#vue [data-fil]').forEach(function(b){ b.onclick=function(){ ouvrirFil(fils[+b.dataset.fil]); }; });
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
+function ouvrirFil(fl){
+  var p=fl.p||{};
+  var f2=document.createElement('div');
+  f2.className='fond-modale';
+  f2.innerHTML='<div class="modale" role="dialog" aria-modal="true" style="max-width:640px"><header><h3>'
+    +ech(p.entreprise||'Conversation')+(p.dirigeant?' <span style="font-weight:400;color:var(--faible);font-size:13px">'+ech(p.dirigeant)+'</span>':'')
+    +'</h3><button class="fermer" aria-label="Fermer">&times;</button></header>'
+    +'<div class="corps"><div style="display:flex;flex-direction:column;gap:10px;max-height:320px;overflow:auto">'
+    +fl.liste.slice().reverse().map(function(m){
+      var deMoi=m.sens==='out';
+      return '<div style="align-self:'+(deMoi?'flex-end':'flex-start')+';max-width:85%;padding:10px 12px;border-radius:11px;'
+        +'background:'+(deMoi?'rgba(var(--signal-r),.10)':'var(--surface-2)')+';border:1px solid var(--filet)">'
+        +'<div style="font-size:11px;color:var(--faible);margin-bottom:4px">'+(deMoi?'Vous':ech(p.entreprise||'Prospect'))
+        +' &middot; '+depuis(m.created_at)+'</div>'
+        +(m.sujet?'<div style="font-size:12.5px;font-weight:600;margin-bottom:3px">'+ech(m.sujet)+'</div>':'')
+        +'<div style="font-size:13px;line-height:1.55;white-space:pre-wrap">'+ech(m.contenu||'')+'</div></div>';
+    }).join('')
+    +'</div>'
+    +(p.email
+      ?'<div style="margin-top:14px"><textarea id="c-rep" rows="4" style="width:100%" placeholder="Votre réponse. Elle partira de votre adresse @oniq.online dans les 5 minutes."></textarea>'
+        +'<label style="display:flex;gap:9px;align-items:center;font-size:12.5px;color:var(--faible);cursor:pointer;margin-top:8px">'
+        +'<input type="checkbox" id="c-rbtn" style="width:auto"> Ajouter le bouton « Estimer votre projet »</label>'
+        +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button class="btn" data-voir-rep>Aperçu</button><button class="btn fort" data-rep>Envoyer</button></div></div>'
+      :'<p style="color:var(--faible);font-size:12.5px;margin-top:12px">Pas d’adresse email sur cette fiche : impossible de répondre par écrit.</p>')
+    +'</div></div>';
+  document.body.appendChild(f2);
+  var partir=function(){f2.remove();};
+  f2.querySelector('.fermer').onclick=partir;
+  f2.addEventListener('click',function(e){if(e.target===f2)partir();});
+  /* Ouvrir la conversation, c'est la lire. */
+  if(p.id)modifier('oq_messages','prospect_id=eq.'+p.id+'&sens=eq.in&lu=is.false',{lu:true})
+    .then(function(){ compteurs(); }).catch(function(){});
+  var bv=f2.querySelector('[data-voir-rep]');
+  if(bv)bv.onclick=function(){
+    var tx=f2.querySelector('#c-rep').value.trim();
+    if(tx)apercuEmail('Re : '+(p.entreprise||''),tx,f2.querySelector('#c-rbtn').checked);
+  };
+  var bt=f2.querySelector('[data-rep]');
+  if(bt)bt.onclick=async function(){
+    var tx=f2.querySelector('#c-rep').value.trim();
+    if(!tx)return;
+    bt.disabled=true; bt.textContent='Envoi&hellip;';
+    try{
+      var der=fl.liste.filter(function(m){return m.sens==='in'&&m.sujet;})[0];
+      await ecrire('oq_envois',{owner_email:moi,prospect_id:p.id||null,to_email:p.email,
+        sujet:der?('Re: '+String(der.sujet).replace(/^re:\s*/i,'')):'Votre échange avec ONIQ',corps:tx,
+        bouton:f2.querySelector('#c-rbtn').checked});
+      await tracer('boite.reponse',p.entreprise||p.email);
+      partir(); bravo('Réponse en file : elle part de votre adresse dans les 5 minutes.');
+      VUES.boite();
+    }catch(e2){
+      bt.disabled=false; bt.textContent='Envoyer';
+      alert('Envoi impossible : '+String(e2.message||e2).slice(0,160));
+    }
+  };
+}
+
+/* Un email neuf, a n'importe quelle adresse. Le moteur l'habille tout
+   seul : bandeau ONIQ, cadre, signature complete du commercial (nom,
+   poste, telephone, WhatsApp, LinkedIn). On n'ecrit QUE le message. */
+/* Ma fiche expediteur, pour dessiner la signature de l'apercu. */
+var EXP_MOI;
+async function expedMoi(){
+  if(EXP_MOI!==undefined)return EXP_MOI;
+  try{
+    var e=await lire('oq_expediteurs','select=*&owner_email=eq.'+encodeURIComponent(moi||'')+'&limit=1');
+    EXP_MOI=e[0]||null;
+  }catch(x){ EXP_MOI=null; }
+  return EXP_MOI;
+}
+
+/* Le gabarit du moteur, rejoue a l'identique : bandeau noir ONIQ,
+   cadre blanc, signature complete, pied de page. Ce que montre
+   l'apercu est ce que recoit le destinataire. */
+function habilleApercu(texte,e,avecBouton){
+  e=e||{};
+  var nom=e.from_nom||'L’équipe ONIQ', poste=e.poste||'', mail=e.from_alias||'',
+      tel=e.telephone||'', wa=String(e.whatsapp||'').replace(/\D/g,''), li=e.linkedin_url||'';
+  var corps=ech(texte).replace(/\n/g,'<br>');
+  var contact=[];
+  if(tel)contact.push('<span style="color:#2B5FD9">'+ech(tel)+'</span>');
+  if(wa)contact.push('<span style="color:#2B5FD9">WhatsApp</span>');
+  if(li)contact.push('<span style="color:#2B5FD9">LinkedIn</span>');
+  if(mail)contact.push('<span style="color:#2B5FD9">'+ech(mail)+'</span>');
+  var sans="'Instrument Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+  return '<!doctype html><html><body style="margin:0;padding:0;background:#EEF1F6">'
+    +'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EEF1F6;padding:28px 12px"><tr><td align="center">'
+    +'<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #E2E7F2;border-radius:16px;overflow:hidden">'
+    +'<tr><td style="background:#08090C;padding:20px 28px">'
+    +'<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
+    +'<td><img src="https://www.oniq.online/logo-email.png" height="26" alt="ONIQ" style="display:block;border:0;height:26px;width:auto"></td>'
+    +'<td align="right" style="font-family:\'JetBrains Mono\',Consolas,monospace;font-size:10px;color:#7FA8FF;letter-spacing:0.16em">LOGICIELS&nbsp;SUR&nbsp;MESURE</td>'
+    +'</tr></table></td></tr>'
+    +'<tr><td style="height:3px;background:linear-gradient(90deg,#2B5FD9,#7FA8FF);font-size:0;line-height:0">&nbsp;</td></tr>'
+    +'<tr><td style="padding:30px 30px 24px;font-family:'+sans+';font-size:14.5px;line-height:1.68;color:#12151C">'+corps+'</td></tr>'
+    +(avecBouton?'<tr><td style="padding:0 30px 26px">'
+      +'<span style="display:inline-block;background:#2B5FD9;color:#ffffff;font-family:'+sans+';font-size:13px;font-weight:600;padding:11px 20px;border-radius:10px">Estimer votre projet &rarr;</span>'
+      +'</td></tr>':'')
+    +'<tr><td style="padding:0 30px"><div style="height:1px;background:#E9EDF6"></div></td></tr>'
+    +'<tr><td style="padding:18px 30px 26px;font-family:'+sans+'">'
+    +'<div style="font-size:14px;font-weight:700;color:#08090C">'+ech(nom)+'</div>'
+    +'<div style="font-size:12px;color:#6A7385;padding-top:2px">'+(poste?ech(poste)+' · ':'')+'ONIQ</div>'
+    +(contact.length?'<div style="font-size:12px;padding-top:8px">'+contact.join(' <span style="color:#C6CFE0">·</span> ')+'</div>':'')
+    +'</td></tr>'
+    +'<tr><td style="background:#F5F7FB;padding:12px 30px;font-family:'+sans+';font-size:10.5px;color:#8A93A5;line-height:1.5">'
+    +'Vous recevez ce message car votre entreprise est inscrite au registre public des sociétés. Répondez <strong>STOP</strong> pour ne plus jamais être contacté.</td></tr>'
+    +'</table></td></tr></table></body></html>';
+}
+
+async function apercuEmail(sujet,texte,avecBouton){
+  var e=await expedMoi();
+  var f3=document.createElement('div');
+  f3.className='fond-modale';
+  f3.innerHTML='<div class="modale" role="dialog" aria-modal="true" style="max-width:680px"><header><h3>'
+    +'Ce que recevra le destinataire</h3><button class="fermer" aria-label="Fermer">&times;</button></header>'
+    +'<div class="corps">'
+    +(sujet?'<div style="font-size:13px;margin-bottom:10px"><span style="color:var(--faible)">Objet :</span> <b>'+ech(sujet)+'</b></div>':'')
+    +'<iframe style="width:100%;height:430px;border:1px solid var(--filet);border-radius:10px;background:#F7F4F0"></iframe>'
+    +(e?'':'<p style="color:var(--attention,#e0a94f);font-size:12.5px;margin-top:10px">Votre fiche expéditeur est vide : la signature affichera « L’équipe ONIQ ». Remplissez-la dans Réglages.</p>')
+    +'</div></div>';
+  document.body.appendChild(f3);
+  f3.querySelector('iframe').srcdoc=habilleApercu(texte,e,avecBouton);
+  var partir=function(){f3.remove();};
+  f3.querySelector('.fermer').onclick=partir;
+  f3.addEventListener('click',function(ev){if(ev.target===f3)partir();});
+}
+
+/* Un email neuf, a n'importe quelle adresse, avec apercu avant envoi. */
+function ecrireEmail(){
+  var f2=document.createElement('div');
+  f2.className='fond-modale';
+  f2.innerHTML='<div class="modale" role="dialog" aria-modal="true" style="max-width:620px"><header>'
+    +'<h3>Écrire un email</h3><button class="fermer" aria-label="Fermer">&times;</button></header>'
+    +'<div class="corps"><div id="err-modale"></div><div class="grille2">'
+    +'<div class="champ" style="grid-column:1/-1"><label for="c-eto">Destinataire</label>'
+    +'<input id="c-eto" placeholder="contact@entreprise.fr"></div>'
+    +'<div class="champ" style="grid-column:1/-1"><label for="c-esu">Objet</label><input id="c-esu"></div>'
+    +'<div class="champ" style="grid-column:1/-1"><label for="c-eco">Votre message. La bannière ONIQ et votre signature s’ajoutent toutes seules.</label>'
+    +'<textarea id="c-eco" rows="7"></textarea></div>'
+    +'<label style="grid-column:1/-1;display:flex;gap:9px;align-items:center;font-size:12.5px;color:var(--faible);cursor:pointer">'
+    +'<input type="checkbox" id="c-ebtn" style="width:auto"> Ajouter le bouton « Estimer votre projet » vers la page des prix</label>'
+    +'</div></div><footer>'
+    +'<button class="btn" data-annuler>Annuler</button>'
+    +'<button class="btn" data-voir>Aperçu</button>'
+    +'<button class="btn fort" data-ok>Envoyer</button></footer></div>';
+  document.body.appendChild(f2);
+  var partir=function(){f2.remove();};
+  f2.querySelector('.fermer').onclick=partir;
+  f2.querySelector('[data-annuler]').onclick=partir;
+  f2.addEventListener('click',function(e){if(e.target===f2)partir();});
+  var champ=function(id){return f2.querySelector(id).value.trim();};
+  var dire=function(m){f2.querySelector('#err-modale').innerHTML='<div class="erreur">'+ech(m)+'</div>';};
+  f2.querySelector('[data-voir]').onclick=function(){
+    var tx=champ('#c-eco');
+    if(!tx){ dire('Écrivez d’abord votre message, l’aperçu le montrera habillé.'); return; }
+    apercuEmail(champ('#c-esu'),tx,f2.querySelector('#c-ebtn').checked);
+  };
+  var ok=f2.querySelector('[data-ok]');
+  ok.onclick=async function(){
+    var to=champ('#c-eto'), su=champ('#c-esu'), co=champ('#c-eco');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)){ dire('L’adresse du destinataire ne ressemble pas à un email.'); return; }
+    if(!su){ dire('Il manque l’objet.'); return; }
+    if(!co){ dire('Le message est vide.'); return; }
+    ok.disabled=true; ok.textContent='Envoi&hellip;';
+    try{
+      var pid=null;
+      try{
+        var p=await lire('oq_prospects','select=id&email=ilike.'+encodeURIComponent(to)+'&limit=1');
+        if(p[0])pid=p[0].id;
+      }catch(e){}
+      await ecrire('oq_envois',{owner_email:moi,prospect_id:pid,to_email:to,sujet:su,corps:co,bouton:f2.querySelector('#c-ebtn').checked});
+      await tracer('boite.email',to);
+      partir(); bravo('En file : il part de votre adresse, habillé et signé, dans les 5 minutes.');
+      aller('boite');
+    }catch(e2){ ok.disabled=false; ok.textContent='Envoyer'; dire(String(e2.message||e2).slice(0,180)); }
+  };
+}
+
+/* ── Agenda ──────────────────────────────────────────────────────────
+   Les rendez-vous pris en session d'appels, ranges par jour, avec le
+   lien visio en un clic. La confirmation et le rappel de la veille
+   partent tout seuls : cet ecran sert a SAVOIR ou l'on va. */
+VUES.agenda=async function(){
+  try{
+    var dep=new Date(Date.now()-86400000).toISOString();
+    var rdv=await lire('oq_prospects',
+      'select=id,entreprise,dirigeant,tel,email,rdv_le,visio_url&rdv_le=gte.'+dep+'&order=rdv_le.asc&limit=200')
+      .catch(function(){return [];});
+    if(!rdv.length){
+      $('#vue').innerHTML='<div class="panneau"><div class="corps">'
+        +vide('Aucun rendez-vous à venir',
+        'Quand un rendez-vous est pris en session d’appels, il apparaît ici avec son lien visio. La confirmation et le rappel de la veille partent tout seuls.')
+        +'</div></div>';
+      return;
+    }
+    var parJour={};
+    rdv.forEach(function(p){ var j=String(p.rdv_le).slice(0,10); (parJour[j]=parJour[j]||[]).push(p); });
+    var auj=new Date().toISOString().slice(0,10);
+    var h='';
+    Object.keys(parJour).sort().forEach(function(j){
+      var d=new Date(j+'T12:00:00');
+      var titre=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+      titre=titre.charAt(0).toUpperCase()+titre.slice(1);
+      if(j===auj)titre+=' &middot; aujourd&rsquo;hui';
+      h+='<div class="panneau'+(j===auj?' vif':'')+'"><header><h2>'+titre+'</h2>'
+        +'<span class="aide">'+parJour[j].length+' rendez-vous</span></header>'
+        +'<div class="tbl-scroll"><table><thead><tr><th>Heure</th><th>Entreprise</th><th>Contact</th><th></th></tr></thead><tbody>'
+        +parJour[j].map(function(p){
+          var hh=new Date(p.rdv_le).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+          return '<tr><td class="mono">'+hh+'</td><td>'+ech(p.entreprise||'')+'</td>'
+            +'<td>'+ech(p.dirigeant||'')+(p.tel?' &middot; '+ech(p.tel):'')+'</td>'
+            +'<td class="n">'
+            +(p.visio_url?'<a class="btn fort" href="'+ech(p.visio_url)+'" target="_blank" rel="noopener" style="text-decoration:none">Ouvrir la visio</a> ':'')
+            +(p.tel?'<a class="btn" href="tel:'+ech(String(p.tel).replace(/[^+0-9]/g,''))+'" style="text-decoration:none">Appeler</a>':'')
+            +'</td></tr>';
+        }).join('')+'</tbody></table></div></div>';
+    });
+    $('#vue').innerHTML=h;
+  }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
+};
+
 var filtreDemandes='nouveau';   /* 'nouveau' ou 'tout' */
+function brancherFiltre(){
+  $$('[data-filtre]').forEach(function(b){
+    b.onclick=function(){ filtreDemandes=b.dataset.filtre; VUES.demandes(); };
+  });
+}
 VUES.demandes=async function(){
   try{
     var d=await lire('demandes_surmesure','select=*&order=created_at.desc&limit=200');
