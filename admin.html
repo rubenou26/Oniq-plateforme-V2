@@ -445,7 +445,18 @@
   .bravo.parti{opacity:0;transform:translateX(-50%) translateY(10px)}
   @keyframes monte-b{from{opacity:0;transform:translateX(-50%) translateY(14px)}}
 
+  /* L'aiguillage : quatre grandes cartes, une par situation reelle. */
+  .choix-suite{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){ .choix-suite{grid-template-columns:1fr} }
+  .choix-suite button{cursor:pointer;text-align:left;font:inherit;color:var(--texte);
+    background:var(--surface-2);border:1px solid var(--filet);border-radius:12px;
+    padding:15px 16px;transition:border-color .16s,transform .16s}
+  .choix-suite button:hover{transform:translateY(-2px);border-color:rgba(var(--signal-r),.45)}
+  .choix-suite b{display:block;font-size:14.5px;font-weight:600;margin-bottom:4px}
+  .choix-suite span{display:block;font-size:12.5px;color:var(--faible);line-height:1.55}
+
   /* ── Session d'appels ─
+
 ─────────────────────────────────────────────
      Un ecran qui ne demande qu'une chose a la fois. Le numero est le
      plus gros element de la page : c'est lui qu'on lit en decrochant. */
@@ -488,8 +499,16 @@ display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:16px;
     letter-spacing:.02em;color:var(--texte);text-decoration:none;
     border-bottom:2px solid rgba(var(--signal-r),.45);padding-bottom:3px;margin-bottom:20px}
   .numero:hover{border-bottom-color:var(--signal)}
-  .script{border-left:2px solid var(--signal);padding:4px 0 4px 16px;margin-bottom:18px;
-    color:var(--attenue);font-size:14.5px;line-height:1.75}
+  .script{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+  .pas-s{display:flex;gap:12px;align-items:flex-start;
+    border-left:2px solid var(--signal);padding:2px 0 2px 14px;
+    color:var(--attenue);font-size:14.5px;line-height:1.7}
+  .pas-s i{flex:none;width:20px;height:20px;margin-top:2px;border-radius:50%;
+    display:grid;place-items:center;font-style:normal;
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    color:var(--signal);border:1px solid rgba(var(--signal-r),.4)}
+  .pas-s.barrage{border-left-color:var(--attente)}
+  .pas-s.barrage i{color:var(--attente);border-color:color-mix(in srgb,var(--attente) 45%,transparent)}
   .script .lab,.signaux .lab{display:block;font-family:"JetBrains Mono",monospace;font-size:9.5px;
     letter-spacing:.13em;text-transform:uppercase;color:var(--faible);margin-bottom:6px}
   .signaux{margin-bottom:18px;color:var(--faible);font-size:13px;line-height:1.7}
@@ -771,8 +790,11 @@ var courante='pilotage';
 
 function dessinerMenu(){
   var h='';
+  var GROUPES_DIRECTION={'Pilotage':1,'Affaires':1,'Maison':1};
   SECTIONS.forEach(function(s){
-    if(s.g){ h+='<div class="groupe">'+s.g+'</div>'; return; }
+    if(s.g){ if(ROLE!=='direction'&&GROUPES_DIRECTION[s.g])return;
+      h+='<div class="groupe">'+s.g+'</div>'; return; }
+    if(sectionCachee(s.id))return;
     h+='<a href="#'+s.id+'" data-id="'+s.id+'" class="'+(s.id===courante?'actif':'')+'">'
       +'<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+(s.ico||'')+'</svg>'
       +'<span class="lib">'+ech(s.nom)+'</span>'
@@ -781,7 +803,8 @@ function dessinerMenu(){
   $('#menu').innerHTML=h;
 }
 function aller(id){
-  if(!SECTIONS.some(function(s){return s.id===id;})) id='pilotage';
+  if(!SECTIONS.some(function(s){return s.id===id;})||sectionCachee(id))
+    id=(ROLE==='direction')?'pilotage':'appels';
   courante=id;
   $$('#menu a').forEach(function(a){a.classList.toggle('actif',a.dataset.id===id);});
   var s=SECTIONS.filter(function(x){return x.id===id;})[0];
@@ -792,13 +815,14 @@ function aller(id){
 }
 window.addEventListener('hashchange',function(){aller((location.hash||'#pilotage').slice(1));});
 
-function ouvrir(){
+async function ouvrir(){
   $('#porte').style.display='none';
   $('#app').classList.add('ouvert');
   $('#qui-suis-je').textContent=moi||'';
   $('#initiale').textContent=(moi||'?').trim().charAt(0).toUpperCase();
+  try{ var ro=await rpc('oq_mon_role'); if(ro)ROLE=ro; }catch(e){}
   dessinerMenu();
-  aller((location.hash||'#pilotage').slice(1));
+  aller((location.hash||(ROLE==='direction'?'#pilotage':'#appels')).slice(1));
   compteurs();
 }
 
@@ -906,6 +930,23 @@ VUES.pilotage=async function(){
    bouge : qui est sur le site maintenant, ce que la machine a envoyé
    depuis minuit, la dernière demande arrivée. Les chiffres viennent de
    nos propres tables, aucun mouchard tiers n'est branché. */
+/* Appel d'une fonction posee cote base : c'est elle qui compte, qui
+   verrouille, qui tranche. Le navigateur ne fait que demander. */
+async function rpc(nom,corps){
+  var r=await fetch(URL_BASE+'/rest/v1/rpc/'+nom,
+    {method:'POST',headers:entetes(),body:JSON.stringify(corps||{})});
+  if(!r.ok)throw new Error(nom+' : '+r.status);
+  return r.json();
+}
+
+/* Le role, lu a l'ouverture : un commercial ne voit que l'acquisition.
+   Tant que oq_mon_role n'est pas posee en base, tout le monde voit
+   tout, comme avant. */
+var ROLE='direction';
+var HORS_COMMERCIAL={pilotage:1,activite:1,clients:1,projets:1,devis:1,
+  factures:1,abonnements:1,automatisations:1,reglages:1};
+function sectionCachee(id){ return ROLE!=='direction' && HORS_COMMERCIAL[id]; }
+
 async function direct(){
   var z=$('#direct'); if(!z)return;
   try{
@@ -975,7 +1016,7 @@ VUES.activite=async function(){
    ce qui s'est passé, la fiche suivante arrive. */
 
 var RESULTATS=[
-  {id:'interesse',    lab:'Intéressé',      touche:'1', genre:'ok',  aide:'passe en client potentiel'},
+  {id:'interesse',    lab:'Intéressé',      touche:'1', genre:'ok',  aide:'contact obtenu — notez email et rendez-vous'},
   {id:'rappeler',     lab:'Rappeler',       touche:'2', genre:'att', aide:'revient dans la file à la date choisie'},
   {id:'absent',       lab:'Absent',         touche:'3', genre:'',    aide:'repropose dans trois jours'},
   {id:'pas_interesse',lab:'Pas intéressé',  touche:'4', genre:'ret', aide:'sort de la file'},
@@ -1169,8 +1210,9 @@ async function ecranDepart(){
     h+='</div></div>';
     $('#vue').innerHTML=h;
     var b=$('#go-session');
-    if(b)b.onclick=function(){
+    if(b)b.onclick=async function(){
       SESSION={debut:Date.now(),faits:0,interesses:0,fiche:null,depart:r[2]};
+      SESSION.nom=await nomParle();
       clearInterval(MINUTEUR);
       ecranSession();
     };
@@ -1188,6 +1230,13 @@ function jourZero(){ var d=new Date(); d.setHours(0,0,0,0); return d.toISOString
    jamais appelees. La colonne de date des prospects s'appelle created_at,
    pas cree_le : la difference coutait une erreur 400 a chaque appel. */
 async function ficheSuivante(){
+  /* La base sert la fiche et la verrouille quinze minutes : deux
+     commerciaux en session ne recoivent jamais la meme entreprise.
+     Fonction pas encore posee en base : ancien chemin. */
+  try{
+    var v=await rpc('oq_fiche_suivante',{p_owner:moi||''});
+    return (v&&v.length)?v[0]:null;
+  }catch(e){}
   var due=await lire('oq_prospects',
     'select=*&tel=not.is.null&rappel_le=lte.'+new Date().toISOString()+'&order=rappel_le.asc&limit=1');
   if(due.length)return due[0];
@@ -1200,16 +1249,51 @@ async function ficheSuivante(){
 /* L'ouverture : on ne récite pas un argumentaire, on part de ce que la
    machine a vu sur leur site. C'est la différence entre un démarchage et
    un appel qui a une raison d'être. */
-function ouverture(p){
+/* Le nom sous lequel le commercial se presente : sa fiche expéditeur
+   d'abord, sinon l'équipe, sinon son identifiant nettoyé. On ne se
+   présente jamais « rubelectro26 » au téléphone. */
+var NOM_PARLE=null;
+async function nomParle(){
+  if(NOM_PARLE)return NOM_PARLE;
+  var brut=String(moi||'').split('@')[0].replace(/[0-9._-]+/g,' ').trim();
+  NOM_PARLE=brut?brut.charAt(0).toUpperCase()+brut.slice(1):'';
+  try{
+    var e=await lire('oq_expediteurs','select=from_nom&owner_email=eq.'+encodeURIComponent(moi||'')+'&limit=1');
+    if(e[0]&&e[0].from_nom)NOM_PARLE=e[0].from_nom;
+    else{
+      var q=await lire('oq_equipe','select=nom&email=eq.'+encodeURIComponent(moi||'')+'&limit=1');
+      if(q[0]&&q[0].nom)NOM_PARLE=q[0].nom;
+    }
+  }catch(x){}
+  return NOM_PARLE;
+}
+
+/* Le but de l'appel : repartir avec le contact du responsable logiciel.
+   Deux regles d'ecriture : on se presente completement des la premiere
+   seconde (nom, societe, metier) — c'est ce qui fait professionnel — et
+   chaque mot doit etre compris du standard sans effort. On dit
+   « une demonstration gratuite de logiciel », jamais « la maquette de
+   votre futur outil de gestion ». */
+function raisonParlee(p){
+  var s=Array.isArray(p.signaux)?p.signaux.join(' | '):String(p.signaux||'');
+  return {chaud:/écrit spontanément|lead entrant/i.test(s)};
+}
+
+function parle(p,nom){
   var pre=p.dirigeant?String(p.dirigeant).split(' ')[0]:'';
-  var quoi=(p.signaux&&String(p.signaux).trim())
-    ? String(p.signaux).split(/[;,\n]/)[0].trim() : '';
-  return 'Bonjour'+(pre?' '+pre:'')+', '+(moi||'').split('@')[0]+' d’ONIQ. '
-    +'Je vous appelle parce que '+(quoi
-      ? 'j’ai vu que '+quoi.charAt(0).toLowerCase()+quoi.slice(1)
-      : 'nous construisons des logiciels sur mesure pour des entreprises comme la vôtre')
-    +'. Je ne vais pas vous prendre trois minutes : aujourd’hui, qu’est-ce qui vous fait perdre '
-    +'le plus de temps dans votre organisation ?';
+  return {
+    accroche:'Bonjour. '+nom+', de la société ONIQ — nous créons des logiciels, des applications et des automatisations pour les entreprises. '
+      +(pre?'Je cherche à joindre '+pre+' : c’est bien lui qui s’occupe des logiciels chez vous ?'
+            :'Pourriez-vous me dire qui s’occupe des logiciels et des outils informatiques dans votre entreprise ?'),
+    pourquoi:'Nous avons préparé pour votre entreprise une démonstration gratuite : '
+      +'un exemple de logiciel ou d’application, fait pour votre métier — et si des tâches se répètent chez vous, on montre aussi comment les automatiser. Il n’y a rien à payer et rien à installer — '
+      +'c’est simplement à regarder. Je souhaite la faire parvenir à la bonne personne.',
+    question:'Quelle est la meilleure adresse email pour la lui envoyer ? '
+      +'Et si vous avez sa ligne directe, je la note.',
+    barrage:'« C’est à quel sujet ? » : Une démonstration de logiciel préparée pour votre entreprise — c’est offert. '
+      +'— « Envoyez au standard » : Bien sûr. À quel nom est-ce que je l’adresse, pour qu’elle arrive à la bonne personne ? '
+      +'— « Pas le temps » : Je comprends. Juste le nom de la personne qui s’en occupe, et je ne vous dérange plus.'
+  };
 }
 
 /* ── Le bilan de l'heure ────────────────────────────────────────────
@@ -1250,6 +1334,7 @@ async function bilanSession(){
     var r=await compter('oq_appels','owner_email=eq.'+encodeURIComponent(moi||'')
       +'&created_at=gte.'+jourZero()).catch(function(){return 0;});
     SESSION={debut:Date.now(),faits:0,interesses:0,fiche:null,depart:r};
+    SESSION.nom=await nomParle();
     ecranSession();
   };
   $('#fini').onclick=function(){ ecranDepart(); };
@@ -1287,6 +1372,8 @@ async function ecranSession(){
     +'<span><b>'+nb(SESSION.interesses)+'</b> intéressé'+(SESSION.interesses>1?'s':'')+'</span>'
     +'<span class="rythme '+(avance>=0?'ok':'mou')+'">'
       +(SESSION.faits?(avance>=0?'dans les temps':'un peu lent'):'à lancer')+'</span>'
+    +((SESSION.histo&&SESSION.histo.length)
+      ?'<button class="btn" id="annuler-appel" title="Le dernier résultat s’annule, la fiche revient">↩ Annuler le dernier</button>':'')
     +'<button class="btn" id="stop-session">Terminer</button>'
     +'</div>'
     +'<div class="jauge-obj"><i style="width:'+partA+'%"></i>'
@@ -1300,13 +1387,25 @@ async function ecranSession(){
       +(p.rappel_le?'<span class="etat e-att">rappel promis</span>':'')
     +'</div>'
     +'<a class="numero" href="tel:'+ech(String(p.tel).replace(/\s/g,''))+'">'+ech(p.tel)+'</a>'
-    +'<div class="script"><span class="lab">Ce que vous pouvez dire</span>'+ech(ouverture(p))+'</div>'
+    +(function(){
+      var s=parle(p,SESSION.nom||'');
+      return '<div class="script">'
+        +'<div class="pas-s"><i>1</i><div><span class="lab">La présentation — nom, société, métier, puis une seule question</span>'+ech(s.accroche)+'</div></div>'
+        +'<div class="pas-s"><i>2</i><div><span class="lab">Le prétexte — une démonstration gratuite à transmettre</span>'+ech(s.pourquoi)+'</div></div>'
+        +'<div class="pas-s"><i>3</i><div><span class="lab">Le but — son email et sa ligne directe</span>'+ech(s.question)+'</div></div>'
+        +'<div class="pas-s barrage"><i>!</i><div><span class="lab">Si ça résiste</span>'+ech(s.barrage)+'</div></div>'
+        +'</div>';
+    })()
     +'<div class="liens-f">'
       +(p.site?'<a href="'+ech(p.site)+'" target="_blank" rel="noopener">Leur site</a>':'')
       +(p.linkedin_url?'<a href="'+ech(p.linkedin_url)+'" target="_blank" rel="noopener">LinkedIn</a>':'')
       +(p.email?'<a href="mailto:'+ech(p.email)+'">'+ech(p.email)+'</a>':'')
     +'</div>'
-    +(p.signaux?'<div class="signaux"><span class="lab">Ce que la machine a vu</span>'+ech(p.signaux)+'</div>':'')
+    +(function(){
+      var s=Array.isArray(p.signaux)?p.signaux:(p.signaux?[p.signaux]:[]);
+      s=s.map(function(x){return String(x).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,'').trim();}).filter(Boolean);
+      return s.length?'<div class="signaux"><span class="lab">Ce que la machine a vu</span>'+s.map(ech).join(' · ')+'</div>':'';
+    })()
     +'<div class="resultats">'
       +RESULTATS.map(function(x){
         return '<button class="res '+(x.genre?'r-'+x.genre:'')+'" data-res="'+x.id+'">'
@@ -1317,6 +1416,7 @@ async function ecranSession(){
 
   $('#vue').innerHTML=h;
   $('#stop-session').onclick=function(){ bilanSession(); };
+  var ba=$('#annuler-appel'); if(ba)ba.onclick=annulerDernier;
 
   /* Le compte a rebours se met a jour tout seul, sans redessiner la fiche :
      le commercial est peut-etre en train de taper une note. */
@@ -1342,39 +1442,233 @@ document.addEventListener('keydown',function(e){
 
 async function noter(resultat){
   var p=SESSION&&SESSION.fiche; if(!p)return;
+  /* Un intéressé ne se clique pas, il se verrouille : email, rendez-vous,
+     besoin. Tout le reste passe par le chemin court. */
+  if(resultat==='interesse'){ choixInteresse(p); return; }
   var note=($('#note-appel')||{}).value||'';
   var rappel=null;
   if(resultat==='rappeler'){
-    var q=prompt('Rappeler dans combien de jours ?','2');
-    if(q===null)return;
-    var j=parseFloat(q)||2;
-    rappel=new Date(Date.now()+j*86400000).toISOString();
+    /* Notre fenetre, pas celle du navigateur : la charte tient jusque
+       dans les petites questions. */
+    formulaire('Vous le rappelez quand ?',[
+      {id:'jours',nom:'Le rappel',type:'select',valeur:'2',options:[
+        ['1','Demain'],['2','Dans deux jours'],['3','Dans trois jours'],
+        ['7','La semaine prochaine'],['14','Dans deux semaines'],['30','Dans un mois']]}
+    ],async function(v){
+      var rap=new Date(Date.now()+(parseFloat(v.jours)||2)*86400000).toISOString();
+      await enregistrer(p,'rappeler',note,rap,
+        {appel_resultat:'rappeler',appel_le:new Date().toISOString(),rappel_le:rap},false);
+    });
+    return;
   }
   if(resultat==='absent') rappel=new Date(Date.now()+3*86400000).toISOString();
+  var maj={appel_resultat:resultat,appel_le:new Date().toISOString(),rappel_le:rappel};
+  if(resultat==='pas_interesse')maj.statut='perdu';
+  if(resultat==='faux_numero')maj.tel=null;
+  await enregistrer(p,resultat,note,rappel,maj,false);
+}
 
+/* ── L'intéressé : le moment le plus précieux de la journée ─────────
+   Le commercial l'a en ligne, c'est maintenant que tout se joue. Le
+   formulaire lui dicte les trois choses à obtenir avant de raccrocher :
+   l'email confirmé à voix haute, le rendez-vous posé, et le besoin
+   avec les mots du prospect. Le rendez-vous et l'email atterrissent
+   sur la fiche : c'est là que l'automatisation de confirmation viendra
+   les chercher. */
+/* ── L'aiguillage de l'intéressé ────────────────────────────────────
+   « Intéressé » recouvre quatre situations qui n'appellent pas la même
+   suite. Le commercial choisit ce qu'il a réellement obtenu, et
+   l'écran le guide vers la bonne action — chaque branche enregistre
+   proprement, et tout reste annulable. */
+/* La salle de visio du rendez-vous : une adresse Jitsi dediee, gratuite,
+   sans compte ni installation des deux cotes. L'identifiant derive de la
+   fiche : impossible a deviner, toujours le meme pour ce prospect. */
+function salleVisio(p){
+  var g=String(p.id||Math.random()).replace(/[^a-z0-9]/gi,'').slice(0,10);
+  return 'https://meet.jit.si/ONIQ-'+g+Math.random().toString(36).slice(2,6);
+}
+
+function choixInteresse(p){
+  var f=document.createElement('div');
+  f.className='fond-modale';
+  f.innerHTML='<div class="modale" role="dialog" aria-modal="true"><header>'
+    +'<h3>Intéressé — qu’avez-vous obtenu ?</h3>'
+    +'<button class="fermer" aria-label="Fermer">×</button></header>'
+    +'<div class="corps"><div class="choix-suite">'
+    +'<button data-suite="contact"><b>Le contact du responsable</b>'
+      +'<span>La personne au bout du fil vous a donné son email — on lui envoie la démonstration</span></button>'
+    +'<button data-suite="cdc"><b>Le responsable est en ligne</b>'
+      +'<span>Il est partant — notez le cahier des charges de sa démonstration maintenant</span></button>'
+    +'<button data-suite="rdv"><b>Il veut un rendez-vous</b>'
+      +'<span>Pas le temps là, mais d’accord pour un créneau — posez-le</span></button>'
+    +'</div></div></div>';
+  document.body.appendChild(f);
+  var partir=function(){ f.remove(); };
+  f.querySelector('.fermer').onclick=partir;
+  f.addEventListener('click',function(e){ if(e.target===f)partir(); });
+  f.querySelectorAll('[data-suite]').forEach(function(b){
+    b.onclick=function(){
+      partir();
+      ({contact:formContact,cdc:ficheCDC,rdv:formRdv})[b.dataset.suite](p);
+    };
+  });
+}
+
+/* 1. Le standard a donné le contact : on enregistre, et la démonstration
+   part tout de suite — l'email s'ouvre prérempli dans la messagerie du
+   commercial, il n'a qu'à cliquer Envoyer. */
+function formContact(p){
+  formulaire('Le contact du responsable',[
+    {id:'nom_resp',nom:'Son nom',requis:true,valeur:p.dirigeant,aide:'prénom et nom si possible'},
+    {id:'email',nom:'Son email',type:'email',requis:true,aide:'faites-le répéter, lettre par lettre'},
+    {id:'tel_resp',nom:'Sa ligne directe',aide:'si on vous l’a donnée'}
+  ],async function(v){
+    /* La machine envoie la démonstration dans les cinq minutes, avec
+       l'expéditeur du commercial. Rien à faire de plus. */
+    var maj={appel_resultat:'interesse',appel_le:new Date().toISOString(),
+      statut:'repondu',email:v.email,demo_a_envoyer:true,
+      rappel_le:new Date(Date.now()+2*86400000).toISOString()};
+    if(v.nom_resp)maj.dirigeant=v.nom_resp;
+    if(v.tel_resp)maj.tel=v.tel_resp;
+    var note='CONTACT RESPONSABLE\nNom : '+(v.nom_resp||'')+'\nEmail : '+(v.email||'')
+      +(v.tel_resp?'\nLigne directe : '+v.tel_resp:'')
+      +'\nDémonstration : envoi automatique dans les 5 minutes.';
+    await enregistrer(p,'interesse',note,maj.rappel_le,maj,true);
+    bravo('Contact noté — la démonstration part toute seule dans les 5 minutes.');
+  });
+}
+
+/* 2. Le responsable est en ligne : le mini cahier des charges,
+   directement. */
+function ficheCDC(p){
+  var heures=[];
+  for(var h9=9;h9<=18;h9++){ heures.push([('0'+h9).slice(-2)+':00',h9+' h']); heures.push([('0'+h9).slice(-2)+':30',h9+' h 30']); }
+  var demain=new Date(Date.now()+86400000).toISOString().slice(0,10);
+  formulaire('Le mini cahier des charges de sa maquette',[
+    {id:'besoin_type',nom:'Ce qui lui prend le plus de temps',type:'select',requis:true,options:[
+      ['','À choisir'],
+      ['Devis et facturation','Devis et facturation'],
+      ['Planning et interventions','Planning et interventions'],
+      ['Suivi des clients','Suivi des clients'],
+      ['Stock et commandes','Stock et commandes'],
+      ['Paperasse et documents','Paperasse et documents'],
+      ['Autre','Autre, précisé ci-dessous']]},
+    {id:'outil_actuel',nom:'Comment il fait aujourd’hui',type:'select',requis:true,options:[
+      ['','À choisir'],
+      ['Papier et carnet','Papier et carnet'],
+      ['Excel ou tableurs','Excel ou tableurs'],
+      ['Un logiciel qui ne convient plus','Un logiciel qui ne convient plus'],
+      ['Plusieurs outils qui ne se parlent pas','Plusieurs outils qui ne se parlent pas']]},
+    {id:'besoin',nom:'Avec ses mots — ce que la maquette doit montrer',type:'textarea',large:true,requis:true,
+     aide:'ex. « il veut faire un devis depuis le chantier et que la facture parte toute seule »'},
+    {id:'email',nom:'Son adresse email',type:'email',requis:true,valeur:p.email,
+     aide:'faites-la répéter, lettre par lettre — la maquette part dessus'},
+    {id:'tel',nom:'Sa ligne directe',valeur:p.tel},
+    {id:'rdv_date',nom:'Présentation de la maquette, le jour',type:'date',requis:true,valeur:demain},
+    {id:'rdv_heure',nom:'Présentation, l’heure',type:'select',options:heures,valeur:'10:00'}
+  ],async function(v){
+    var rdv=null;
+    try{ rdv=new Date(v.rdv_date+'T'+(v.rdv_heure||'10:00')+':00').toISOString(); }catch(x){}
+    var maj={appel_resultat:'interesse',appel_le:new Date().toISOString(),
+      statut:'repondu',rappel_le:null};
+    if(v.email)maj.email=v.email;
+    if(v.tel)maj.tel=v.tel;
+    if(rdv)maj.rdv_le=rdv;
+    maj.visio_url=p.visio_url||salleVisio(p);
+    /* La note est le cahier des charges : celui qui fabrique la maquette
+       n'a besoin de rien d'autre. */
+    var note='CAHIER DES CHARGES MAQUETTE'
+      +'\nBesoin principal : '+(v.besoin_type||'')
+      +'\nAujourd’hui : '+(v.outil_actuel||'')
+      +'\nÀ montrer : '+(v.besoin||'')
+      +'\nPrésentation : '+(rdv?date(rdv)+' à '+(v.rdv_heure||'10:00'):'à fixer');
+    await enregistrer(p,'interesse',note,null,maj,true);
+  });
+}
+
+
+/* 3. Le rendez-vous : un créneau, un contact pour la confirmation. */
+function formRdv(p){
+  var heures=[];
+  for(var h9=9;h9<=18;h9++){ heures.push([('0'+h9).slice(-2)+':00',h9+' h']); heures.push([('0'+h9).slice(-2)+':30',h9+' h 30']); }
+  var demain=new Date(Date.now()+86400000).toISOString().slice(0,10);
+  formulaire('Le rendez-vous',[
+    {id:'avec',nom:'Avec qui',requis:true,valeur:p.dirigeant,aide:'la personne qui sera au rendez-vous'},
+    {id:'rdv_date',nom:'Le jour',type:'date',requis:true,valeur:demain},
+    {id:'rdv_heure',nom:'L’heure',type:'select',options:heures,valeur:'10:00'},
+    {id:'email',nom:'Son email',type:'email',valeur:p.email,aide:'pour la confirmation — fortement conseillé'},
+    {id:'note_rdv',nom:'À savoir avant le rendez-vous',type:'textarea',large:true}
+  ],async function(v){
+    var rdv=null;
+    try{ rdv=new Date(v.rdv_date+'T'+(v.rdv_heure||'10:00')+':00').toISOString(); }catch(x){}
+    var maj={appel_resultat:'interesse',appel_le:new Date().toISOString(),
+      statut:'repondu',rappel_le:null};
+    if(v.email)maj.email=v.email;
+    if(v.avec)maj.dirigeant=v.avec;
+    if(rdv)maj.rdv_le=rdv;
+    maj.visio_url=p.visio_url||salleVisio(p);
+    var note='RENDEZ-VOUS\nAvec : '+(v.avec||'')+'\nLe : '+(rdv?date(rdv)+' à '+(v.rdv_heure||'10:00'):'à fixer')
+      +'\nVisio : '+maj.visio_url
+      +(v.email?'\nEmail : '+v.email:'')+(v.note_rdv?'\nNotes : '+v.note_rdv:'');
+    await enregistrer(p,'interesse',note,null,maj,true);
+  });
+}
+
+
+/* Le tronc commun : la ligne d'appel, la fiche, la trace, et de quoi
+   tout défaire si le doigt a glissé. */
+async function enregistrer(p,resultat,note,rappel,maj,interesse){
   try{
-    await ecrire('oq_appels',{prospect_id:p.id,owner_email:moi,resultat:resultat,
+    var lig=await ecrire('oq_appels',{prospect_id:p.id,owner_email:moi,resultat:resultat,
       note:note||null,rappel_le:rappel});
-    var maj={appel_resultat:resultat,appel_le:new Date().toISOString(),rappel_le:rappel};
-    if(resultat==='interesse')maj.statut='repondu';
-    if(resultat==='pas_interesse')maj.statut='perdu';
-    if(resultat==='faux_numero')maj.tel=null;
     await modifier('oq_prospects','id=eq.'+p.id,maj);
     await tracer('appel.'+resultat,p.entreprise,p.id);
+    SESSION.histo=SESSION.histo||[];
+    SESSION.histo.push({appel:lig[0]&&lig[0].id,prospect:p.id,entreprise:p.entreprise,
+      interesse:!!interesse,
+      avant:{statut:p.statut||'nouveau',appel_resultat:p.appel_resultat||null,
+        appel_le:p.appel_le||null,rappel_le:p.rappel_le||null,
+        tel:p.tel||null,email:p.email||null,rdv_le:p.rdv_le||null}});
   }catch(e){
     alert('Enregistrement impossible : '+e.message);
     return;
   }
   SESSION.faits++;
-  if(resultat==='interesse')SESSION.interesses++;
+  if(interesse)SESSION.interesses++;
   /* Un mot au passage des paliers, jamais deux fois le meme. */
   var o=await objectifs(), tot=(SESSION.depart||0)+SESSION.faits;
   SESSION.paliers=SESSION.paliers||{};
   [[o.appels,'Objectif du jour tenu.'],
    [Math.ceil(o.appels/2),'La moitié est faite.'],
-   [Math.ceil(o.appels/4),'Un quart de fait.']].forEach(function(p){
-    if(tot>=p[0]&&!SESSION.paliers[p[0]]){ SESSION.paliers[p[0]]=1; bravo(p[1]); }
+   [Math.ceil(o.appels/4),'Un quart de fait.']].forEach(function(pp){
+    if(tot>=pp[0]&&!SESSION.paliers[pp[0]]){ SESSION.paliers[pp[0]]=1; bravo(pp[1]); }
   });
+  ecranSession();
+}
+
+/* ── L'erreur se répare ─────────────────────────────────────────────
+   Le dernier résultat s'annule : la ligne d'appel est supprimée, la
+   fiche revient exactement à son état d'avant, les compteurs
+   redescendent. On peut remonter toute la session, appel par appel. */
+async function annulerDernier(){
+  var h=SESSION&&SESSION.histo&&SESSION.histo.pop();
+  if(!h)return;
+  try{
+    if(h.appel){
+      var r=await fetch(URL_BASE+'/rest/v1/oq_appels?id=eq.'+h.appel,
+        {method:'DELETE',headers:entetes()});
+      if(!r.ok)throw new Error('oq_appels : '+r.status);
+    }
+    await modifier('oq_prospects','id=eq.'+h.prospect,h.avant);
+    await tracer('appel.annule',h.entreprise,h.prospect);
+  }catch(e){
+    alert('Annulation impossible : '+e.message);
+    SESSION.histo.push(h);
+    return;
+  }
+  SESSION.faits=Math.max(0,SESSION.faits-1);
+  if(h.interesse)SESSION.interesses=Math.max(0,SESSION.interesses-1);
+  bravo('Annulé — la fiche '+(h.entreprise||'')+' est revenue dans la file.');
   ecranSession();
 }
 
@@ -1412,7 +1706,11 @@ VUES.pipeline=async function(){
     h+=chauds.length?('<div class="tbl-scroll"><table><thead><tr><th>Entreprise</th><th>Ville</th>'
       +'<th>Contact</th><th>Dernier appel</th><th></th></tr></thead><tbody>'
       +chauds.map(function(p){
-        return '<tr><td><b>'+ech(p.entreprise||'—')+'</b></td><td>'+ech(p.ville||'—')+'</td>'
+        return '<tr><td><b>'+ech(p.entreprise||'—')+'</b>'
+          +(p.rdv_le?'<div style="font-size:12px;color:var(--ok)">RDV le '+date(p.rdv_le)
+            +(p.visio_url?' · <a href="'+ech(p.visio_url)+'" target="_blank" rel="noopener" style="color:var(--signal)">ouvrir la visio</a>':'')
+            +'</div>':'')
+          +'</td><td>'+ech(p.ville||'—')+'</td>'
           +'<td>'+ech(p.dirigeant||p.email||'—')+'</td>'
           +'<td>'+(p.appel_le?date(p.appel_le):'—')+'</td>'
           +'<td class="n">'+(p.tel?'<a class="btn" href="tel:'+ech(String(p.tel).replace(/\s/g,''))+'">Appeler</a>':'')
@@ -1427,12 +1725,17 @@ VUES.pipeline=async function(){
 /* ── Performance ───────────────────────────────────────────────────── */
 VUES.performance=async function(){
   try{
+    /* On ne telecharge plus tous les appels de la maison : seulement
+       les miens (moyenne, record), et l'equipe arrive deja comptee par
+       la base (oq_perf) - quelques centaines d'octets a 10 000 appels. */
     var r=await Promise.all([
-      lire('oq_appels','select=owner_email,resultat,created_at&order=created_at.desc&limit=4000'),
+      lire('oq_appels','select=owner_email,resultat,created_at&owner_email=eq.'
+        +encodeURIComponent(moi||'')+'&order=created_at.desc&limit=2000'),
       lire('oq_equipe','select=email,nom,objectif_appels,objectif_interesses&order=email')
-        .catch(function(){return [];})
+        .catch(function(){return [];}),
+      rpc('oq_perf').catch(function(){return null;})
     ]);
-    var app=r[0], equipe=r[1];
+    var app=r[0], equipe=r[1], perf=r[2];
 
     bouton('Objectifs',function(){
       if(!equipe.length){ alert('Aucun membre d’équipe enregistré.'); return; }
@@ -1449,7 +1752,7 @@ VUES.performance=async function(){
       });
     });
 
-    if(!app.length){
+    if(!app.length&&!(perf&&perf.length)){
       $('#vue').innerHTML='<div class="panneau"><div class="corps">'
         +vide('Aucun appel enregistré','Les chiffres apparaîtront dès la première session d’appels.')
         +'</div></div>';
@@ -1462,7 +1765,7 @@ VUES.performance=async function(){
 
     /* Ce qui me concerne, moi seul : aucune ligne ne compare deux
        personnes entre elles. */
-    var moiApp=app.filter(function(a){return (a.owner_email||'')===moi;});
+    var moiApp=app;
     var jour=moiApp.filter(function(a){return a.created_at>=t0;});
     var s1=moiApp.filter(function(a){return a.created_at>=sem;});
     var s0=moiApp.filter(function(a){return a.created_at>=sem2&&a.created_at<sem;});
@@ -1514,15 +1817,22 @@ VUES.performance=async function(){
 
     /* La table de l'équipe : des faits, sans rang ni médaille. */
     var par={};
-    app.forEach(function(a){
-      var k=a.owner_email||'inconnu';
-      par[k]=par[k]||{jour:0,sem:0,tot:0,interesse:0,joint:0};
-      par[k].tot++;
-      if(a.created_at>=t0)par[k].jour++;
-      if(a.created_at>=sem)par[k].sem++;
-      if(a.resultat==='interesse')par[k].interesse++;
-      if(a.resultat!=='absent'&&a.resultat!=='faux_numero')par[k].joint++;
-    });
+    if(perf&&perf.length){
+      perf.forEach(function(x){ par[x.owner_email||'inconnu']=
+        {jour:+x.jour||0,sem:+x.sem||0,tot:+x.tot||0,
+         interesse:+x.interesse||0,joint:+x.joint||0}; });
+    }else{
+      /* oq_perf pas encore posee : on retombe sur mes seuls appels. */
+      app.forEach(function(a){
+        var k=a.owner_email||'inconnu';
+        par[k]=par[k]||{jour:0,sem:0,tot:0,interesse:0,joint:0};
+        par[k].tot++;
+        if(a.created_at>=t0)par[k].jour++;
+        if(a.created_at>=sem)par[k].sem++;
+        if(a.resultat==='interesse')par[k].interesse++;
+        if(a.resultat!=='absent'&&a.resultat!=='faux_numero')par[k].joint++;
+      });
+    }
     var obj={}; equipe.forEach(function(g){ obj[g.email]=g.objectif_appels||40; });
     var noms=Object.keys(par).sort();
     h+='<div class="panneau"><header><h2>L’équipe</h2>'
@@ -2096,15 +2406,21 @@ VUES.automatisations=async function(){
 VUES.reglages=async function(){
   try{
     var r=await Promise.all([
-      lire('oq_expediteurs','select=*&limit=50').catch(function(){return [];}),
+      lire('oq_expediteurs','select=*&order=owner_email&limit=50').catch(function(){return [];}),
       lire('oq_modeles','select=canal,etape,sujet,maj_le&order=canal,etape').catch(function(){return [];})
     ]);
-    var h='<div class="duo"><div class="panneau"><header><h2>Expéditeurs</h2></header>';
-    h+=r[0].length?('<div class="tbl-scroll"><table><thead><tr><th>Commercial</th><th>Alias</th><th>Téléphone</th></tr></thead><tbody>'
-      +r[0].map(function(x){
-        return '<tr><td>'+ech(x.nom||x.owner_email||'')+'</td><td class="mono">'+ech(x.alias||'')
-          +'</td><td>'+ech(x.tel||'')+'</td></tr>';}).join('')+'</tbody></table></div>')
-      :vide('Aucun expéditeur','Chaque commercial renseigne son alias à sa première connexion au CRM.');
+    EXPS=r[0];
+    bouton('+ Expéditeur',function(){ ficheExpediteur(null); });
+    bouton('Sauvegarde (JSON)',sauvegarde);
+    var h='<div class="duo"><div class="panneau"><header><h2>Expéditeurs</h2>'
+      +'<span class="aide">le nom et l’alias sous lesquels chacun écrit</span></header>';
+    h+=r[0].length?('<div class="tbl-scroll"><table><thead><tr><th>Commercial</th><th>Alias</th><th>Téléphone</th><th></th></tr></thead><tbody>'
+      +r[0].map(function(x,i){
+        return '<tr><td>'+ech(x.from_nom||x.owner_email||'')+'</td><td class="mono">'+ech(x.from_alias||'')
+          +'</td><td>'+ech(x.telephone||'')+'</td>'
+          +'<td class="n"><button class="btn" data-exp="'+i+'">Modifier</button></td></tr>';}).join('')
+      +'</tbody></table></div>')
+      :vide('Aucun expéditeur','Cliquez sur « + Expéditeur » : sans fiche, les emails automatiques attendent.');
     h+='</div><div class="panneau"><header><h2>Modèles de messages</h2>'
       +'<span class="aide">édition dans le CRM</span></header>';
     h+=r[1].length?('<div class="tbl-scroll"><table><thead><tr><th>Canal</th><th>Étape</th><th>Objet</th><th>Modifié</th></tr></thead><tbody>'
@@ -2118,12 +2434,71 @@ VUES.reglages=async function(){
       +'<div class="rangee"><div><b>ONIQ SOFTWARE</b><div style="color:var(--faible);font-size:13px">'
       +'SAS · SIRET 103 508 263 00011 · Marsanne (26)</div></div></div>'
       +'<div class="rangee"><div><b>Sauvegarde de la base</b>'
-      +'<div style="color:var(--faible);font-size:13px">Aucune sauvegarde automatique à ce jour. '
-      +'Un export manuel depuis Supabase une fois par semaine coûte cinq minutes et évite de tout reperdre.</div></div></div>'
+      +'<div style="color:var(--faible);font-size:13px">Le bouton « Sauvegarde (JSON) » en haut de page '
+      +'télécharge toutes les tables dans un fichier daté. Une fois par semaine, cinq secondes, '
+      +'et rien ne peut être perdu. Gardez le fichier ailleurs que sur ce poste.</div></div></div>'
       +'</div></div>';
     $('#vue').innerHTML=h;
+    $$('#vue [data-exp]').forEach(function(b){
+      b.onclick=function(){ ficheExpediteur(EXPS[+b.dataset.exp]); };
+    });
   }catch(e){ $('#vue').innerHTML='<div class="erreur">'+ech(e.message)+'</div>'; }
 };
+
+/* La fiche expediteur, editable sur place : plus besoin d'aller dans le
+   CRM pour donner un nom et un alias a un commercial. */
+var EXPS=[];
+function ficheExpediteur(x){
+  x=x||{};
+  formulaire(x.owner_email?'Expéditeur — '+x.owner_email:'Nouvel expéditeur',[
+    {id:'owner_email',nom:'Email de connexion',valeur:x.owner_email||'',requis:true,
+     aide:'celui avec lequel il se connecte ici'},
+    {id:'from_nom',nom:'Nom affiché',valeur:x.from_nom||'',requis:true,aide:'Prénom Nom'},
+    {id:'from_alias',nom:'Alias d’envoi',valeur:x.from_alias||'',requis:true,aide:'prenom@oniq.online'},
+    {id:'poste',nom:'Poste',valeur:x.poste||'',aide:'Conseiller logiciels'},
+    {id:'telephone',nom:'Téléphone',valeur:x.telephone||''},
+    {id:'whatsapp',nom:'WhatsApp',valeur:x.whatsapp||''},
+    {id:'linkedin_url',nom:'LinkedIn',valeur:x.linkedin_url||'',large:true}
+  ],async function(v){
+    if(!/@oniq\.online$/i.test(v.from_alias||''))
+      throw new Error('L’alias doit finir par @oniq.online, sinon Brevo refusera l’envoi.');
+    var r=await fetch(URL_BASE+'/rest/v1/oq_expediteurs?on_conflict=owner_email',
+      {method:'POST',headers:entetes({'Prefer':'resolution=merge-duplicates'}),
+       body:JSON.stringify(v)});
+    if(!r.ok)throw new Error(await r.text());
+    await tracer('expediteur.modifie',v.owner_email);
+    aller('reglages');
+  });
+}
+
+/* La sauvegarde : toutes les tables, paginees par mille, dans un seul
+   fichier JSON date. Ce que la lecture refuse (droits) est note tel quel. */
+async function sauvegarde(){
+  bravo('Sauvegarde en cours, quelques secondes…');
+  var tables=['oq_clients','oq_projets','oq_devis','oq_devis_lignes','oq_factures',
+    'oq_abonnements','oq_prospects','oq_appels','oq_campagnes','oq_messages',
+    'oq_equipe','oq_expediteurs','oq_modeles','oq_automatisations',
+    'demandes_surmesure','oq_activite'];
+  var tout={faite_le:new Date().toISOString(),par:moi||''};
+  for(var k=0;k<tables.length;k++){
+    var tb=tables[k], lignes=[], page=0;
+    try{
+      while(page<20){
+        var l=await lire(tb,'select=*&limit=1000&offset='+(page*1000));
+        lignes=lignes.concat(l); page++;
+        if(l.length<1000)break;
+      }
+      tout[tb]=lignes;
+    }catch(err){ tout[tb]='inaccessible : '+String(err.message||err).slice(0,120); }
+  }
+  var b=new Blob([JSON.stringify(tout)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download='oniq-sauvegarde-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+  bravo('Sauvegarde téléchargée : '+a.download);
+}
 
 
 /* ══ Ressources de marque ════════════════════════════════════════════
