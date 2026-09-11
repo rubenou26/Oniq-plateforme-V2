@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ONIQ. OniMarketer — Démo</title>
+<!--
+  OniMarketer — version de démonstration (id « onimarketer »).
+  Refonte à la charte ONIQ (celle de oniq.online et du CRM) :
+    · tokens --fond / --surface / --filet / --texte / --signal…, thème sombre et clair
+    · Instrument Sans (texte) + JetBrains Mono (chiffres, références, étiquettes)
+    · accent unique --signal ; vert / ambre / rouge réservés aux états
+  Mode démo :
+    · aucun appel réseau vers Supabase : la couche de persistance est remplacée par un
+      client local (mémoire + localStorage, clés « oniq-demo-onimarketer-* ») qui expose
+      la même interface que supabase-js (from().select().order().insert().update()…)
+    · données fictives d'un constructeur de maisons de la Drôme (« Bâti Drôme »)
+    · les actions qui dépendaient d'un service externe affichent un message simulé
+-->
+<script>
+/* Thème appliqué avant le rendu. Ordre : clé du CRM « oq-theme » (même origine),
+   sinon préférence du système. */
+(function(){
+  var t = null;
+  try { t = localStorage.getItem('oq-theme'); } catch(e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  }
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* ════════════════════════════════════════════════════════════
+     TOKENS ONIQ — sombre par défaut, clair via data-theme
+     ════════════════════════════════════════════════════════════ */
+  :root{
+    --fond:#08090C; --surface:#0E1116; --surface-2:#141922; --survol:#171D26;
+    --filet:#1B212B; --filet-fort:#2A3341;
+    --texte:#EAEDF2; --attenue:#8B94A5; --faible:#59616F;
+    --signal:#7FA8FF; --signal-r:127,168,255;
+    --ok:#5FD3A6; --ok-r:95,211,166;
+    --attente:#E0B15C; --attente-r:224,177,92;
+    --retard:#E8796B; --retard-r:232,121,107;
+    --voile:rgba(0,0,0,.6);
+
+    --sans:'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sb-w:236px;
+    --bar-h:30px;
+    --ease:cubic-bezier(.2,.8,.2,1);
+  }
+  @media (prefers-color-scheme:light){
+    :root:not([data-theme="dark"]){
+      --fond:#F7F8FA; --surface:#FFFFFF; --surface-2:#F1F3F6; --survol:#EDF0F4;
+      --filet:#E3E7ED; --filet-fort:#CFD5DE;
+      --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+      --signal:#2B5FD9; --signal-r:43,95,217;
+      --ok:#17805C; --ok-r:23,128,92;
+      --attente:#96701C; --attente-r:150,112,28;
+      --retard:#B5443A; --retard-r:181,68,58;
+      --voile:rgba(11,14,19,.38);
+    }
+  }
+  :root[data-theme="light"]{
+    --fond:#F7F8FA; --surface:#FFFFFF; --surface-2:#F1F3F6; --survol:#EDF0F4;
+    --filet:#E3E7ED; --filet-fort:#CFD5DE;
+    --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+    --signal:#2B5FD9; --signal-r:43,95,217;
+    --ok:#17805C; --ok-r:23,128,92;
+    --attente:#96701C; --attente-r:150,112,28;
+    --retard:#B5443A; --retard-r:181,68,58;
+    --voile:rgba(11,14,19,.38);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans); color:var(--texte); background:var(--fond);
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; letter-spacing:-.004em;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .mono{font-family:var(--mono)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--filet-fort);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-track{background:transparent}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:13px;color:var(--texte)}
+  :focus-visible{outline:2px solid var(--signal);outline-offset:2px;border-radius:6px}
+
+  /* ════════════════════════════════════════════════════════════
+     BANDEAU DÉMO
+     ════════════════════════════════════════════════════════════ */
+  .demo-bar{
+    flex:0 0 var(--bar-h); height:var(--bar-h);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:0 12px 0 16px; background:var(--surface); border-bottom:1px solid var(--filet);
+    font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--faible); white-space:nowrap; overflow:hidden;
+  }
+  .demo-bar .lab{display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; text-overflow:ellipsis}
+  .demo-bar .lab b{color:var(--attenue); font-weight:500}
+  .demo-bar .pt{width:6px; height:6px; border-radius:50%; background:var(--signal); flex:none}
+  .demo-bar .outils{display:flex; align-items:center; gap:6px; flex:none}
+  .demo-bar button{
+    display:inline-flex; align-items:center; gap:6px; height:22px; padding:0 9px;
+    border:1px solid var(--filet); border-radius:6px; color:var(--attenue);
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    transition:color .15s, border-color .15s;
+  }
+  .demo-bar button:hover{color:var(--texte); border-color:var(--filet-fort)}
+  .demo-bar button svg{width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+  .demo-bar .i-lune{display:none}
+  :root[data-theme="light"] .demo-bar .i-lune{display:block}
+  :root[data-theme="light"] .demo-bar .i-soleil{display:none}
+
+  .app{display:flex; flex:1; min-height:0; overflow:hidden}
+
+  /* ════════════════════════════════════════════════════════════
+     BARRE LATÉRALE
+     ════════════════════════════════════════════════════════════ */
+  .side{
+    width:var(--sb-w); flex:0 0 var(--sb-w);
+    background:var(--surface); border-right:1px solid var(--filet);
+    display:flex; flex-direction:column; position:relative; z-index:5; min-height:0;
+  }
+  .side-head{padding:18px 18px 15px; border-bottom:1px solid var(--filet)}
+  .wordmark{font-size:15.5px; font-weight:700; letter-spacing:-.03em; line-height:1.2; white-space:nowrap}
+  .wordmark .pt{color:var(--signal)}
+  .wordmark .app-nm{color:var(--attenue); font-weight:600; margin-left:3px}
+  .wordmark-sub{
+    margin-top:7px; font-family:var(--mono); font-size:9.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--faible);
+  }
+
+  .side-nav{flex:1; padding:6px 12px 14px; display:flex; flex-direction:column; gap:1px; overflow-y:auto; min-height:0}
+  .side-nav::-webkit-scrollbar{width:6px}
+  .nav-section{
+    display:flex; align-items:center; gap:9px; padding:16px 8px 7px;
+    font-family:var(--mono); font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--faible);
+  }
+  .nav-section::after{content:''; flex:1; height:1px; background:var(--filet)}
+  .nav-section:first-child{padding-top:10px}
+  .nav-item{
+    position:relative; display:flex; align-items:center; gap:11px; width:100%;
+    padding:8px 11px; border-radius:9px; border:1px solid transparent;
+    color:var(--attenue); font-size:13.5px; text-align:left;
+    transition:background .16s, color .16s, border-color .16s;
+  }
+  .nav-item:hover{background:var(--survol); color:var(--texte)}
+  .nav-item.active{
+    color:var(--texte); font-weight:500; background:rgba(var(--signal-r),.10);
+    border-color:rgba(var(--signal-r),.22);
+  }
+  .nav-item.active::before{
+    content:''; position:absolute; left:-12px; top:8px; bottom:8px; width:3px;
+    border-radius:0 3px 3px 0; background:var(--signal);
+  }
+  .nav-item .ico{width:17px; height:17px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; opacity:.62}
+  .nav-item:hover .ico{opacity:1}
+  .nav-item.active .ico{color:var(--signal); opacity:1}
+  .nav-item .ico svg{stroke-width:1.6}
+  .nav-item .lbl{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .nav-item .soon{
+    font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase;
+    padding:1px 7px; border-radius:20px; border:1px solid var(--filet); color:var(--faible);
+  }
+
+  .side-actions{display:flex; gap:4px; padding:8px 10px; border-top:1px solid var(--filet)}
+  .side-action{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+    padding:8px 4px; border-radius:8px; border:1px solid transparent; color:var(--faible);
+    font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+    transition:background .16s, color .16s, border-color .16s;
+  }
+  .side-action:hover{background:var(--survol); color:var(--texte); border-color:var(--filet)}
+
+  .side-foot{padding:10px 12px 14px; border-top:1px solid var(--filet)}
+  .user-card{
+    display:flex; align-items:center; gap:10px; min-width:0;
+    background:var(--surface-2); border:1px solid var(--filet); border-radius:11px; padding:9px 11px;
+  }
+  .avatar{
+    width:28px; height:28px; border-radius:50%; flex-shrink:0; display:grid; place-items:center;
+    font-size:11px; font-weight:600; color:var(--fond); background:var(--signal); letter-spacing:.02em;
+  }
+  .user-info{flex:1; min-width:0; overflow:hidden}
+  .user-name{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .user-role{font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--faible); margin-top:1px}
+
+  /* ════════════════════════════════════════════════════════════
+     ZONE PRINCIPALE
+     ════════════════════════════════════════════════════════════ */
+  .main{flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; background:var(--fond)}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    min-height:64px; padding:12px 28px; border-bottom:1px solid var(--filet); background:var(--fond);
+  }
+  .tb-eyebrow{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--faible); margin-bottom:3px}
+  .tb-title{font-size:19px; font-weight:600; letter-spacing:-.02em; line-height:1.2}
+  #tbActions{display:flex; gap:8px; flex-wrap:wrap}
+  .content{flex:1; overflow-y:auto; padding:26px 28px 60px}
+  .wrap{max-width:1180px; margin:0 auto}
+
+  /* Boutons */
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; padding:8px 14px;
+    border-radius:8px; font-size:13px; font-weight:500; white-space:nowrap;
+    background:var(--surface); border:1px solid var(--filet-fort); color:var(--texte);
+    transition:background .15s, border-color .15s, opacity .15s;
+  }
+  .btn:hover{background:var(--survol)}
+  .btn-primary{background:var(--texte); color:var(--fond); border-color:var(--texte); font-weight:600}
+  .btn-primary:hover{background:var(--texte); opacity:.88}
+  .btn-ghost{}
+  .btn-sm{font-size:12px; padding:5px 10px}
+  .btn-block{width:100%; justify-content:center}
+  .btn svg{width:14px; height:14px}
+
+  /* KPI */
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:24px}
+  .kpi{background:var(--surface); border:1px solid var(--filet); border-radius:12px; padding:17px 18px; min-width:0}
+  .kpi-l{font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--faible); margin-bottom:10px}
+  .kpi-v{font-family:var(--mono); font-weight:500; font-size:24px; letter-spacing:-.03em; line-height:1.1; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+  .kpi-v.accent{color:var(--signal)}
+  .kpi-t{font-size:12px; margin-top:8px; color:var(--attenue)}
+  .kpi-t.up{color:var(--ok)} .kpi-t.down{color:var(--retard)}
+
+  .grid2{display:grid; grid-template-columns:1.5fr 1fr; gap:16px}
+  .grid2 > *{min-width:0}
+  .card{background:var(--surface); border:1px solid var(--filet); border-radius:12px; padding:20px 22px}
+  .card-t{font-weight:600; font-size:15px; letter-spacing:-.01em; margin-bottom:3px}
+  .card-sub{font-size:12.5px; color:var(--attenue); margin-bottom:16px; line-height:1.55}
+  .scroll-x{overflow-x:auto}
+
+  .sec-h{margin:26px 0 12px}
+  .sec-h .t{font-weight:600; font-size:15.5px; letter-spacing:-.015em}
+  .sec-h .s{font-size:12.5px; color:var(--attenue); margin-top:3px}
+
+  /* Barres */
+  .bars{display:flex; flex-direction:column; gap:12px}
+  .bar-row{display:grid; grid-template-columns:138px 1fr 58px; align-items:center; gap:12px}
+  .bar-lab{font-size:12.5px; color:var(--texte); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .bar-track{height:6px; background:var(--surface-2); border-radius:20px; overflow:hidden}
+  .bar-fill{height:100%; border-radius:20px; background:var(--signal)}
+  .bar-val{font-family:var(--mono); font-size:12px; color:var(--attenue); text-align:right; font-variant-numeric:tabular-nums}
+
+  /* Fil d'activité */
+  .feed{display:flex; flex-direction:column}
+  .feed-i{display:flex; gap:11px; padding:10px 0; border-bottom:1px solid var(--filet)}
+  .feed-i:last-child{border-bottom:none}
+  .feed-dot{width:7px; height:7px; border-radius:50%; margin-top:6px; flex:0 0 7px}
+  .feed-tx{font-size:13px}
+  .feed-tx b{font-weight:600}
+  .feed-ti{font-family:var(--mono); font-size:10.5px; color:var(--faible); margin-top:2px}
+
+  /* Pipeline */
+  .pipe-stats{display:flex; gap:28px; margin-bottom:20px; flex-wrap:wrap}
+  .pstat b{font-family:var(--mono); font-size:21px; font-weight:500; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+  .pstat b.accent{color:var(--signal)}
+  .pstat span{display:block; margin-top:2px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--faible)}
+  .board{display:flex; gap:12px; overflow-x:auto; padding-bottom:14px; align-items:flex-start}
+  .col{flex:0 0 244px; background:var(--surface-2); border:1px solid var(--filet); border-radius:11px; padding:10px; min-height:120px}
+  .col-h{display:flex; align-items:center; justify-content:space-between; padding:4px 6px 10px}
+  .col-h .nm{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--attenue); display:flex; align-items:center; gap:8px}
+  .col-h .ct{font-family:var(--mono); font-size:11px; color:var(--attenue); background:var(--surface); border:1px solid var(--filet); padding:0 8px; border-radius:20px}
+  .col-stripe{width:7px; height:7px; border-radius:50%}
+  .col-empty{font-size:12px; color:var(--faible); padding:10px 6px; text-align:center}
+  .lead{
+    background:var(--surface); border:1px solid var(--filet); border-radius:9px;
+    padding:11px 12px; margin-bottom:8px; cursor:grab; transition:border-color .12s;
+  }
+  .lead:hover{border-color:var(--filet-fort)}
+  .lead.dragging{opacity:.4}
+  .lead-nm{font-weight:600; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; gap:6px}
+  .lead-meta{font-size:12px; color:var(--attenue); margin-top:3px}
+  .lead-tags{display:flex; gap:5px; margin-top:9px; flex-wrap:wrap}
+  .tag{
+    display:inline-block; font-family:var(--mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:2px 8px; border-radius:20px; border:1px solid var(--filet); background:var(--surface-2); color:var(--attenue);
+    white-space:nowrap;
+  }
+  .tag.bud{color:var(--texte); text-transform:none; letter-spacing:0}
+  .lead-mv{display:flex; gap:4px; margin-top:9px}
+  .mv{font-family:var(--mono); font-size:12px; line-height:1; color:var(--attenue); padding:4px 8px; border-radius:6px; border:1px solid var(--filet); background:var(--surface-2); cursor:pointer}
+  .mv:hover{background:var(--texte); color:var(--fond); border-color:var(--texte)}
+  .col.drop{outline:1px dashed var(--signal); outline-offset:-3px; background:rgba(var(--signal-r),.06)}
+
+  /* Pastilles d'état */
+  .chip{
+    display:inline-block; font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.06em;
+    text-transform:uppercase; padding:2px 9px; border-radius:20px; border:1px solid; white-space:nowrap; line-height:1.6;
+  }
+  .e-ok{color:var(--ok); border-color:rgba(var(--ok-r),.4); background:rgba(var(--ok-r),.1)}
+  .e-att{color:var(--attente); border-color:rgba(var(--attente-r),.4); background:rgba(var(--attente-r),.1)}
+  .e-ret{color:var(--retard); border-color:rgba(var(--retard-r),.4); background:rgba(var(--retard-r),.1)}
+  .e-sig{color:var(--signal); border-color:rgba(var(--signal-r),.4); background:rgba(var(--signal-r),.1)}
+  .e-neu{color:var(--attenue); border-color:var(--filet); background:var(--surface-2)}
+
+  /* Tableaux */
+  .tbl{width:100%; border-collapse:collapse; font-size:13px; margin-top:4px}
+  .tbl th{
+    padding:9px 10px; text-align:left; border-bottom:1px solid var(--filet); white-space:nowrap;
+    font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--faible);
+  }
+  .tbl td{padding:11px 10px; border-bottom:1px solid var(--filet); vertical-align:middle}
+  .tbl tbody tr:last-child td{border-bottom:none}
+  .tbl tbody tr{transition:background .14s}
+  .tbl tbody tr:hover{background:var(--survol)}
+  .tbl .n{text-align:right; font-family:var(--mono); font-size:12.5px; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .tbl .c{text-align:center}
+  .tbl .r{text-align:right}
+  .tbl .sec{color:var(--attenue)}
+  .tbl .date{font-family:var(--mono); font-size:11.5px; color:var(--attenue); white-space:nowrap}
+  .strong{font-weight:600}
+  .em{color:var(--signal)}
+
+  /* Lignes-cartes (listes des modules) */
+  .rc{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--filet); border-radius:11px;
+    padding:13px 16px; margin-bottom:8px; transition:border-color .14s;
+  }
+  .rc:hover{border-color:var(--filet-fort)}
+  .rc.muted{opacity:.55}
+  .rc-main{flex:1 1 220px; min-width:0}
+  .rc-t{font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .rc-s{font-size:12px; color:var(--attenue); margin-top:3px}
+  .rc-s.mono{font-size:11.5px}
+  .rc-s.ell{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .rc-end{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+  .stripe{width:3px; align-self:stretch; border-radius:2px; flex:none}
+  .sq{
+    width:36px; height:36px; border-radius:8px; flex:none; display:grid; place-items:center;
+    background:var(--surface-2); border:1px solid var(--filet); color:var(--attenue);
+    font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.04em;
+  }
+  .sq svg{width:16px; height:16px}
+  .metrics{display:flex; gap:20px; flex-wrap:wrap}
+  .metric{text-align:right; min-width:48px}
+  .metric .l{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faible)}
+  .metric .v{font-family:var(--mono); font-size:13.5px; font-weight:500; font-variant-numeric:tabular-nums; margin-top:1px}
+  .metric.ctr{text-align:center}
+  .metric.big .v{font-size:17px}
+  .v.ok{color:var(--ok)} .v.att{color:var(--attente)} .v.ret{color:var(--retard)} .v.faible{color:var(--faible)} .v.em{color:var(--signal)}
+  .actions-row{margin-top:11px; display:flex; gap:8px; flex-wrap:wrap}
+  .rc-block{display:block}
+  .rc-block .rc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap}
+
+  /* Apporteurs */
+  .app-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px}
+  .app-card{background:var(--surface); border:1px solid var(--filet); border-radius:12px; padding:18px 20px}
+  .app-card.off{opacity:.6}
+  .app-head{display:flex; align-items:center; gap:13px; margin-bottom:13px}
+  .ini{
+    width:40px; height:40px; border-radius:9px; flex-shrink:0; display:grid; place-items:center;
+    background:var(--surface-2); border:1px solid var(--filet-fort); color:var(--texte);
+    font-family:var(--mono); font-weight:500; font-size:13px;
+  }
+  .app-nm{font-weight:600; font-size:15px; line-height:1.25}
+  .app-org{font-size:12px; color:var(--attenue); margin-top:2px}
+  .app-tags{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px}
+  .app-stats{display:grid; grid-template-columns:repeat(3,1fr); padding:11px 0; border-top:1px solid var(--filet); border-bottom:1px solid var(--filet); margin-bottom:11px}
+  .app-stats > div{text-align:center}
+  .app-stats > div + div{border-left:1px solid var(--filet)}
+  .app-stats .v{font-family:var(--mono); font-weight:500; font-size:16px; font-variant-numeric:tabular-nums}
+  .app-stats .l{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faible); margin-top:2px}
+  .app-contact{display:flex; gap:12px; font-size:12px; color:var(--attenue); align-items:center}
+  .app-contact span{display:inline-flex; align-items:center; gap:6px; min-width:0}
+  .app-contact .ell{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block}
+  .app-contact .tel{font-family:var(--mono); font-size:11.5px; white-space:nowrap}
+  .app-contact svg{width:13px; height:13px; flex:none; opacity:.7}
+
+  /* Formulaires (simulateur / configurateur) */
+  .ctl{display:flex; flex-direction:column; gap:16px}
+  .ctl-l{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--faible); margin-bottom:6px}
+  .range-row{display:flex; align-items:center; gap:12px}
+  .range-row input[type=range]{flex:1; accent-color:var(--signal)}
+  .range-v{font-family:var(--mono); font-weight:500; font-size:15px; min-width:96px; text-align:right; font-variant-numeric:tabular-nums}
+  .inp{width:100%; padding:9px 11px; border:1px solid var(--filet); border-radius:8px; background:var(--surface-2); color:var(--texte)}
+  .inp:focus{outline:none; border-color:var(--signal)}
+  .seg{display:flex; gap:8px}
+  .seg .btn{flex:1; justify-content:center}
+  .opt{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; cursor:pointer;
+    border:1px solid var(--filet); border-radius:8px; transition:border-color .14s, background .14s;
+  }
+  .opt:hover{border-color:var(--filet-fort)}
+  .opt.on{border-color:rgba(var(--signal-r),.5); background:rgba(var(--signal-r),.07)}
+  .opt input{accent-color:var(--signal); margin:0}
+  .opt .p{font-family:var(--mono); font-size:12px; color:var(--attenue)}
+  .opt.on .p{color:var(--signal)}
+  .model-row{padding:11px 0; border-bottom:1px solid var(--filet); display:flex; justify-content:space-between; align-items:center; gap:12px}
+  .model-row .px{font-family:var(--mono); font-weight:500; font-variant-numeric:tabular-nums}
+  .recap{background:var(--surface-2); border-color:var(--filet-fort); display:flex; flex-direction:column; justify-content:space-between}
+  .recap-l{display:flex; justify-content:space-between; gap:12px; font-size:13px; padding:4px 0}
+  .recap-l b{font-family:var(--mono); font-weight:500; font-variant-numeric:tabular-nums}
+  .recap-sep{height:1px; background:var(--filet-fort); margin:10px 0}
+  .recap-tot{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+  .recap-tot span{font-weight:600; font-size:14px}
+  .recap-tot b{font-family:var(--mono); font-weight:500; font-size:22px; letter-spacing:-.03em; color:var(--signal)}
+
+  /* Canaux / agences / parcours */
+  .channels{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px}
+  .channel{border:1px solid var(--filet); border-radius:10px; padding:10px 14px; background:var(--surface-2)}
+  .channel.off{background:transparent}
+  .channel b{display:block; font-size:13px; font-weight:600; margin-bottom:6px}
+  .agences{display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:14px; margin-bottom:8px}
+  .ag-note{font-family:var(--mono); font-weight:500; font-size:22px; letter-spacing:-.03em; text-align:right}
+  .stars{letter-spacing:1px; color:var(--texte); font-size:12.5px}
+  .stars .off{color:var(--filet-fort)}
+  .review{padding:9px 0; border-top:1px solid var(--filet)}
+  .review q{display:block; font-size:12.5px; line-height:1.45; quotes:'« ' ' »'}
+  .journey{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+  .step{display:inline-flex; align-items:center; gap:7px; background:var(--surface-2); border:1px solid var(--filet); padding:3px 10px; border-radius:20px; font-size:12px}
+  .step small{font-family:var(--mono); font-size:10.5px; color:var(--faible)}
+  .arrow{color:var(--faible); font-size:12px}
+  .scorebar{width:64px; height:5px; background:var(--surface-2); border-radius:20px; overflow:hidden}
+  .scorebar i{display:block; height:100%; border-radius:20px}
+  .method{display:flex; flex-direction:column; gap:9px; margin-top:6px; font-size:12.5px; color:var(--attenue)}
+  .method b{color:var(--texte); font-weight:600}
+
+  /* Module « à venir » (conservé) */
+  .soon-panel{text-align:center; max-width:620px; margin:30px auto; padding:44px 30px; background:var(--surface); border:1px solid var(--filet); border-radius:14px}
+  .soon-ic-wrap{width:56px; height:56px; margin:0 auto 14px; background:var(--surface-2); border:1px solid var(--filet-fort); border-radius:12px; display:grid; place-items:center; color:var(--signal)}
+  .soon-panel h2{font-size:22px; font-weight:600; letter-spacing:-.02em; margin-bottom:6px}
+  .soon-tag{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faible); border:1px solid var(--filet); padding:3px 12px; border-radius:20px; margin-bottom:16px}
+  .soon-panel p{font-size:14px; color:var(--attenue); line-height:1.65; margin-bottom:20px}
+  .soon-feats{display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left; margin-top:10px}
+  .soon-feat{display:flex; gap:9px; align-items:flex-start; font-size:12.5px}
+  .soon-feat .ck{color:var(--signal); font-family:var(--mono); flex:0 0 auto}
+
+  /* Fenêtres modales */
+  .ov{position:fixed; inset:0; background:var(--voile); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; padding:20px; z-index:9999}
+  .ov.show{display:flex}
+  .modal{background:var(--surface); border:1px solid var(--filet-fort); border-radius:14px; width:min(480px,96vw); max-height:90vh; overflow-y:auto; box-shadow:0 12px 32px rgba(0,0,0,.18); animation:pop .22s var(--ease)}
+  @keyframes pop{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+  .modal-h{padding:17px 22px; border-bottom:1px solid var(--filet)}
+  .modal-h h3{font-size:15.5px; font-weight:600; letter-spacing:-.01em}
+  .modal-b{padding:20px 22px}
+  .modal-b p{font-size:13.5px; color:var(--attenue); line-height:1.6}
+  .fld{margin-bottom:13px}
+  .fld label{display:block; font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--faible); margin-bottom:6px}
+  .fld input,.fld select{width:100%; padding:9px 11px; border:1px solid var(--filet); border-radius:8px; background:var(--surface-2); color:var(--texte); font-size:13.5px}
+  .fld input::placeholder{color:var(--faible)}
+  .fld input:focus,.fld select:focus{outline:none; border-color:var(--signal)}
+  .fld-row{display:grid; grid-template-columns:1fr 1fr; gap:11px}
+  .modal-f{padding:14px 22px; border-top:1px solid var(--filet); display:flex; gap:9px; justify-content:flex-end}
+
+  /* Message éphémère */
+  .toasts{position:fixed; right:18px; bottom:18px; z-index:10000; display:flex; flex-direction:column; gap:8px; align-items:flex-end; pointer-events:none}
+  .toast{
+    display:flex; align-items:flex-start; gap:10px; max-width:380px; pointer-events:auto;
+    background:var(--surface); border:1px solid var(--filet-fort); border-radius:10px; padding:11px 14px;
+    font-size:13px; line-height:1.45; box-shadow:0 6px 18px rgba(0,0,0,.14);
+    animation:pop .22s var(--ease);
+  }
+  .toast .pt{width:7px; height:7px; border-radius:50%; background:var(--signal); margin-top:6px; flex:none}
+  .toast.ok .pt{background:var(--ok)}
+  .toast.out{opacity:0; transform:translateY(6px); transition:opacity .25s, transform .25s}
+
+  /* ════════════════════════════════════════════════════════════
+     RESPONSIVE — tablette (1024) puis téléphone
+     ════════════════════════════════════════════════════════════ */
+  @media(max-width:1100px){
+    .content{padding:22px 22px 50px}
+    .topbar{padding:12px 22px}
+    .grid2{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:900px){
+    body{overflow:auto}
+    .app{flex-direction:column; overflow:visible}
+    .side{width:auto; flex:none; flex-direction:row; align-items:center; border-right:none; border-bottom:1px solid var(--filet)}
+    .side-head{border-bottom:none; border-right:1px solid var(--filet); padding:12px 14px; flex:none}
+    .wordmark-sub{display:none}
+    .side-nav{flex-direction:row; overflow-x:auto; padding:8px 10px; gap:4px}
+    .nav-section,.side-actions,.side-foot{display:none}
+    .nav-item{white-space:nowrap; width:auto; padding:7px 10px}
+    .nav-item.active::before{display:none}
+    .main{overflow:visible}
+    .content{overflow:visible}
+    .grid2{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr}
+    .bar-row{grid-template-columns:110px 1fr 52px}
+  }
+  @media(max-width:560px){
+    .content{padding:18px 14px 50px}
+    .topbar{padding:12px 14px}
+    .fld-row,.soon-feats{grid-template-columns:1fr}
+    .demo-bar .lab .long{display:none}
+    .demo-bar .txt{display:none}
+    .metrics{gap:14px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<!-- Bandeau démo -->
+<div class="demo-bar" role="note">
+  <div class="lab"><span class="pt"></span><b>Démo — données fictives</b><span class="long">· compte « Démo — Bâti Drôme »</span></div>
+  <div class="outils">
+    <button type="button" id="btnReset" title="Remettre les données de démonstration d'origine">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+      <span class="txt">Réinitialiser la démo</span>
+    </button>
+    <button type="button" id="btnTheme" title="Basculer thème jour / nuit" aria-label="Basculer thème jour / nuit">
+      <svg class="i-soleil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="i-lune" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="side">
+    <div class="side-head">
+      <div class="wordmark">ONIQ<span class="pt">.</span><span class="app-nm">OniMarketer</span></div>
+      <div class="wordmark-sub">Marketing · Bâtiment</div>
+    </div>
+    <nav class="side-nav" id="nav" aria-label="Modules"></nav>
+
+    <div class="side-actions" role="toolbar" aria-label="Actions rapides">
+      <button class="side-action" id="actSync" title="Synchronisation entre logiciels ONIQ">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span>Sync</span>
+      </button>
+      <button class="side-action" id="actHelp" title="Aide / Support">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Aide</span>
+      </button>
+      <button class="side-action" id="actExport" title="Exporter les données">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
+      </button>
+    </div>
+
+    <div class="side-foot">
+      <div class="user-card">
+        <div class="avatar" id="av">BD</div>
+        <div class="user-info">
+          <div class="user-name" id="uname">Démo — Bâti Drôme</div>
+          <div class="user-role" id="urole">Admin · démo</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="tb-eyebrow" id="tbEye">Pilotage</div>
+        <div class="tb-title" id="tbTitle">Tableau de bord</div>
+      </div>
+      <div id="tbActions"></div>
+    </div>
+    <div class="content" id="content"><div class="wrap" id="view"></div></div>
+  </div>
+</div>
+
+<!-- Modale : nouvel apporteur -->
+<div class="ov" id="ovApp" role="dialog" aria-modal="true" aria-labelledby="ovAppT">
+  <div class="modal">
+    <div class="modal-h"><h3 id="ovAppT">Nouvel apporteur d'affaires</h3></div>
+    <div class="modal-b">
+      <div class="fld"><label for="a-nm">Nom complet</label><input id="a-nm" placeholder="Laurent Vidal"/></div>
+      <div class="fld-row">
+        <div class="fld"><label for="a-org">Organisation</label><input id="a-org" placeholder="Immobilier du Val de Drôme"/></div>
+        <div class="fld"><label for="a-type">Type</label>
+          <select id="a-type">
+            <option>Agent immo</option><option>Courtier prêt</option><option>Mandataire</option>
+            <option>Notaire</option><option>Client parrain</option><option>Indépendant</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="a-email">Email</label><input id="a-email" placeholder="contact@..."/></div>
+        <div class="fld"><label for="a-tel">Téléphone</label><input id="a-tel" placeholder="06 ..."/></div>
+      </div>
+      <div class="fld"><label for="a-com">Commission convenue</label><input id="a-com" placeholder='Ex : "1.0 %" ou "500 €/signature"'/></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeAppModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveApporteur()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale : nouveau lead -->
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-labelledby="ovT">
+  <div class="modal">
+    <div class="modal-h"><h3 id="ovT">Nouveau lead</h3></div>
+    <div class="modal-b">
+      <div class="fld"><label for="f-name">Nom du prospect</label><input id="f-name" placeholder="Julien &amp; Camille Reynaud"/></div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-email">Email</label><input id="f-email" placeholder="julien@exemple.fr"/></div>
+        <div class="fld"><label for="f-tel">Téléphone</label><input id="f-tel" placeholder="06 12 34 56 78"/></div>
+      </div>
+      <div class="fld-row">
+        <div class="fld"><label for="f-src">Source</label>
+          <select id="f-src">
+            <option>Configurateur</option><option>Simulateur PTZ</option><option>Google Ads</option>
+            <option>Meta / Insta</option><option>SEO local</option><option>Salon / JPO</option>
+            <option>Apporteur</option><option>Bouche-à-oreille</option>
+          </select>
+        </div>
+        <div class="fld"><label for="f-bud">Budget projet</label>
+          <select id="f-bud">
+            <option>&lt; 200 k€</option><option>200–300 k€</option><option>300–400 k€</option><option>&gt; 400 k€</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld"><label for="f-zone">Zone / Projet</label><input id="f-zone" placeholder="Maison 110 m² — secteur Valence"/></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveLead()">Ajouter le lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale : confirmation (remplace window.confirm, qui bloque l'iframe) -->
+<div class="ov" id="ovConfirm" role="alertdialog" aria-modal="true" aria-labelledby="cfT">
+  <div class="modal" style="width:min(430px,96vw)">
+    <div class="modal-h"><h3 id="cfT">Confirmer</h3></div>
+    <div class="modal-b"><p id="cfMsg"></p></div>
+    <div class="modal-f">
+      <button class="btn" id="cfNo">Annuler</button>
+      <button class="btn btn-primary" id="cfYes">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+/* ════════════════════════ ICÔNES SVG MONOLINE ════════════════════════
+   Inspirées des icônes Feather/Lucide, alignées avec celles d'OniPilote. */
+const ICO = {
+  layout:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  flow:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.1 7.5l2.4 2.4M13.5 13.5l2.4 2.4"/></svg>',
+  magnet:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v9a6 6 0 0 0 12 0V4"/><path d="M6 4h4v3H6zM14 4h4v3h-4z"/></svg>',
+  search:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  share:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
+  target:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  radar:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M22 12a10 10 0 0 1-13.07 9.53"/><path d="M2 12a10 10 0 0 0 17 7.07"/><circle cx="12" cy="12" r="3"/></svg>',
+  calc:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>',
+  home:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg>',
+  form:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="15" y2="13"/><line x1="8" y1="17" x2="15" y2="17"/><line x1="8" y1="9" x2="11" y2="9"/></svg>',
+  chat:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+  loop:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  send:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+  thermo:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 5 0z"/></svg>',
+  star:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  compass:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+  euro:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11M4 14h11"/><path d="M19 5.5a8 8 0 1 0 0 13"/></svg>',
+  userCheck:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>',
+  percent:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+  gift:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
+  mail:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></svg>',
+  phone:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  filter:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+};
+
+/* ════════════════════════ MENU (sans "Oni" devant) ════════════════════════
+   Le préfixe "Oni" reste réservé au NOM du logiciel (OniMarketer).
+   Les onglets internes ont des libellés métier clairs. */
+const MENU = [
+  {grp:'Acquisition', items:[
+    {id:'seo',     ic:ICO.search, nm:'SEO local',         soon:0, eye:'Acquisition', desc:'SEO programmatique à l’échelle nationale.', tag:'Bientôt', long:'Génère et publie automatiquement des milliers de pages locales optimisées (« Construire à [ville] », « Maison PTZ zone B1 à [commune] ») pour capter du trafic gratuit en continu.', feats:['Pages locales × communes × gammes','Optimisation IA du contenu','Maillage interne automatique','Suivi du positionnement Google']},
+    {id:'social',  ic:ICO.share, nm:'Réseaux sociaux',    soon:0, eye:'Acquisition', desc:'Réseaux sociaux multi-agences automatisés.', tag:'Bientôt', long:'Production et publication automatique sur Instagram, TikTok, Facebook et YouTube, avec déclinaison locale par agence et calendrier éditorial piloté par IA.', feats:['Calendrier éditorial IA','Déclinaison par agence','Publication multi-réseaux','Bibliothèque de visuels chantier']},
+    {id:'ads',     ic:ICO.target, nm:'Publicité',         soon:0, eye:'Acquisition', desc:'Régie pub centralisée Google + Meta.', tag:'Bientôt', long:'Pilotage centralisé de toutes les campagnes Google Ads, Meta et TikTok avec créations dynamiques (DCO) pré-optimisées pour le CCMI.', feats:['Templates pub CCMI','Créations dynamiques (DCO)','Budget centralisé multi-agences','ROAS en temps réel']},
+    {id:'radar',   ic:ICO.radar, nm:'Détection projets', soon:0, eye:'Acquisition', desc:'Détection de projets avant les concurrents.', tag:'R&D', long:'Croise les données open data (permis de construire, DIA, mutations cadastrales, terrains en vente) pour détecter les futurs projets de construction et alerter le commercial avant la première recherche Google du prospect.', feats:['Veille permis & DIA','Scoring signaux faibles','Alertes terrain acheté','Attribution commercial/agence']},
+  ]},
+  {grp:'Conversion', items:[
+    {id:'leads',   ic:ICO.magnet, nm:'Leads',             soon:0, eye:'Conversion', desc:'Pipeline de capture & qualification.'},
+    {id:'simu',    ic:ICO.calc, nm:'Simulateur',         soon:0, eye:'Conversion', desc:'Simulateur PTZ & capacité d’emprunt.', tag:'Bientôt', long:'Landing interactive : le visiteur entre ses revenus, découvre sa capacité d’emprunt, sa mensualité et son PTZ 2025, puis voit les modèles compatibles — et devient un lead qualifié.', feats:['Calcul capacité d’emprunt','PTZ 2025 (zonage à jour)','Mensualité & assurance','Modèles compatibles + capture lead']},
+    {id:'config',  ic:ICO.home, nm:'Configurateur',      soon:0, eye:'Conversion', desc:'Configurateur 3D de maison.', tag:'Bientôt', long:'Le visiteur compose sa future maison (plan, étages, façade, options), voit le prix se mettre à jour en direct, et devient un lead chaud au moment de recevoir son dossier.', feats:['Composition plan & façade','Prix en temps réel','Galerie d’options','Export dossier + lead chaud']},
+    {id:'forms',   ic:ICO.form, nm:'Formulaires',        soon:0, eye:'Conversion', desc:'Formulaires intelligents + scoring.', tag:'Bientôt', long:'Formulaires de capture avec scoring automatique en temps réel et routage du lead vers la bonne agence ou le bon commercial.', feats:['Scoring en temps réel','Routage par zone','A/B test intégré','Anti-spam IA']},
+    {id:'bot',     ic:ICO.chat, nm:'Chatbot IA',         soon:0, eye:'Conversion', desc:'Agent IA conversationnel 24/7.', tag:'Bientôt', long:'Agent IA (chat web, WhatsApp, voix) qui qualifie les prospects 24h/24, prend les RDV dans l’agenda du commercial et livre un dossier qualifié au format CCMI.', feats:['Chat web + WhatsApp','Qualification 8 critères','Prise de RDV automatique','Voix naturelle (option)']},
+  ]},
+  {grp:'Activation', items:[
+    {id:'flow',    ic:ICO.loop, nm:'Automation',         soon:0, eye:'Activation', desc:'Automation cycle long 6–18 mois.', tag:'Bientôt', long:'Scénarios conditionnels par étape du projet CCMI (visite terrain → RDV banque → dépôt PC → signature → livraison). Aucun outil grand public ne modélise ce cycle.', feats:['Déclencheurs par étape projet','Email + SMS + WhatsApp','Relances commerciales auto','Synchro OniPilote']},
+    {id:'sms',     ic:ICO.send, nm:'SMS & WhatsApp',     soon:0, eye:'Activation', desc:'SMS & WhatsApp Business.', tag:'Bientôt', long:'Campagnes et relances SMS / WhatsApp Business avec envoi de documents PDF et qualification automatique.', feats:['SMS transactionnel & marketing','WhatsApp Business','Envoi de PDF (devis, plans)','Modèles dynamiques']},
+    {id:'score',   ic:ICO.thermo, nm:'Lead scoring',     soon:0, eye:'Activation', desc:'Lead scoring prédictif IA.', tag:'Bientôt', long:'Un modèle IA prédit les leads chauds vs froids et alerte le commercial au bon moment pour maximiser le taux de signature.', feats:['Score chaud/froid','Alerte « moment idéal »','Priorisation du pipe','Apprentissage continu']},
+    {id:'repu',    ic:ICO.star, nm:'E-réputation',       soon:0, eye:'Activation', desc:'Avis & e-réputation locale.', tag:'Bientôt', long:'Agrège les avis Google par agence, déclenche automatiquement une demande d’avis après livraison, surveille les nouveaux avis et propose des réponses pré-rédigées.', feats:['Demande d’avis post-livraison','Agrégation multi-agences','Alerte avis négatif','Réponses pré-rédigées']},
+  ]},
+  {grp:'Réseau', items:[
+    {id:'apporteurs',  ic:ICO.userCheck, nm:'Apporteurs',  soon:0, eye:'Réseau', desc:'Réseau d’apporteurs d’affaires.'},
+    {id:'commissions', ic:ICO.percent, nm:'Commissions',   soon:0, eye:'Réseau', desc:'Suivi des commissions à verser.', tag:'Bientôt', long:'Suivi automatique des commissions à verser à chaque apporteur, déclenchement au moment du déblocage des fonds banque (CCMI), génération des factures d’apport, paiement groupé mensuel par virement SEPA.', feats:['Calcul automatique au déblocage','Factures d’apport générées','Paiement SEPA groupé','Reporting par apporteur · par mois']},
+    {id:'parrain',     ic:ICO.gift, nm:'Parrainage',       soon:0, eye:'Réseau', desc:'Programme parrain pour clients existants.', tag:'Bientôt', long:'Vos clients livrés deviennent vos meilleurs apporteurs. Programme de parrainage avec prime (500 € à 1 500 €) versée à la signature du CCMI parrainé, lien d’invitation personnalisé et suivi des conversions.', feats:['Lien d’invitation personnel','Prime à la signature CCMI','Suivi par client parrain','Notif quand le filleul signe']},
+  ]},
+  {grp:'Pilotage', items:[
+    {id:'dash',    ic:ICO.layout, nm:'Tableau de bord',  soon:0, eye:'Pilotage', desc:'Vue d’ensemble de la performance.'},
+    {id:'attrib',  ic:ICO.compass, nm:'Attribution',     soon:0, eye:'Pilotage', desc:'Attribution multi-touch 12–18 mois.', tag:'Bientôt', long:'Identifie quel canal a réellement converti sur l’ensemble du cycle long, au-delà du dernier clic.', feats:['Modèle multi-touch','Cycle 12–18 mois','ROI par canal','Export rapports']},
+    {id:'roi',     ic:ICO.euro, nm:'ROI',                soon:0, eye:'Pilotage', desc:'ROI marketing par € investi.', tag:'Bientôt', long:'ROI marketing par euro investi, par canal, par campagne et par commercial, avec prévision des signatures.', feats:['ROI par campagne','Coût par lead / signature','Prévision IA','Tableaux de bord direction']},
+  ]},
+];
+const FLAT = {}; MENU.forEach(g=>g.items.forEach(i=>FLAT[i.id]=i));
+let current = 'dash';
+
+/* ════════════════════════ OUTILS DÉMO ════════════════════════
+   Message éphémère (remplace alert, qui bloque l'iframe), confirmation
+   en fenêtre ONIQ (remplace confirm), bascule jour / nuit. */
+const DEMO = {
+  id: 'onimarketer',
+  prefix: 'oniq-demo-onimarketer-',
+  version: 1,
+  userId: '00000000-0000-4000-a000-0000000de300',   // compte « Démo — Bâti Drôme »
+};
+
+function notify(msg, kind){
+  const box = document.getElementById('toasts'); if(!box) return;
+  const t = document.createElement('div');
+  t.className = 'toast' + (kind==='ok' ? ' ok' : '');
+  t.innerHTML = '<span class="pt"></span><span></span>';
+  t.lastChild.textContent = msg;
+  box.appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(), 300); }, 3600);
+}
+const INSTALLED = 'Disponible dans la version installée.';
+
+function askConfirm(title, msg, okLabel){
+  return new Promise(resolve=>{
+    const ov = document.getElementById('ovConfirm');
+    document.getElementById('cfT').textContent = title;
+    document.getElementById('cfMsg').textContent = msg;
+    const yes = document.getElementById('cfYes'), no = document.getElementById('cfNo');
+    yes.textContent = okLabel || 'Confirmer';
+    const done = v => { ov.classList.remove('show'); yes.onclick = no.onclick = ov.onclick = null; resolve(v); };
+    yes.onclick = () => done(true);
+    no.onclick  = () => done(false);
+    ov.onclick  = e => { if(e.target === ov) done(false); };
+    ov.classList.add('show');
+    setTimeout(()=>yes.focus(), 30);
+  });
+}
+
+function currentTheme(){ return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'; }
+function setTheme(t, save){
+  document.documentElement.setAttribute('data-theme', t);
+  if (save) { try { localStorage.setItem('oq-theme', t); } catch(e) {} }
+}
+/* Le CRM (même origine) peut changer le thème pendant que la démo est ouverte. */
+window.addEventListener('storage', e=>{ if(e.key==='oq-theme' && (e.newValue==='dark'||e.newValue==='light')) setTheme(e.newValue, false); });
+if (window.matchMedia) {
+  const mq = window.matchMedia('(prefers-color-scheme: light)');
+  const onMq = () => { let s=null; try{ s = localStorage.getItem('oq-theme'); }catch(e){} if(s!=='dark'&&s!=='light') setTheme(mq.matches?'light':'dark', false); };
+  if (mq.addEventListener) mq.addEventListener('change', onMq);
+}
+
+/* ════════════════════════ STOCKAGE LOCAL DE DÉMO ════════════════════════
+   Remplace supabase-js. Expose la même interface que ce que le code
+   attend : createClient().from(table).select().order().limit(),
+   .insert(row).select().single(), .update(vals).eq() / .in().
+   Les tables om_* (voir supabase/migrations/onimarketer_phase1.sql) vivent
+   en mémoire et sont recopiées dans localStorage sous la clé
+   « oniq-demo-onimarketer-db ». Aucun appel réseau. */
+const dAgo   = n => new Date(Date.now() - n*864e5);
+const isoAgo = n => dAgo(n).toISOString();
+const dayAgo = n => dAgo(n).toISOString().slice(0,10);   // n négatif = dans le futur
+
+function demoSeed(){
+  const O = DEMO.userId;
+  /* Apporteurs d'affaires — réseau d'un constructeur de maisons drômois */
+  const om_apporteurs = [
+    {id:1, nm:'Laurent Vidal',   org:'Immobilier du Val de Drôme · Crest', type:'Agent immo',     tel:'06 14 27 38 52', email:'l.vidal@valdedrome-immo.fr',  com:'1.0 %',            status:'actif',   created_at:isoAgo(30)},
+    {id:2, nm:'Nadia Chabert',   org:'Rhône-Drôme Financement · Valence',  type:'Courtier prêt',  tel:'06 52 61 70 18', email:'n.chabert@rdfinancement.fr',  com:'0.5 %',            status:'actif',   created_at:isoAgo(60)},
+    {id:3, nm:'Julien Roux',     org:'Indépendant · Montélimar',           type:'Mandataire',     tel:'07 21 34 45 60', email:'j.roux.immo@exemple.fr',      com:'1.5 %',            status:'actif',   created_at:isoAgo(90)},
+    {id:4, nm:'Gérard Bonnet',   org:'Ancien client (livré 2024)',         type:'Client parrain', tel:'06 88 90 12 34', email:'g.bonnet@exemple.fr',         com:'500 €/signature',  status:'actif',   created_at:isoAgo(120)},
+    {id:5, nm:'Étude Faure & Associés', org:'Notaires · Romans-sur-Isère', type:'Notaire',        tel:'04 75 02 13 24', email:'contact@etude-faure.fr',      com:'forfait 1 000 €',  status:'actif',   created_at:isoAgo(150)},
+    {id:6, nm:'Céline Arnaud',   org:'Anciennement Valence Immo Conseil',  type:'Mandataire',     tel:'06 43 32 21 10', email:'c.arnaud@exemple.fr',         com:'1.2 %',            status:'inactif', created_at:isoAgo(400)},
+    {id:7, nm:'Thierry Mounier', org:'Géomètre-expert · Loriol-sur-Drôme', type:'Indépendant',    tel:'06 70 81 92 03', email:'t.mounier@geo-drome.fr',      com:'400 €/signature',  status:'actif',   created_at:isoAgo(45)},
+  ].map(r=>({owner_id:O, notes:null, updated_at:r.created_at, ...r}));
+
+  /* Leads — pipeline de capture */
+  const L = (id, name, email, tel, src, bud, zone, stage, score, apporteur_id, age) =>
+    ({id, owner_id:O, name, email, tel, src, bud, zone, stage, score, apporteur_id, notes:null, created_at:isoAgo(age), updated_at:isoAgo(Math.max(0,age-2))});
+  const om_leads = [
+    L(1,  'Julien & Camille Reynaud', 'jc.reynaud@exemple.fr',   '06 12 34 56 78', 'Configurateur',    '300–400 k€', 'Maison 120 m² — Chabeuil',                'qual', 72, null, 9),
+    L(2,  'Famille Brunel',           'brunel.famille@exemple.fr','06 22 11 33 44', 'Simulateur PTZ',   '200–300 k€', 'Plain-pied 92 m² — Étoile-sur-Rhône',     'new',  38, null, 1),
+    L(3,  'Sandrine Morel',           's.morel@exemple.fr',      '07 88 99 00 11', 'Google Ads',       '> 400 k€',   'Villa 165 m² — Saint-Marcel-lès-Valence', 'rdv',  86, null, 16),
+    L(4,  'Thomas Giraud',            't.giraud@exemple.fr',     '06 55 44 33 22', 'SEO local',        '200–300 k€', 'Maison 100 m² — Livron-sur-Drôme',        'cont', 48, null, 5),
+    L(5,  'Léa & Hugo Chaix',         'chaix.lh@exemple.fr',     '06 77 66 55 44', 'Apporteur',        '300–400 k€', 'Contemporaine 135 m² — Crest',            'sign', 95, 1,    48),
+    L(6,  'Karim Belkacem',           'k.belkacem@exemple.fr',   '07 12 23 34 45', 'Meta / Insta',     '< 200 k€',   'Extension 35 m² + garage — Portes-lès-Valence', 'new', 31, null, 1),
+    L(7,  'Claire Vernet',            'c.vernet@exemple.fr',     '06 33 22 11 00', 'Salon / JPO',      '300–400 k€', 'Maison 115 m² — Montélimar',              'cont', 52, null, 7),
+    L(8,  'Mathieu & Inès Perrin',    'perrin.mi@exemple.fr',    '06 41 52 63 74', 'Apporteur',        '200–300 k€', 'Plain-pied 105 m² — Beaumont-lès-Valence','rdv',  81, 2,    19),
+    L(9,  'Famille Ollier',           'ollier@exemple.fr',       '06 18 29 30 41', 'Bouche-à-oreille', '300–400 k€', 'Maison à étage 140 m² — Romans-sur-Isère', 'qual', 69, null, 12),
+    L(10, 'Antoine Delorme',          'a.delorme@exemple.fr',    '06 90 81 72 63', 'Apporteur',        '200–300 k€', 'Maison 98 m² — Savasse',                  'sign', 93, 3,    62),
+    L(11, 'Élodie Marchal',           'e.marchal@exemple.fr',    '07 54 65 76 87', 'Configurateur',    '200–300 k€', 'Plain-pied 95 m² — Allex',                'new',  41, null, 2),
+    L(12, 'Rémi & Sarah Bouvier',     'bouvier.rs@exemple.fr',   '06 63 74 85 96', 'Google Ads',       '300–400 k€', 'Maison 125 m² — Bourg-de-Péage',          'qual', 66, null, 14),
+    L(13, 'Patricia Achard',          'p.achard@exemple.fr',     '06 27 38 49 50', 'Apporteur',        '< 200 k€',   'Plain-pied 80 m² — Loriol-sur-Drôme',     'lost', 20, 6,    70),
+    L(14, 'Famille Teyssier',         'teyssier@exemple.fr',     '06 36 47 58 69', 'Apporteur',        '300–400 k€', 'Maison 118 m² — Marsanne',                'sign', 94, 4,    40),
+    L(15, 'Yannick Blanc',            'y.blanc@exemple.fr',      '07 45 56 67 78', 'SEO local',        '> 400 k€',   'Villa 170 m² avec piscine — Dieulefit',   'cont', 58, null, 4),
+    L(16, 'Manon Clément',            'm.clement@exemple.fr',    '06 58 69 70 81', 'Apporteur',        '200–300 k€', 'Maison 110 m² — Pierrelatte',             'new',  44, 2,    3),
+    L(17, 'Famille Chapuis',          'chapuis@exemple.fr',      '06 72 83 94 05', 'Meta / Insta',     '200–300 k€', 'Plain-pied 100 m² — Saulce-sur-Rhône',    'rdv',  77, null, 21),
+  ];
+
+  /* Commissions dues au réseau — déclenchées au déblocage des fonds CCMI */
+  const C = (id, apporteur_id, lead_id, client_name, ccmi_amount, com_amount, deb, status, paid, age) =>
+    ({id, owner_id:O, apporteur_id, lead_id, client_name, ccmi_amount, com_amount,
+      deblocage_date:dayAgo(deb), status, paid_date: paid==null ? null : dayAgo(paid),
+      created_at:isoAgo(age), updated_at:isoAgo(age)});
+  const om_commissions = [
+    C(1,  1, 5,    'Léa & Hugo Chaix',            268000, 2680, -12, 'à verser', null, 46),
+    C(2,  4, 14,   'Famille Teyssier',            247000,  500,  -8, 'à verser', null, 38),
+    C(3,  3, 10,   'Antoine Delorme',             238000, 3570, -20, 'à verser', null, 60),
+    C(4,  7, null, 'Famille Sauvan',              212000,  400, -30, 'à verser', null, 66),
+    C(5,  1, null, 'M. & Mme Roche',              245000, 2450, -25, 'à verser', null, 75),
+    C(6,  2, null, 'Sophie & Marc Imbert',        289000, 1445, -16, 'à verser', null, 82),
+    C(7,  2, null, 'Kévin Laurent',               198000,  990,  -4, 'à verser', null, 95),
+    C(8,  2, null, 'Famille Jourdan',             254000, 1270,  41, 'payée',     38, 120),
+    C(9,  1, null, 'Famille Pons',                232000, 2320,  52, 'payée',     47, 140),
+    C(10, 4, null, 'M. & Mme Dumas (parrainé)',   225000,  500, 118, 'payée',    112, 170),
+    C(11, 5, null, 'M. Renaud',                   340000, 1000, 205, 'payée',    199, 240),
+  ];
+
+  /* Parrainage — clients livrés et leurs filleuls */
+  const om_parrains = [
+    {id:1, owner_id:O, client_name:'Gérard Bonnet',   livraison_date:'2024-05-17', ref_code:'BONNET-7K3', created_at:isoAgo(60)},
+    {id:2, owner_id:O, client_name:'Famille Pons',    livraison_date:'2025-03-21', ref_code:'PONS-4QX',   created_at:isoAgo(90)},
+    {id:3, owner_id:O, client_name:'Famille Jourdan', livraison_date:'2025-01-24', ref_code:'JOURDN-9HT', created_at:isoAgo(110)},
+    {id:4, owner_id:O, client_name:'M. Garnier',      livraison_date:'2024-09-13', ref_code:'GARNIR-2VB', created_at:isoAgo(200)},
+  ];
+  const F = (id, parrain_id, nm, etat, prime, signed, age) =>
+    ({id, parrain_id, owner_id:O, nm, etat, prime, signed_date: signed==null ? null : dayAgo(signed), created_at:isoAgo(age)});
+  const om_filleuls = [
+    F(1, 1, 'M. & Mme Dumas',          'signé',         500, 118, 190),
+    F(2, 1, 'Aurélie Masson',          'visite agence',   0, null, 24),
+    F(3, 2, 'Sophie Pons (sœur)',      'signé',         500,  96, 150),
+    F(4, 2, 'Mehdi Taleb',             'signé',         500, 160, 230),
+    F(5, 2, 'Hugo Rivière',            'lien envoyé',     0, null, 6),
+    F(6, 3, 'Stéphane Coste (collègue)','lien cliqué',    0, null, 11),
+    F(7, 4, 'Karim Garnier (cousin)',  'signé',        1000, 350, 420),
+  ];
+
+  /* Détection projets — signaux open data (permis, DIA, ventes de terrains) */
+  const R = (id, type, zone, signal_info, terrain_size, score, age, commune) =>
+    ({id, owner_id:O, type, zone, signal_info, terrain_size, score, status:'nouveau', lead_id:null,
+      source_url:'https://www.data.gouv.fr/', detected_at:isoAgo(age), meta:{commune, departement:'26'}});
+  const om_radar_signaux = [
+    R(1, 'Permis déposé', 'Chabeuil — route de Montvendre',         'PC en cours d’instruction',     '487 m²', 92, 3,  'Chabeuil'),
+    R(2, 'DIA',           'Crest — coteaux nord',                   'Mutation cadastrale signalée',  '612 m²', 88, 5,  'Crest'),
+    R(3, 'Terrain vendu', 'Étoile-sur-Rhône — lotissement Les Vignes','Acte authentique signé',      '520 m²', 85, 6,  'Étoile-sur-Rhône'),
+    R(4, 'Permis déposé', 'Romans-sur-Isère — quartier des Balmes', 'PC en cours d’instruction',     '455 m²', 81, 8,  'Romans-sur-Isère'),
+    R(5, 'Permis déposé', 'Montélimar — secteur sud',               'PC en cours d’instruction',     '410 m²', 74, 9,  'Montélimar'),
+    R(6, 'DIA',           'Loriol-sur-Drôme — proche centre',       'Mutation cadastrale signalée',  '380 m²', 68, 14, 'Loriol-sur-Drôme'),
+    R(7, 'Terrain vendu', 'Dieulefit — hameau de la Paillette',     'Acte authentique signé',        '780 m²', 55, 20, 'Dieulefit'),
+    R(8, 'Terrain vendu', 'Upie — lotissement du Château',          'Acte authentique signé',        '430 m²', 46, 24, 'Upie'),
+  ];
+
+  const tables = {om_apporteurs, om_leads, om_commissions, om_parrains, om_filleuls, om_radar_signaux, om_seo_pages:[]};
+  const seq = {}; Object.keys(tables).forEach(t=>{ seq[t] = tables[t].reduce((m,r)=>Math.max(m,r.id||0), 0); });
+  return {v:DEMO.version, seededAt:new Date().toISOString(), tables, seq};
+}
+
+const DemoSupabase = (function(){
+  const KEY = DEMO.prefix + 'db';
+  let db = null;
+  const clone = o => JSON.parse(JSON.stringify(o));
+  function load(){
+    if (db) return;
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { const d = JSON.parse(raw); if (d && d.v === DEMO.version && d.tables) { db = d; return; } }
+    } catch(e) {}
+    db = demoSeed(); persist();
+  }
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e) {} }
+  function nextId(t){ db.seq[t] = (db.seq[t]||0) + 1; return db.seq[t]; }
+
+  function from(table){
+    const st = {op:'select', vals:null, filters:[], order:null, limit:null, single:false};
+    function run(){
+      try {
+        const rows = db.tables[table];
+        if (!rows) return {data:null, error:{message:'relation "'+table+'" does not exist'}};
+        const match = r => st.filters.every(f=>f(r));
+        const now = new Date().toISOString();
+        if (st.op === 'insert'){
+          const list = (Array.isArray(st.vals) ? st.vals : [st.vals]).map(v=>{
+            const row = Object.assign({id:nextId(table), created_at:now}, v);
+            if (table==='om_radar_signaux' && !row.detected_at) row.detected_at = now;
+            if (['om_leads','om_apporteurs','om_commissions','om_seo_pages'].includes(table)) row.updated_at = now;
+            rows.push(row); return row;
+          });
+          persist();
+          const out = clone(list);
+          return {data: st.single ? out[0] : out, error:null};
+        }
+        if (st.op === 'update'){
+          const hit = rows.filter(match);
+          hit.forEach(r=>{ Object.assign(r, st.vals); if ('updated_at' in r) r.updated_at = now; });
+          persist();
+          const out = clone(hit);
+          return {data: st.single ? (out[0]||null) : out, error:null};
+        }
+        if (st.op === 'delete'){
+          const keep = rows.filter(r=>!match(r));
+          const gone = rows.length - keep.length;
+          db.tables[table] = keep; persist();
+          return {data:null, error:null, count:gone};
+        }
+        let out = rows.filter(match);
+        if (st.order){
+          const {col, asc} = st.order;
+          out = out.slice().sort((a,b)=> (a[col] > b[col] ? 1 : a[col] < b[col] ? -1 : 0) * (asc ? 1 : -1));
+        }
+        if (st.limit != null) out = out.slice(0, st.limit);
+        out = clone(out);
+        return {data: st.single ? (out[0]||null) : out, error:null};
+      } catch(err) {
+        return {data:null, error:{message:String(err && err.message || err)}};
+      }
+    }
+    const q = {
+      select(){ return q; },
+      insert(v){ st.op='insert'; st.vals=v; return q; },
+      update(v){ st.op='update'; st.vals=v; return q; },
+      delete(){ st.op='delete'; return q; },
+      eq(c,v){ st.filters.push(r=>r[c]===v); return q; },
+      in(c,vs){ st.filters.push(r=>(vs||[]).includes(r[c])); return q; },
+      order(c,o){ st.order={col:c, asc:!(o && o.ascending===false)}; return q; },
+      limit(n){ st.limit=n; return q; },
+      single(){ st.single=true; return q; },
+      then(ok, ko){ return Promise.resolve().then(run).then(ok, ko); },
+    };
+    return q;
+  }
+  return {
+    createClient(){ load(); return {from}; },
+    reset(){
+      try { Object.keys(localStorage).filter(k=>k.indexOf(DEMO.prefix)===0).forEach(k=>localStorage.removeItem(k)); } catch(e) {}
+      db = demoSeed(); persist();
+    },
+  };
+})();
+
+async function resetDemo(){
+  const ok = await askConfirm('Réinitialiser la démo ?',
+    'Les leads, apporteurs et paiements ajoutés pendant la démonstration seront effacés, et les données fictives d’origine rechargées.',
+    'Réinitialiser');
+  if (!ok) return;
+  DemoSupabase.reset();
+  location.reload();
+}
+
+/* ════════════════════════ PERSISTANCE (client local de démo) ═════════════════
+   Version d'origine : l'iframe demandait la session Supabase au parent ONIQ
+   par postMessage. En démo, le client est local et toujours prêt.          */
+let SB = null;          // client (même interface que supabase-js)
+let SB_USER_ID = null;  // identifiant du compte de démonstration
+let SB_READY = false;   // true quand le client est prêt
+
+function initSupabase(){
+  try {
+    SB = DemoSupabase.createClient();
+    SB_USER_ID = DEMO.userId;
+    SB_READY = true;
+  } catch(err) { console.error('[OM] init stockage démo:', err); SB_READY = false; }
+  return Promise.resolve(SB_READY);
+}
+
+/* Mapping DB ↔ structures locales (les tables om_* utilisent des
+   noms en snake_case côté SQL, on convertit pour rester compatible
+   avec le code de rendu existant). */
+const fmtMonth = d => { if(!d) return ''; const x = new Date(d); return isNaN(x) ? d : x.toLocaleDateString('fr-FR',{month:'short', year:'numeric'}); };
+const fmtDate  = d => { if(!d) return ''; const x = new Date(d); return isNaN(x) ? d : x.toLocaleDateString('fr-FR'); };
+const mapLeadFromDB        = r => ({id:r.id, name:r.name, email:r.email||'', tel:r.tel||'', src:r.src||'', bud:r.bud||'', zone:r.zone||'', stage:r.stage||'new', apporteur_id:r.apporteur_id||null});
+const mapApporteurFromDB   = r => ({id:r.id, nm:r.nm, org:r.org||'', type:r.type, tel:r.tel||'', email:r.email||'', com:r.com||'', status:r.status||'actif', leads:0, signed:0, due:0});
+const mapCommissionFromDB  = (r, appByid) => ({id:r.id, appNm:(appByid[r.apporteur_id]||{}).nm||'?', client:r.client_name, ccmi:r.ccmi_amount, com:r.com_amount, dec:r.deblocage_date||'', etat:r.status==='payée'?'payée':'à verser', payDate:r.paid_date||null, apporteur_id:r.apporteur_id, lead_id:r.lead_id||null});
+const mapRadarFromDB       = r => ({id:r.id, type:r.type, zone:r.zone, sig:r.signal_info||'', terrain:r.terrain_size||'', score:r.score||0, st:r.score>=80?'chaud':r.score>=50?'tiède':'froid', date:r.detected_at?(new Date(r.detected_at)).toLocaleDateString('fr-FR'):'', status:r.status});
+
+/* Charge l'état depuis le stockage (mêmes requêtes que la version Supabase). */
+async function loadFromSupabase(){
+  if (!SB_READY) return false;
+  try {
+    const [leads, apps, comms, parr, fill, radar] = await Promise.all([
+      SB.from('om_leads').select('*').order('created_at',{ascending:false}),
+      SB.from('om_apporteurs').select('*').order('created_at',{ascending:false}),
+      SB.from('om_commissions').select('*').order('created_at',{ascending:false}),
+      SB.from('om_parrains').select('*').order('created_at',{ascending:false}),
+      SB.from('om_filleuls').select('*'),
+      SB.from('om_radar_signaux').select('*').order('detected_at',{ascending:false}).limit(50),
+    ]);
+    if (leads.data) LEADS = leads.data.map(mapLeadFromDB);
+    if (apps.data)  APPORTEURS = apps.data.map(mapApporteurFromDB);
+    if (comms.data) {
+      const appByid = Object.fromEntries(APPORTEURS.map(a=>[a.id,a]));
+      COMMISSIONS = comms.data.map(r=>mapCommissionFromDB(r, appByid));
+      // Stats apporteurs : leads apportés + signés + commission cumulée
+      APPORTEURS.forEach(a=>{
+        const cs = COMMISSIONS.filter(c=>c.apporteur_id===a.id);
+        // leads apportés = dossiers commissionnés + leads encore dans le pipeline
+        const open = LEADS.filter(l=>l.apporteur_id===a.id && !cs.some(c=>c.lead_id===l.id)).length;
+        a.leads  = cs.length + open;
+        a.signed = cs.filter(c=>c.ccmi>0).length;
+        a.due    = cs.filter(c=>c.etat==='à verser').reduce((s,c)=>s+c.com,0);
+      });
+    }
+    if (parr.data) PARRAINS = parr.data.map(p=>({
+      id:p.id, nm:p.client_name, livre:fmtMonth(p.livraison_date), ref:p.ref_code||'',
+      filleuls: (fill.data||[]).filter(f=>f.parrain_id===p.id).map(f=>({
+        id:f.id, nm:f.nm, etat:f.etat, prime:f.prime||0, date:fmtMonth(f.signed_date||f.created_at)
+      }))
+    }));
+    if (radar.data && radar.data.length) RADAR_SIG = radar.data.map(mapRadarFromDB);
+    return true;
+  } catch(e){ console.error('[OM] chargement stockage démo:', e); return false; }
+}
+
+/* Helpers d'écriture — mêmes signatures que la version Supabase. */
+async function sbInsertLead(lead){
+  if (!SB_READY) return null;
+  const { data, error } = await SB.from('om_leads').insert({
+    owner_id: SB_USER_ID,
+    name: lead.name, email: lead.email||null, tel: lead.tel||null,
+    src: lead.src||null, bud: lead.bud||null, zone: lead.zone||null,
+    stage: lead.stage||'new'
+  }).select().single();
+  if (error) { console.error('[OM] insertLead:', error); return null; }
+  return data.id;
+}
+async function sbUpdateLeadStage(id, stage){
+  if (!SB_READY || typeof id !== 'number') return;
+  const { error } = await SB.from('om_leads').update({stage}).eq('id', id);
+  if (error) console.error('[OM] updateLeadStage:', error);
+}
+async function sbInsertApporteur(a){
+  if (!SB_READY) return null;
+  const { data, error } = await SB.from('om_apporteurs').insert({
+    owner_id: SB_USER_ID, nm: a.nm, org: a.org||null, type: a.type,
+    tel: a.tel||null, email: a.email||null, com: a.com||null, status: a.status||'actif'
+  }).select().single();
+  if (error) { console.error('[OM] insertApporteur:', error); return null; }
+  return data.id;
+}
+async function sbMarkCommissionsPaid(ids, payDate){
+  if (!SB_READY || !ids.length) return;
+  const { error } = await SB.from('om_commissions').update({status:'payée', paid_date:payDate}).in('id', ids);
+  if (error) console.error('[OM] markCommissionsPaid:', error);
+}
+
+/* ════════════════════════ DONNÉES (remplies depuis le stockage de démo) ═══ */
+const STAGES = [
+  {id:'new',  nm:'Nouveau',  c:'var(--faible)'},
+  {id:'cont', nm:'Contacté', c:'var(--attente)'},
+  {id:'qual', nm:'Qualifié', c:'var(--attenue)'},
+  {id:'rdv',  nm:'RDV pris', c:'var(--signal)'},
+  {id:'sign', nm:'Signé',    c:'var(--ok)'},
+  {id:'lost', nm:'Perdu',    c:'var(--retard)'},
+];
+let LEADS = [];
+let seq = 100;
+
+/* Apporteurs typiques du CCMI : agents immo, courtiers prêt, mandataires,
+   clients parrains. Commission = % du prix de vente OU forfait par signature. */
+const APP_TYPES = ['Agent immo','Courtier prêt','Mandataire','Notaire','Client parrain','Indépendant'];
+let APPORTEURS = [];
+let appSeq = 200;
+
+/* ════════════════════════ NAV ════════════════════════ */
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = MENU.map(g=>`
+    <div class="nav-section">${g.grp}</div>
+    ${g.items.map(i=>`
+      <button class="nav-item ${i.id===current?'active':''}" data-id="${i.id}" onclick="go('${i.id}')" ${i.id===current?'aria-current="page"':''}>
+        <span class="ico">${i.ic}</span>
+        <span class="lbl">${i.nm}</span>
+        ${i.soon?`<span class="soon">${i.tag||'Bientôt'}</span>`:''}
+      </button>`).join('')}
+  `).join('');
+}
+function go(id){
+  current = id; renderNav(); renderView();
+  const c = document.getElementById('content'); if (c) c.scrollTop = 0;
+  try { sessionStorage.setItem(DEMO.prefix+'vue', id); } catch(e) {}
+}
+
+/* ════════════════════════ TOPBAR + VUES ════════════════════════ */
+function renderView(){
+  const item = FLAT[current];
+  document.getElementById('tbEye').textContent = item.eye;
+  document.getElementById('tbTitle').textContent = item.nm;
+  const actions = document.getElementById('tbActions');
+  const view = document.getElementById('view');
+
+  /* Routing : chaque module a sa view dédiée. */
+  const r = ROUTES[current];
+  if (r){
+    actions.innerHTML = r.actions || '';
+    view.innerHTML = r.render();
+    if (r.bind) r.bind();
+  } else {
+    actions.innerHTML = '';
+    view.innerHTML = viewSoon(item);
+  }
+}
+
+/* ════════════════════════ ROUTES — 1 entrée par module ════════════════════════ */
+const ROUTES = {
+  dash:       { render:()=>viewDash() },
+  leads:      { actions:`<button class="btn btn-primary" onclick="openModal()">+ Nouveau lead</button>`, render:()=>viewLeads(), bind:bindDnD },
+  apporteurs: { actions:`<button class="btn btn-primary" onclick="openAppModal()">+ Nouvel apporteur</button>`, render:()=>viewApporteurs() },
+  seo:        { actions:`<button class="btn btn-primary" onclick="seoGenerate()">+ Générer pages</button>`, render:()=>viewSeo() },
+  social:     { actions:`<button class="btn btn-primary" onclick="notify('Composer un post avec l’IA — '+INSTALLED)">+ Nouveau post</button>`, render:()=>viewSocial() },
+  ads:        { actions:`<button class="btn btn-primary" onclick="notify('Lancer une campagne (connexion Google / Meta) — '+INSTALLED)">+ Nouvelle campagne</button>`, render:()=>viewAds() },
+  radar:      { actions:`<button class="btn" onclick="notify('Filtres — zones, surface min, prix : '+INSTALLED)">${ICO.filter} Filtres</button>`, render:()=>viewRadar() },
+  simu:       { render:()=>viewSimu(), bind:bindSimu },
+  config:     { render:()=>viewConfig(), bind:bindConfig },
+  forms:      { actions:`<button class="btn btn-primary" onclick="notify('Éditeur de formulaire glisser-déposer — '+INSTALLED)">+ Nouveau formulaire</button>`, render:()=>viewForms() },
+  bot:        { render:()=>viewBot() },
+  flow:       { actions:`<button class="btn btn-primary" onclick="notify('Créer un scénario depuis un modèle — '+INSTALLED)">+ Nouveau scénario</button>`, render:()=>viewFlow() },
+  sms:        { actions:`<button class="btn btn-primary" onclick="notify('Composer une campagne SMS — '+INSTALLED)">+ Nouvelle campagne</button>`, render:()=>viewSms() },
+  score:      { render:()=>viewScore() },
+  repu:       { actions:`<button class="btn btn-primary" onclick="notify('Demande d’avis envoyée à tous les clients livrés récemment (simulation).','ok')">Solliciter des avis</button>`, render:()=>viewRepu() },
+  commissions:{ actions:`<button class="btn btn-primary" onclick="commPay()">Marquer tout payé</button>`, render:()=>viewCommissions() },
+  parrain:    { actions:`<button class="btn btn-primary" onclick="notify('Nouveau lien parrain généré (simulation).','ok')">+ Lien parrain</button>`, render:()=>viewParrain() },
+  attrib:     { render:()=>viewAttrib() },
+  roi:        { render:()=>viewRoi() },
+};
+
+/* ════════════════════════ HELPERS RÉUTILISABLES ════════════════════════ */
+const fmtEur = n => (n||0).toLocaleString('fr-FR') + ' €';
+const fmtNum = n => (n||0).toLocaleString('fr-FR');
+const fmtK   = n => fmtNum(Math.round((n||0)/1000)) + ' k€';
+const fmtDec = (n, d) => (n||0).toLocaleString('fr-FR',{minimumFractionDigits:d, maximumFractionDigits:d});
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function kpiRow(items){
+  return `<div class="kpis">` + items.map(k=>{
+    const cls = k.tCls || (k.t && k.t.charAt(0)==='▲' ? 'up' : '');
+    return `
+    <div class="kpi">
+      <div class="kpi-l">${k.l}</div>
+      <div class="kpi-v ${k.accent?'accent':''}">${k.v}</div>
+      ${k.t?`<div class="kpi-t ${cls}">${k.t}</div>`:''}
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+/* Pastille d'état : vert / ambre / rouge pour le sens, bleu signal pour
+   une information, neutre pour le reste. */
+function chip(label, color){
+  const cls = {green:'e-ok', red:'e-ret', amber:'e-att', blue:'e-sig', stone:'e-neu', neutral:'e-neu'}[color] || 'e-neu';
+  return `<span class="chip ${cls}">${label}</span>`;
+}
+
+function sectionTitle(title, sub){
+  return `<div class="sec-h"><div class="t">${title}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
+}
+const toneVar = c => ({red:'var(--retard)', amber:'var(--attente)', green:'var(--ok)', stone:'var(--faible)'})[c] || 'var(--faible)';
+const toneCls = c => ({red:'ret', amber:'att', green:'ok', stone:'faible'})[c] || 'faible';
+
+/* ════════════════════════ PILOTAGE — tableau de bord ════════════════════════ */
+function viewDash(){
+  const total = LEADS.length;
+  const signed = LEADS.filter(l=>l.stage==='sign').length;
+  const active = LEADS.filter(l=>!['sign','lost'].includes(l.stage)).length;
+  const conv = total? Math.round(signed/total*100):0;
+  const bySrc = {};
+  LEADS.forEach(l=> bySrc[l.src]=(bySrc[l.src]||0)+1);
+  const maxSrc = Math.max(...Object.values(bySrc),1);
+  const bars = Object.entries(bySrc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-lab">${esc(k)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxSrc*100)}%"></div></div>
+      <div class="bar-val">${v}</div>
+    </div>`).join('');
+  const feed = [
+    {c:'var(--ok)',      tx:'<b>Léa & Hugo Chaix</b> ont signé leur CCMI', ti:'il y a 2 h · via Apporteur'},
+    {c:'var(--signal)',  tx:'RDV agence programmé avec <b>Sandrine Morel</b>', ti:'il y a 5 h · via Google Ads'},
+    {c:'var(--faible)',  tx:'Nouveau lead <b>Karim Belkacem</b> (configurateur)', ti:'hier · Meta / Insta'},
+    {c:'var(--attente)', tx:'<b>Thomas Giraud</b> a été contacté par le commercial', ti:'hier · SEO local'},
+    {c:'var(--attenue)', tx:'<b>Julien & Camille Reynaud</b> qualifiés — budget 300–400 k€', ti:'il y a 2 j · Configurateur'},
+  ].map(f=>`<div class="feed-i"><div class="feed-dot" style="background:${f.c}"></div><div><div class="feed-tx">${f.tx}</div><div class="feed-ti">${f.ti}</div></div></div>`).join('');
+  return kpiRow([
+    {l:'Leads ce mois', v:total, t:'▲ +18 % vs mois dernier'},
+    {l:'Pipeline actif', v:active, t:'▲ 3 nouveaux aujourd’hui'},
+    {l:'Taux de signature', v:conv+'%', accent:true, t:'▲ +4 pts'},
+    {l:'Coût par lead', v:'38&nbsp;€', tCls:'up', t:'▼ −12 % (optimisé)'},
+  ]) + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Leads par source</div>
+      <div class="card-sub">D’où viennent vos prospects ce mois-ci</div>
+      <div class="bars">${bars}</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Activité récente</div>
+      <div class="card-sub">Derniers mouvements du pipeline</div>
+      <div class="feed">${feed}</div>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════ CONVERSION — pipeline de leads ════════════════════════ */
+function viewLeads(){
+  const total = LEADS.length;
+  const active = LEADS.filter(l=>!['sign','lost'].includes(l.stage)).length;
+  const signed = LEADS.filter(l=>l.stage==='sign').length;
+  const conv = total? Math.round(signed/total*100):0;
+  const stats = `
+    <div class="pipe-stats">
+      <div class="pstat"><b>${total}</b><span>Total leads</span></div>
+      <div class="pstat"><b>${active}</b><span>En cours</span></div>
+      <div class="pstat"><b>${signed}</b><span>Signés</span></div>
+      <div class="pstat"><b class="accent">${conv}%</b><span>Conversion</span></div>
+    </div>`;
+  const cols = STAGES.map(s=>{
+    const list = LEADS.filter(l=>l.stage===s.id);
+    const cards = list.map(l=>leadCard(l)).join('') || `<div class="col-empty">—</div>`;
+    return `
+      <div class="col" data-stage="${s.id}">
+        <div class="col-h">
+          <div class="nm"><span class="col-stripe" style="background:${s.c}"></span>${s.nm}</div>
+          <div class="ct">${list.length}</div>
+        </div>
+        ${cards}
+      </div>`;
+  }).join('');
+  return stats + `<div class="board">${cols}</div>`;
+}
+
+function leadCard(l){
+  const idx = STAGES.findIndex(s=>s.id===l.stage);
+  const prev = idx>0 ? `<span class="mv" role="button" tabindex="0" title="Reculer" onclick="move(${l.id},-1)">←</span>` : '';
+  const next = idx<STAGES.length-1 ? `<span class="mv" role="button" tabindex="0" title="Avancer" onclick="move(${l.id},1)">→</span>` : '';
+  return `
+  <div class="lead" draggable="true" data-id="${l.id}">
+    <div class="lead-nm">${esc(l.name)}</div>
+    <div class="lead-meta">${esc(l.zone)}</div>
+    <div class="lead-tags"><span class="tag">${esc(l.src)}</span><span class="tag bud">${esc(l.bud)}</span></div>
+    <div class="lead-mv">${prev}${next}</div>
+  </div>`;
+}
+function move(id, dir){
+  const l = LEADS.find(x=>x.id===id); if(!l) return;
+  const idx = STAGES.findIndex(s=>s.id===l.stage);
+  const ni = Math.min(Math.max(idx+dir,0),STAGES.length-1);
+  l.stage = STAGES[ni].id;
+  sbUpdateLeadStage(l.id, l.stage);   // persistance en arrière-plan (non bloquant)
+  renderView();
+}
+
+let dragId = null;
+function bindDnD(){
+  document.querySelectorAll('.lead').forEach(el=>{
+    el.addEventListener('dragstart',e=>{ dragId=+el.dataset.id; el.classList.add('dragging'); });
+    el.addEventListener('dragend',e=>{ el.classList.remove('dragging'); dragId=null; });
+  });
+  document.querySelectorAll('.col').forEach(col=>{
+    col.addEventListener('dragover',e=>{ e.preventDefault(); col.classList.add('drop'); });
+    col.addEventListener('dragleave',e=>col.classList.remove('drop'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault(); col.classList.remove('drop');
+      const l = LEADS.find(x=>x.id===dragId);
+      if(l){ l.stage = col.dataset.stage; sbUpdateLeadStage(l.id, l.stage); renderView(); }
+    });
+  });
+  /* Clavier : Entrée / Espace sur les flèches ← → */
+  document.querySelectorAll('.mv').forEach(b=>b.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); b.click(); } }));
+}
+
+/* ════════════════════════ RÉSEAU — apporteurs ════════════════════════ */
+function viewApporteurs(){
+  const total = APPORTEURS.length;
+  const actifs = APPORTEURS.filter(a=>a.status==='actif').length;
+  const leads  = APPORTEURS.reduce((s,a)=>s+a.leads,0);
+  const signed = APPORTEURS.reduce((s,a)=>s+a.signed,0);
+  const due    = APPORTEURS.reduce((s,a)=>s+a.due,0);
+  const fmt    = n => (n||0).toLocaleString('fr-FR') + ' €';
+
+  const stats = `
+    <div class="pipe-stats" style="margin-bottom:22px">
+      <div class="pstat"><b>${total}</b><span>Apporteurs (${actifs} actifs)</span></div>
+      <div class="pstat"><b>${leads}</b><span>Leads apportés (cumul)</span></div>
+      <div class="pstat"><b>${signed}</b><span>Signatures via réseau</span></div>
+      <div class="pstat"><b class="accent">${fmt(due)}</b><span>Commissions cumulées</span></div>
+    </div>`;
+
+  const cards = APPORTEURS.map(a=>{
+    const initials = a.nm.split(' ').filter(Boolean).map(x=>x[0]).slice(0,2).join('').toUpperCase();
+    const inactive = a.status==='inactif';
+    return `
+    <div class="app-card ${inactive?'off':''}">
+      <div class="app-head">
+        <div class="ini">${esc(initials)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="app-nm">${esc(a.nm)}</div>
+          <div class="app-org">${esc(a.org)}</div>
+        </div>
+        ${chip(a.status, inactive?'red':'green')}
+      </div>
+      <div class="app-tags">
+        <span class="tag">${esc(a.type)}</span>
+        <span class="tag bud">Commission ${esc(a.com)}</span>
+      </div>
+      <div class="app-stats">
+        <div><div class="v">${a.leads}</div><div class="l">Leads</div></div>
+        <div><div class="v" style="color:var(--ok)">${a.signed}</div><div class="l">Signés</div></div>
+        <div><div class="v">${fmt(a.due)}</div><div class="l">Cumul</div></div>
+      </div>
+      <div class="app-contact">
+        <span style="flex:1;min-width:0">${ICO.mail}<span class="ell">${esc(a.email)}</span></span>
+        <span class="tel">${ICO.phone}${esc(a.tel)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  return stats + `<div class="app-grid">${cards}</div>`;
+}
+
+/* Modale nouvel apporteur */
+function openAppModal(){
+  const ov = document.getElementById('ovApp');
+  ov.classList.add('show');
+  setTimeout(()=>document.getElementById('a-nm').focus(), 30);
+}
+function closeAppModal(){ document.getElementById('ovApp').classList.remove('show'); }
+async function saveApporteur(){
+  const v = id => (document.getElementById(id).value || '').trim();
+  const nm = v('a-nm'); if(!nm){ document.getElementById('a-nm').focus(); return; }
+  const app = { nm, org:v('a-org')||'—', type:v('a-type'),
+                tel:v('a-tel')||'—', email:v('a-email')||'—',
+                com:v('a-com')||'1.0 %', status:'actif' };
+  const dbId = await sbInsertApporteur(app);
+  APPORTEURS.unshift({ id: dbId || (++appSeq), ...app, leads:0, signed:0, due:0 });
+  ['a-nm','a-org','a-tel','a-email','a-com'].forEach(i=>document.getElementById(i).value='');
+  closeAppModal();
+  renderView();
+}
+
+/* ════════════════════════ ACQUISITION ════════════════════════ */
+
+/* — SEO local : pages locales générées ————————————————————— */
+let SEO_PAGES = [
+  {ville:'Valence',          mc:'construire maison Valence',               pos:3,  vues:2148, leads:11, status:'indexée'},
+  {ville:'Montélimar',       mc:'constructeur maison Montélimar',          pos:5,  vues:1654, leads:8,  status:'indexée'},
+  {ville:'Romans-sur-Isère', mc:'maison PTZ Romans-sur-Isère',             pos:8,  vues:982,  leads:4,  status:'indexée'},
+  {ville:'Crest',            mc:'maison contemporaine Crest',              pos:2,  vues:1207, leads:7,  status:'indexée'},
+  {ville:'Chabeuil',         mc:'maison plain-pied Chabeuil',              pos:11, vues:540,  leads:2,  status:'indexée'},
+  {ville:'Livron-sur-Drôme', mc:'CCMI Livron prix',                        pos:14, vues:312,  leads:1,  status:'indexée'},
+  {ville:'Dieulefit',        mc:'constructeur Dieulefit Drôme provençale', pos:18, vues:188,  leads:0,  status:'en attente'},
+  {ville:'Bourg-lès-Valence',mc:'maison neuve Bourg-lès-Valence',          pos:7,  vues:721,  leads:3,  status:'indexée'},
+  {ville:'Pierrelatte',      mc:'construire à Pierrelatte',                pos:9,  vues:475,  leads:2,  status:'indexée'},
+];
+function viewSeo(){
+  const total = SEO_PAGES.length;
+  const indexed = SEO_PAGES.filter(p=>p.status==='indexée').length;
+  const trafic = SEO_PAGES.reduce((s,p)=>s+p.vues,0);
+  const leads = SEO_PAGES.reduce((s,p)=>s+p.leads,0);
+  const top10 = SEO_PAGES.filter(p=>p.pos && p.pos<=10).length;
+  const kpis = kpiRow([
+    {l:'Pages publiées', v:total, t:`▲ ${indexed} indexées`},
+    {l:'Top 10 Google', v:top10, accent:true, t:`▲ +3 ce mois`},
+    {l:'Trafic SEO (30j)', v:fmtNum(trafic), t:'▲ +24 %'},
+    {l:'Leads SEO', v:leads, t:'▲ +6 vs M-1'},
+  ]);
+  const rows = SEO_PAGES.map(p=>`
+    <tr>
+      <td class="strong">${p.ville}</td>
+      <td class="sec">${p.mc}</td>
+      <td class="c">${p.pos ? chip('#'+p.pos, p.pos<=3?'green':p.pos<=10?'blue':'stone') : chip('—','stone')}</td>
+      <td class="n">${fmtNum(p.vues)}</td>
+      <td class="n strong">${p.leads}</td>
+      <td class="c">${chip(p.status, p.status==='indexée'?'green':'amber')}</td>
+    </tr>`).join('');
+  return kpis + `
+  <div class="card scroll-x">
+    <div class="card-t">Pages locales publiées</div>
+    <div class="card-sub">Une URL par commune × type de prestation — indexée par Google Search Console</div>
+    <table class="tbl">
+      <thead><tr>
+        <th>Commune</th><th>Mot-clé cible</th><th class="c">Position</th>
+        <th class="r">Vues 30j</th><th class="r">Leads</th><th class="c">État</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+function seoGenerate(){
+  const villes = ['Loriol-sur-Drôme','Saulce-sur-Rhône','Tain-l’Hermitage','Nyons','Allex'];
+  const v = villes[Math.floor(Math.random()*villes.length)];
+  SEO_PAGES.unshift({ville:v, mc:'construire maison '+v, pos:0, vues:0, leads:0, status:'en attente'});
+  renderView();
+  notify('Page « construire maison '+v+' » générée — en attente d’indexation.','ok');
+}
+
+/* — Réseaux sociaux : calendrier éditorial ——————————————— */
+const SOCIAL_POSTS = [
+  {date:'Aujourd’hui · 18h',  net:'Instagram',  type:'Reel',     titre:'Visite chantier en cours — Crest',            statut:'programmé', port:'—'},
+  {date:'Demain · 12h',        net:'Facebook',   type:'Carrousel',titre:'5 erreurs à éviter quand on construit',      statut:'programmé', port:'—'},
+  {date:'Demain · 19h',        net:'TikTok',     type:'Vidéo',    titre:'Time-lapse pose charpente — Valence',        statut:'programmé', port:'—'},
+  {date:'Hier · 18h',          net:'Instagram',  type:'Reel',     titre:'Avant/après terrassement — Chabeuil',        statut:'publié',    port:'8,2k'},
+  {date:'Hier · 11h',          net:'TikTok',     type:'Vidéo',    titre:'Q&A avec Mathieu, conducteur de travaux',    statut:'publié',    port:'14,3k'},
+  {date:'Il y a 2 j',          net:'Facebook',   type:'Photo',    titre:'Remise des clés — famille Guillot, Montélimar', statut:'publié', port:'3,1k'},
+];
+const NET_ABBR = n => ({'Instagram':'IG','TikTok':'TT','Facebook':'FB','YouTube':'YT','Google':'GO','Meta':'ME','LinkedIn':'LI'})[n] || n.slice(0,2).toUpperCase();
+function viewSocial(){
+  const programmes = SOCIAL_POSTS.filter(p=>p.statut==='programmé').length;
+  const kpis = kpiRow([
+    {l:'Posts programmés', v:programmes, t:'▲ 6 cette semaine'},
+    {l:'Portée 30j', v:'82,4k', accent:true, t:'▲ +31 %'},
+    {l:'Engagement', v:'5,8 %', t:'▲ +0,6 pt'},
+    {l:'Abonnés Insta', v:'4 217', t:'▲ +148 ce mois'},
+  ]);
+  const cards = SOCIAL_POSTS.map(p=>`
+    <div class="rc">
+      <div class="sq" title="${p.net}">${NET_ABBR(p.net)}</div>
+      <div class="rc-main">
+        <div class="rc-t">${p.titre}</div>
+        <div class="rc-s">${p.net} · ${p.type} · <span class="mono">${p.date}</span></div>
+      </div>
+      <div class="rc-end">
+        ${p.port!=='—'?`<div class="metric"><div class="l">Portée</div><div class="v">${p.port}</div></div>`:''}
+        ${chip(p.statut, p.statut==='publié'?'green':'amber')}
+      </div>
+    </div>`).join('');
+  return kpis + sectionTitle('Calendrier éditorial', 'Génération + publication automatique multi-réseaux, déclinaison locale par agence') + cards;
+}
+
+/* — Publicité : campagnes Google/Meta —————————————————— */
+const ADS_CAMPS = [
+  {net:'Google', nm:'Construire à Valence — search', budget:850, impr:124800, clics:2814, cpc:0.30, leads:42, roas:3.8, etat:'active'},
+  {net:'Google', nm:'PTZ 2025 Drôme — search',       budget:600, impr:86200,  clics:1925, cpc:0.31, leads:31, roas:4.2, etat:'active'},
+  {net:'Meta',   nm:'Reels visite maison témoin',    budget:450, impr:215600, clics:3812, cpc:0.12, leads:28, roas:5.1, etat:'active'},
+  {net:'Meta',   nm:'Lookalike clients livrés',      budget:380, impr:142300, clics:2241, cpc:0.17, leads:19, roas:2.9, etat:'active'},
+  {net:'TikTok', nm:'Time-lapse chantier',           budget:200, impr:418200, clics:5128, cpc:0.04, leads:14, roas:2.1, etat:'test'},
+  {net:'Google', nm:'Constructeur Montélimar',       budget:0,   impr:0,      clics:0,    cpc:0,    leads:0,  roas:0,   etat:'pause'},
+];
+function viewAds(){
+  const t = ADS_CAMPS.reduce((a,c)=>({budget:a.budget+c.budget,leads:a.leads+c.leads,clics:a.clics+c.clics}),{budget:0,leads:0,clics:0});
+  const cpl = t.leads ? Math.round(t.budget/t.leads) : 0;
+  const kpis = kpiRow([
+    {l:'Budget actif (j)', v:fmtEur(t.budget), t:'▼ −5 % vs sem.'},
+    {l:'Leads ads 30j', v:t.leads*30, accent:true, t:'▲ +12 %'},
+    {l:'CPL moyen', v:fmtEur(cpl), tCls:'up', t:'▼ −18 % (optimisé)'},
+    {l:'ROAS portefeuille', v:'3,4×', t:'▲ +0,4'},
+  ]);
+  const rows = ADS_CAMPS.map(c=>`
+    <div class="rc ${c.etat==='pause'?'muted':''}">
+      <div class="sq" title="${c.net}">${NET_ABBR(c.net)}</div>
+      <div class="rc-main">
+        <div class="rc-t">${c.nm}</div>
+        <div class="rc-s">${c.net} · <span class="mono">${fmtNum(c.impr)}</span> impressions · <span class="mono">${fmtNum(c.clics)}</span> clics</div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="l">Budget/j</div><div class="v">${fmtEur(c.budget)}</div></div>
+        <div class="metric"><div class="l">CPC</div><div class="v">${fmtDec(c.cpc,2)} €</div></div>
+        <div class="metric"><div class="l">Leads</div><div class="v em">${c.leads}</div></div>
+        <div class="metric"><div class="l">ROAS</div><div class="v ${c.roas>=3?'ok':c.roas>0?'att':'faible'}">${fmtDec(c.roas,1)}×</div></div>
+      </div>
+      <div>${chip(c.etat, c.etat==='active'?'green':c.etat==='test'?'amber':'stone')}</div>
+    </div>`).join('');
+  return kpis + sectionTitle('Campagnes en cours', 'Google Ads + Meta + TikTok, pilotage centralisé multi-agences') + rows;
+}
+
+/* — Détection projets : signaux open data ——————————————— */
+let RADAR_SIG = [];   // rempli depuis om_radar_signaux
+function viewRadar(){
+  const chauds = RADAR_SIG.filter(s=>s.st==='chaud').length;
+  const tiedes = RADAR_SIG.filter(s=>s.st==='tiède').length;
+  const kpis = kpiRow([
+    {l:'Signaux 30j', v:RADAR_SIG.length, t:'▲ +4 vs M-1'},
+    {l:'Chauds (>80)', v:chauds, accent:true, t:'▲ priorité commerciale'},
+    {l:'Tièdes (50-80)', v:tiedes, t:'À surveiller'},
+    {l:'Avance vs Google', v:'~12 sem.', t:'Moyenne par projet'},
+  ]);
+  const cards = RADAR_SIG.map(s=>`
+    <div class="rc rc-block">
+      <div class="rc-top">
+        <div style="flex:1;min-width:200px">
+          <div class="rc-t">${s.zone}</div>
+          <div class="rc-s">${s.sig} · terrain <span class="mono">${s.terrain}</span></div>
+        </div>
+        <div class="rc-end">
+          ${chip(s.type,'blue')}
+          ${chip(s.date,'stone')}
+          ${chip('Score '+s.score, s.st==='chaud'?'red':s.st==='tiède'?'amber':'stone')}
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-sm" onclick="notify('Lead créé dans la pipeline','ok')">+ Convertir en lead</button>
+        <button class="btn btn-sm" onclick="notify('Apporteur tagué','ok')">Tag apporteur</button>
+        <button class="btn btn-sm" onclick="notify('Signal ignoré')">Ignorer</button>
+      </div>
+    </div>`).join('');
+  return kpis + sectionTitle('Signaux marché détectés', 'Permis de construire, DIA, mutations cadastrales — croisés avec votre zone d’activité') + cards;
+}
+
+/* ════════════════════════ CONVERSION ════════════════════════ */
+
+/* — Simulateur PTZ + capacité d’emprunt ——————————————— */
+let SIMU = { revenus:3800, apport:25000, duree:25, taux:3.5, zone:'B1' };
+function viewSimu(){
+  /* Capacité d’emprunt simplifiée : taux d’endettement max 33 % → mensualité max
+     → capital empruntable via formule de calcul. */
+  const mensMax = SIMU.revenus * 0.33;
+  const r = SIMU.taux / 100 / 12;
+  const n = SIMU.duree * 12;
+  const capital = mensMax * (1 - Math.pow(1+r, -n)) / r;
+  /* PTZ 2025 simplifié : montant = 30 % du coût du projet en zones B1/B2/C
+     pour primo-accédant, plafonné selon revenus. Ici approximation lisible. */
+  const projet = capital + SIMU.apport;
+  const ptzPct = ({A:0.50,B1:0.40,B2:0.40,C:0.20})[SIMU.zone] || 0.30;
+  const ptz = Math.min(projet * ptzPct, 100000);
+  const kpis = kpiRow([
+    {l:'Capacité d’emprunt', v:fmtEur(Math.round(capital/1000)*1000), accent:true},
+    {l:'Projet total max', v:fmtEur(Math.round(projet/1000)*1000), t:'apport inclus'},
+    {l:'Mensualité', v:fmtEur(Math.round(mensMax))+' /mois', t:'taux d’endettement 33 %'},
+    {l:'PTZ 2025 estimé', v:fmtEur(Math.round(ptz/1000)*1000), t:`zone ${SIMU.zone}`},
+  ]);
+  return kpis + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Paramètres de la simulation</div>
+      <div class="card-sub">Les visiteurs entrent ces valeurs sur votre site, vous récupérez un lead qualifié à la fin.</div>
+      <div class="ctl">
+        <div>
+          <label class="ctl-l" for="simu-rev">Revenus nets mensuels (foyer)</label>
+          <div class="range-row">
+            <input id="simu-rev" type="range" min="1500" max="10000" step="100" value="${SIMU.revenus}"/>
+            <div class="range-v">${fmtEur(SIMU.revenus)}</div>
+          </div>
+        </div>
+        <div>
+          <label class="ctl-l" for="simu-app">Apport personnel</label>
+          <div class="range-row">
+            <input id="simu-app" type="range" min="0" max="150000" step="1000" value="${SIMU.apport}"/>
+            <div class="range-v">${fmtEur(SIMU.apport)}</div>
+          </div>
+        </div>
+        <div>
+          <label class="ctl-l" for="simu-dur">Durée du prêt (années)</label>
+          <div class="range-row">
+            <input id="simu-dur" type="range" min="10" max="30" step="1" value="${SIMU.duree}"/>
+            <div class="range-v">${SIMU.duree} ans</div>
+          </div>
+        </div>
+        <div class="fld-row" style="gap:10px">
+          <div>
+            <label class="ctl-l" for="simu-tx">Taux estimé (%)</label>
+            <input id="simu-tx" class="inp mono" type="number" step="0.1" value="${SIMU.taux}"/>
+          </div>
+          <div>
+            <label class="ctl-l" for="simu-zn">Zone PTZ 2025</label>
+            <select id="simu-zn" class="inp">
+              <option value="A" ${SIMU.zone==='A'?'selected':''}>A — métropoles tendues</option>
+              <option value="B1" ${SIMU.zone==='B1'?'selected':''}>B1 — grandes agglomérations</option>
+              <option value="B2" ${SIMU.zone==='B2'?'selected':''}>B2 — villes moyennes</option>
+              <option value="C" ${SIMU.zone==='C'?'selected':''}>C — communes rurales</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div class="card-t">Modèles compatibles</div>
+        <div class="card-sub">Sélection automatique selon votre capacité</div>
+        ${[
+          {nm:'Plain-pied T4 100 m²', prix:215000, lab:'Modèle « Roselin »'},
+          {nm:'Plain-pied T5 115 m²', prix:248000, lab:'Modèle « Mésange »'},
+          {nm:'Étage T5 130 m²', prix:289000, lab:'Modèle « Hirondelle »'},
+        ].filter(m=>m.prix<=projet).map(m=>`
+          <div class="model-row">
+            <div><div class="strong">${m.nm}</div><div class="rc-s">${m.lab}</div></div>
+            <div class="px">${fmtEur(m.prix)}</div>
+          </div>`).join('') || `<div class="rc-s" style="padding:14px 0">Aucun modèle compatible — augmentez l’apport ou la durée.</div>`}
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="notify('Lead enregistré dans la pipeline avec dossier de simulation','ok')">Recevoir mon dossier complet</button>
+    </div>
+  </div>`;
+}
+function bindSimu(){
+  const upd = ()=>{
+    SIMU.revenus = +document.getElementById('simu-rev').value;
+    SIMU.apport  = +document.getElementById('simu-app').value;
+    SIMU.duree   = +document.getElementById('simu-dur').value;
+    SIMU.taux    = +document.getElementById('simu-tx').value || 3.5;
+    SIMU.zone    = document.getElementById('simu-zn').value;
+    renderView();
+  };
+  ['simu-rev','simu-app','simu-dur','simu-tx','simu-zn'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.addEventListener('change',upd);
+  });
+}
+
+/* — Configurateur 3D (simplifié 2D) ——————————————————— */
+let CONFIG = { surface:110, chambres:3, etage:false, garage:true, terrasse:true, pompe:true, finition:'standard' };
+function viewConfig(){
+  /* Pricing simple : base + surface + options. */
+  const base = 145000;
+  const prixM2 = 1450;
+  const opt = (CONFIG.etage?15000:0) + (CONFIG.garage?12000:0) + (CONFIG.terrasse?6000:0) + (CONFIG.pompe?9500:0);
+  const fin = ({standard:0,confort:18000,premium:34000})[CONFIG.finition];
+  const prix = base + CONFIG.surface*prixM2 + opt + fin;
+  const kpis = kpiRow([
+    {l:'Surface', v:CONFIG.surface+' m²'},
+    {l:'Chambres', v:CONFIG.chambres},
+    {l:'Prix estimé', v:fmtEur(prix), accent:true},
+    {l:'Mensualité 25 ans', v:fmtEur(Math.round(prix*0.005))+' /mois', t:'(taux 3,5 %)'},
+  ]);
+  const opts = [
+    {k:'etage', lab:'Étage R+1', sub:'+15 000 €', val:CONFIG.etage},
+    {k:'garage', lab:'Garage attenant', sub:'+12 000 €', val:CONFIG.garage},
+    {k:'terrasse', lab:'Terrasse couverte', sub:'+6 000 €', val:CONFIG.terrasse},
+    {k:'pompe', lab:'Pompe à chaleur air/eau', sub:'+9 500 €', val:CONFIG.pompe},
+  ];
+  return kpis + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">Composez votre maison</div>
+      <div class="card-sub">Le visiteur ajuste, le prix se met à jour en temps réel</div>
+      <div class="ctl">
+        <div>
+          <label class="ctl-l" for="cfg-surf">Surface habitable</label>
+          <div class="range-row">
+            <input id="cfg-surf" type="range" min="70" max="180" step="5" value="${CONFIG.surface}"/>
+            <div class="range-v">${CONFIG.surface} m²</div>
+          </div>
+        </div>
+        <div>
+          <span class="ctl-l">Chambres</span>
+          <div class="seg">
+            ${[2,3,4,5].map(n=>`<button class="btn ${CONFIG.chambres===n?'btn-primary':''}" aria-pressed="${CONFIG.chambres===n}" onclick="CONFIG.chambres=${n};renderView()">${n}</button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <span class="ctl-l">Options</span>
+          ${opts.map(o=>`
+            <label class="opt ${o.val?'on':''}">
+              <input type="checkbox" ${o.val?'checked':''} onchange="CONFIG.${o.k}=this.checked;renderView()"/>
+              <div style="flex:1"><div style="font-weight:500">${o.lab}</div></div>
+              <div class="p">${o.sub}</div>
+            </label>`).join('')}
+        </div>
+        <div>
+          <span class="ctl-l">Niveau de finition</span>
+          <div class="seg">
+            ${[{k:'standard',l:'Standard'},{k:'confort',l:'Confort (+18 k€)'},{k:'premium',l:'Premium (+34 k€)'}].map(f=>`<button class="btn ${CONFIG.finition===f.k?'btn-primary':''}" style="font-size:12px" aria-pressed="${CONFIG.finition===f.k}" onclick="CONFIG.finition='${f.k}';renderView()">${f.l}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card recap">
+      <div>
+        <div class="card-t">Votre projet</div>
+        <div class="card-sub">Aperçu détaillé · économies CCMI incluses</div>
+        <div class="recap-l"><span>Construction (base + surface)</span><b>${fmtEur(base+CONFIG.surface*prixM2)}</b></div>
+        <div class="recap-l"><span>Options</span><b>${fmtEur(opt)}</b></div>
+        <div class="recap-l"><span>Finition ${CONFIG.finition}</span><b>${fmtEur(fin)}</b></div>
+        <div class="recap-sep"></div>
+        <div class="recap-tot"><span>Total estimé</span><b>${fmtEur(prix)}</b></div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:20px" onclick="notify('Dossier envoyé par email — lead créé dans la pipeline (simulation)','ok')">Recevoir mon dossier maison</button>
+    </div>
+  </div>`;
+}
+function bindConfig(){
+  const surf = document.getElementById('cfg-surf');
+  if (surf) surf.addEventListener('change', ()=>{ CONFIG.surface=+surf.value; renderView(); });
+}
+
+/* — Formulaires : liste de formulaires de capture ———————— */
+const FORMS_LIST = [
+  {nm:'Capture landing PTZ',      placement:'/simulateur-ptz',        vues:4218, soumis:286, conv:6.8, statut:'actif'},
+  {nm:'Formulaire configurateur', placement:'/configurer-ma-maison',  vues:2541, soumis:189, conv:7.4, statut:'actif'},
+  {nm:'Inscription JPO Valence',  placement:'/jpo-valence',           vues:982,  soumis:74,  conv:7.5, statut:'actif'},
+  {nm:'Demande de brochure',      placement:'/brochure',              vues:1654, soumis:118, conv:7.1, statut:'actif'},
+  {nm:'Contact agence Montélimar',placement:'/agences/montelimar',    vues:621,  soumis:42,  conv:6.8, statut:'actif'},
+  {nm:'Newsletter conseils CCMI', placement:'/blog (sidebar)',        vues:8214, soumis:412, conv:5.0, statut:'actif'},
+];
+function viewForms(){
+  const total = FORMS_LIST.length;
+  const subs = FORMS_LIST.reduce((s,f)=>s+f.soumis,0);
+  const vues = FORMS_LIST.reduce((s,f)=>s+f.vues,0);
+  const avgConv = subs/vues*100;
+  const kpis = kpiRow([
+    {l:'Formulaires actifs', v:total},
+    {l:'Soumissions 30j', v:fmtNum(subs), accent:true, t:'▲ +12 %'},
+    {l:'Taux conv. moyen', v:fmtDec(avgConv,1)+' %', t:'▲ +0,6 pt'},
+    {l:'Anti-spam IA', v:'42', t:'tentatives bloquées'},
+  ]);
+  const cards = FORMS_LIST.map(f=>`
+    <div class="rc">
+      <div class="sq">${ICO.form}</div>
+      <div class="rc-main">
+        <div class="rc-t">${f.nm}</div>
+        <div class="rc-s mono">${f.placement}</div>
+      </div>
+      <div class="metrics">
+        <div class="metric ctr big"><div class="v">${fmtNum(f.vues)}</div><div class="l">Vues</div></div>
+        <div class="metric ctr big"><div class="v em">${f.soumis}</div><div class="l">Soumis</div></div>
+        <div class="metric ctr big"><div class="v ok">${fmtDec(f.conv,1)}%</div><div class="l">Conv.</div></div>
+      </div>
+      ${chip(f.statut,'green')}
+    </div>`).join('');
+  return kpis + sectionTitle('Formulaires de capture', 'Scoring en temps réel + routage par zone géographique + A/B testing intégré') + cards;
+}
+
+/* — Chatbot IA : conversations en cours ——————————————— */
+const BOT_CONVS = [
+  {nm:'Visiteur · Valence',  last:'Quel est le délai pour une maison T4 ?',                   msg:8,  intent:'Délais',       score:'chaud', heure:'il y a 3 min'},
+  {nm:'Visiteur · Romans',   last:'Avez-vous des modèles à étage éligibles au PTZ ?',         msg:14, intent:'Modèles',      score:'chaud', heure:'il y a 11 min'},
+  {nm:'Mme Morel',           last:'Merci, j’ai bien reçu le RDV agence vendredi 14h',         msg:22, intent:'Confirmation', score:'tiède', heure:'il y a 1 h'},
+  {nm:'Visiteur · Crest',    last:'Bonjour, j’aimerais en savoir plus sur le PTZ',            msg:3,  intent:'Découverte',   score:'froid', heure:'il y a 2 h'},
+  {nm:'M. Giraud',           last:'Pouvez-vous me rappeler demain matin ?',                   msg:16, intent:'Rappel',       score:'chaud', heure:'il y a 4 h'},
+];
+function viewBot(){
+  const kpis = kpiRow([
+    {l:'Conversations 30j', v:'382', t:'▲ +47 % vs M-1'},
+    {l:'RDV pris auto', v:'58', accent:true, t:'▲ taux qualif. 64 %'},
+    {l:'Temps moyen', v:'4,2 min', t:'fin de conversation'},
+    {l:'Coût/lead', v:'2,30 €', tCls:'up', t:'▼ vs 38 € canal payant'},
+  ]);
+  const cards = BOT_CONVS.map(c=>`
+    <div class="rc">
+      <div class="sq" style="border-radius:50%">${ICO.chat}</div>
+      <div class="rc-main">
+        <div class="rc-t">${c.nm} ${chip(c.intent,'blue')}</div>
+        <div class="rc-s ell">${c.last}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${chip(c.score, c.score==='chaud'?'red':c.score==='tiède'?'amber':'stone')}
+        <div class="rc-s mono" style="margin-top:5px">${c.msg} msg · ${c.heure}</div>
+      </div>
+    </div>`).join('');
+  return kpis + sectionTitle('Conversations en cours', 'Agent IA Mistral · qualification 8 critères CCMI · prise de RDV automatique dans l’agenda commercial') + cards + `
+  <div class="card" style="margin-top:18px">
+    <div class="card-t">Canaux connectés</div>
+    <div class="card-sub">Le même agent répond partout, avec contexte unifié</div>
+    <div class="channels">
+      ${[{nm:'Chat web',etat:'actif'},{nm:'WhatsApp Business',etat:'actif'},{nm:'Messenger',etat:'actif'},{nm:'SMS',etat:'inactif'},{nm:'Téléphone (voix IA)',etat:'pilote'}].map(c=>`
+        <div class="channel ${c.etat==='actif'?'':'off'}"><b>${c.nm}</b>${chip(c.etat,c.etat==='actif'?'green':c.etat==='pilote'?'amber':'stone')}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════ ACTIVATION ════════════════════════ */
+
+/* — Automation : scénarios cycle long CCMI ——————————————— */
+const FLOWS = [
+  {nm:'Welcome — nouveau lead',           etape:'Pré-RDV',         dec:'Lead créé',                actifs:142, signes:24, taux:17, etat:'actif'},
+  {nm:'Relance après RDV agence',         etape:'Post-RDV',        dec:'RDV terminé · décision attendue', actifs:38, signes:11, taux:29, etat:'actif'},
+  {nm:'Visite terrain → dossier banque',  etape:'Pré-signature',   dec:'Terrain visité',           actifs:24, signes:9, taux:38, etat:'actif'},
+  {nm:'Relance bancaire (J+15)',          etape:'Pré-signature',   dec:'Dossier banque envoyé',    actifs:18, signes:7, taux:39, etat:'actif'},
+  {nm:'Pré-CCMI — pièces manquantes',     etape:'Signature',       dec:'CCMI prêt à signer',       actifs:6,  signes:5, taux:83, etat:'actif'},
+  {nm:'Post-livraison — demande d’avis',  etape:'Post-livraison',  dec:'Livraison J+30',           actifs:11, signes:0, taux:0,  etat:'actif'},
+  {nm:'Anniversaire signature (1 an)',    etape:'Fidélisation',    dec:'1 an après signature',     actifs:23, signes:0, taux:0,  etat:'pause'},
+];
+function viewFlow(){
+  const actifsT = FLOWS.filter(f=>f.etat==='actif').length;
+  const leadsT = FLOWS.reduce((s,f)=>s+f.actifs,0);
+  const signesT = FLOWS.reduce((s,f)=>s+f.signes,0);
+  const kpis = kpiRow([
+    {l:'Scénarios actifs', v:actifsT+' / '+FLOWS.length},
+    {l:'Leads dans flows', v:fmtNum(leadsT), accent:true},
+    {l:'Signatures attribuées', v:signesT, t:'30 derniers jours'},
+    {l:'Gain CA estimé', v:fmtEur(signesT*235000), t:'panier moyen 235 k€'},
+  ]);
+  /* Filet de gauche : progression dans le cycle CCMI */
+  const etapeColor = e => ({'Pré-RDV':'var(--filet-fort)','Post-RDV':'var(--faible)','Pré-signature':'var(--attenue)','Signature':'var(--signal)','Post-livraison':'var(--ok)','Fidélisation':'var(--ok)'})[e] || 'var(--filet-fort)';
+  const cards = FLOWS.map(f=>`
+    <div class="rc ${f.etat==='pause'?'muted':''}">
+      <div class="stripe" style="background:${etapeColor(f.etape)}"></div>
+      <div class="rc-main">
+        <div class="rc-t">${f.nm}</div>
+        <div class="rc-s">Déclencheur : ${f.dec}</div>
+      </div>
+      <div>${chip(f.etape,'neutral')}</div>
+      <div class="metrics">
+        <div class="metric"><div class="l">Actifs</div><div class="v">${f.actifs}</div></div>
+        <div class="metric"><div class="l">Signés</div><div class="v em">${f.signes}</div></div>
+      </div>
+      <div>${chip(f.etat, f.etat==='actif'?'green':'stone')}</div>
+    </div>`).join('');
+  return kpis + sectionTitle('Scénarios automatisés', 'Email + SMS + WhatsApp, déclenchés par étape projet · synchro OniPilote') + cards;
+}
+
+/* — SMS & WhatsApp : campagnes ————————————————————— */
+const SMS_CAMPS = [
+  {nm:'JPO Montélimar — fin d’été',   canal:'SMS',      dest:842,  envoyes:842, ouv:96, repondu:34, etat:'envoyé'},
+  {nm:'Relance dossier PTZ',          canal:'WhatsApp', dest:118,  envoyes:118, ouv:91, repondu:42, etat:'envoyé'},
+  {nm:'Visite maison témoin Chabeuil',canal:'SMS',      dest:286,  envoyes:286, ouv:88, repondu:18, etat:'envoyé'},
+  {nm:'Programme parrainage',         canal:'SMS',      dest:412,  envoyes:412, ouv:84, repondu:11, etat:'envoyé'},
+  {nm:'JPO Valence — automne',        canal:'SMS',      dest:621,  envoyes:0,   ouv:0,  repondu:0,  etat:'programmé'},
+];
+function viewSms(){
+  const t = SMS_CAMPS.reduce((a,c)=>({d:a.d+c.dest, e:a.e+c.envoyes, r:a.r+c.repondu}),{d:0,e:0,r:0});
+  const tauxRep = t.e ? fmtDec(t.r/t.e*100,1) : 0;
+  const kpis = kpiRow([
+    {l:'Envois 30j', v:fmtNum(t.e)},
+    {l:'Taux ouverture moyen', v:'89 %', accent:true, t:'SMS 96 % · WhatsApp 91 %'},
+    {l:'Taux de réponse', v:tauxRep+' %', t:'▲ +2,1 pts'},
+    {l:'Coût moyen / msg', v:'0,055 €', t:'opérateur pro'},
+  ]);
+  const canalIc = c => c==='WhatsApp' ? ICO.chat : ICO.send;
+  const rows = SMS_CAMPS.map(c=>`
+    <div class="rc">
+      <div class="sq" title="${c.canal}">${canalIc(c.canal)}</div>
+      <div class="rc-main"><div class="rc-t">${c.nm}</div><div class="rc-s">${c.canal} · <span class="mono">${c.dest}</span> destinataires</div></div>
+      <div class="metrics">
+        <div class="metric"><div class="l">Envoyés</div><div class="v">${c.envoyes}</div></div>
+        <div class="metric"><div class="l">Ouv.</div><div class="v">${c.ouv}%</div></div>
+        <div class="metric"><div class="l">Réponses</div><div class="v em">${c.repondu}</div></div>
+      </div>
+      <div>${chip(c.etat, c.etat==='envoyé'?'green':'amber')}</div>
+    </div>`).join('');
+  return kpis + sectionTitle('Campagnes SMS & WhatsApp', 'Envoi de PDF (devis, plans) intégré · qualification automatique des réponses') + rows;
+}
+
+/* — Lead scoring : score prédictif ———————————————————— */
+function viewScore(){
+  /* Scoring simulé sur les LEADS existants : on génère un score basé sur stage + source. */
+  const scoreOf = l => {
+    let s = 30;
+    if (l.stage==='qual') s += 35;
+    if (l.stage==='rdv')  s += 50;
+    if (l.stage==='sign') s += 70;
+    if (l.stage==='cont') s += 15;
+    if (l.bud==='> 400 k€') s += 12;
+    if (l.bud==='300–400 k€') s += 8;
+    if (l.src==='Configurateur' || l.src==='Simulateur PTZ') s += 7;
+    return Math.min(s, 99);
+  };
+  const scored = LEADS.map(l => ({...l, score:scoreOf(l)})).filter(l=>!['sign','lost'].includes(l.stage)).sort((a,b)=>b.score-a.score);
+  const chauds = scored.filter(l=>l.score>=70).length;
+  const tiedes = scored.filter(l=>l.score>=40 && l.score<70).length;
+  const froids = scored.filter(l=>l.score<40).length;
+  const kpis = kpiRow([
+    {l:'Leads scorés', v:scored.length},
+    {l:'Chauds (≥70)', v:chauds, accent:true, t:'à appeler aujourd’hui'},
+    {l:'Tièdes (40-69)', v:tiedes, t:'à nourrir'},
+    {l:'Froids (<40)', v:froids, t:'à requalifier'},
+  ]);
+  const rows = scored.map(l=>{
+    const c = l.score>=70?'red':l.score>=40?'amber':'stone';
+    return `
+    <div class="rc">
+      <div class="rc-main"><div class="rc-t">${esc(l.name)}</div><div class="rc-s">${esc(l.zone)}</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tag">${esc(l.src)}</span><span class="tag bud">${esc(l.bud)}</span></div>
+      <div class="metric"><div class="l">Score</div>
+        <div style="display:flex;align-items:center;gap:9px;justify-content:flex-end;margin-top:2px"><div class="scorebar"><i style="width:${l.score}%;background:${toneVar(c)}"></i></div><span class="v ${toneCls(c)}" style="font-size:15px">${l.score}</span></div>
+      </div>
+      ${chip(l.score>=70?'Chaud — rappeler maintenant':l.score>=40?'tiède':'froid', c)}
+    </div>`;
+  }).join('');
+  return kpis + sectionTitle('Top des leads à activer', 'Modèle IA entraîné sur vos signatures précédentes — alerte « moment idéal »') + rows;
+}
+
+/* — E-réputation : avis Google par agence ——————————————— */
+const REPU_AGENCES = [
+  {nm:'Agence Valence',          avis:184, note:4.8, recents:[{aut:'Camille R.', txt:'Équipe ultra réactive, livraison à la date promise', sup:5, date:'il y a 3 j'}, {aut:'Karim B.', txt:'Suivi de chantier exemplaire, je recommande', sup:5, date:'il y a 5 j'}]},
+  {nm:'Agence Montélimar',       avis:127, note:4.7, recents:[{aut:'Sandrine M.', txt:'Bonne expérience malgré 2 mois de retard sur la livraison', sup:4, date:'il y a 1 sem.'}]},
+  {nm:'Agence Romans-sur-Isère', avis:98,  note:4.9, recents:[{aut:'Thomas G.', txt:'Maison conforme au devis, aucun supplément non prévu, parfait', sup:5, date:'il y a 2 sem.'}]},
+];
+const REPU_DEMANDES = [
+  {nm:'Famille Barral',     livraison:'il y a 18 j', etat:'envoyée'},
+  {nm:'M. Vincent',         livraison:'il y a 24 j', etat:'cliquée'},
+  {nm:'Famille Serre',      livraison:'il y a 31 j', etat:'avis posté ★★★★★'},
+  {nm:'M. & Mme Guillot',   livraison:'il y a 2 j',  etat:'à envoyer'},
+];
+const stars = n => `<span class="stars">${'★'.repeat(Math.round(n))}<span class="off">${'★'.repeat(5-Math.round(n))}</span></span>`;
+function viewRepu(){
+  const totalAvis = REPU_AGENCES.reduce((s,a)=>s+a.avis,0);
+  const noteAvg = fmtDec(REPU_AGENCES.reduce((s,a)=>s+a.note*a.avis,0)/totalAvis, 2);
+  const kpis = kpiRow([
+    {l:'Avis Google total', v:fmtNum(totalAvis)},
+    {l:'Note moyenne', v:'★ '+noteAvg, accent:true, t:'▲ +0,2 sur 6 mois'},
+    {l:'Avis ce mois', v:'14', t:'▲ +5'},
+    {l:'Demandes en attente', v:'1', t:'à envoyer'},
+  ]);
+  const agences = `<div class="agences">${REPU_AGENCES.map(a=>`
+    <div class="card" style="padding:16px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px;gap:10px">
+        <div>
+          <div class="app-nm">${a.nm}</div>
+          <div class="rc-s"><span class="mono">${a.avis}</span> avis Google</div>
+        </div>
+        <div><div class="ag-note">${fmtDec(a.note,1)}</div>${stars(a.note)}</div>
+      </div>
+      ${a.recents.map(r=>`
+        <div class="review">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><b style="font-size:12.5px">${r.aut}</b>${stars(r.sup)}</div>
+          <q>${r.txt}</q>
+          <div class="feed-ti">${r.date}</div>
+        </div>`).join('')}
+    </div>`).join('')}</div>`;
+  const demandes = REPU_DEMANDES.map(d=>{
+    const c = d.etat.startsWith('avis posté')?'green':d.etat==='cliquée'?'amber':d.etat==='envoyée'?'blue':'stone';
+    return `
+    <div class="rc">
+      <div class="rc-main"><div class="rc-t">${d.nm}</div><div class="rc-s">Livraison ${d.livraison}</div></div>
+      ${chip(d.etat, c)}
+    </div>`;
+  }).join('');
+  return kpis + sectionTitle('Réputation par agence', 'Demande d’avis automatique post-livraison · alerte avis négatif · réponses pré-rédigées IA') + agences + sectionTitle('Demandes d’avis récentes') + demandes;
+}
+
+/* ════════════════════════ RÉSEAU ════════════════════════ */
+
+/* — Commissions : à verser aux apporteurs ——————————————— */
+let COMMISSIONS = [];   // rempli depuis om_commissions
+function viewCommissions(){
+  const total = COMMISSIONS.length;
+  const aVerser = COMMISSIONS.filter(c=>c.etat==='à verser');
+  const totalDue = aVerser.reduce((s,c)=>s+c.com,0);
+  const payees = COMMISSIONS.filter(c=>c.etat==='payée');
+  const totalPayees = payees.reduce((s,c)=>s+c.com,0);
+  const kpis = kpiRow([
+    {l:'Commissions ouvertes', v:total},
+    {l:'Montant à verser', v:fmtEur(totalDue), accent:true, t:`${aVerser.length} ligne(s)`},
+    {l:'Versé en '+new Date().getFullYear(), v:fmtEur(totalPayees)},
+    {l:'CCMI cumulé via réseau', v:fmtK(COMMISSIONS.reduce((s,c)=>s+c.ccmi,0))},
+  ]);
+  const rows = COMMISSIONS.map(c=>`
+    <tr>
+      <td class="strong">${esc(c.appNm)}</td>
+      <td>${esc(c.client)}</td>
+      <td class="n">${fmtEur(c.ccmi)}</td>
+      <td class="n strong">${fmtEur(c.com)}</td>
+      <td class="date">déblocage ${fmtDate(c.dec)}${c.payDate?' · payé '+fmtDate(c.payDate):''}</td>
+      <td class="r">${chip(c.etat, c.etat==='payée'?'green':'amber')}</td>
+    </tr>`).join('');
+  return kpis + `
+  <div class="card scroll-x">
+    <div class="card-t">Commissions à verser au réseau</div>
+    <div class="card-sub">Déclenchement au déblocage des fonds banque · factures d’apport générées · paiement SEPA groupé</div>
+    <table class="tbl">
+      <thead><tr>
+        <th>Apporteur</th><th>Client signé</th><th class="r">Montant CCMI</th>
+        <th class="r">Commission</th><th>Dates</th><th class="r">Statut</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+async function commPay(){
+  const aVerser = COMMISSIONS.filter(c=>c.etat==='à verser');
+  if(!aVerser.length){ notify('Aucune commission en attente'); return; }
+  const total = aVerser.reduce((s,c)=>s+c.com,0);
+  if(!(await askConfirm('Paiement groupé', 'Confirmer le paiement SEPA groupé de '+aVerser.length+' commissions ('+fmtEur(total)+') ?', 'Confirmer le paiement'))) return;
+  const today = new Date().toISOString().slice(0,10);
+  const dbIds = aVerser.map(c=>c.id).filter(id=>typeof id === 'number');
+  await sbMarkCommissionsPaid(dbIds, today);
+  aVerser.forEach(c=>{ c.etat='payée'; c.payDate=today; });
+  APPORTEURS.forEach(a=>{ if(aVerser.some(c=>c.apporteur_id===a.id)) a.due = COMMISSIONS.filter(c=>c.apporteur_id===a.id && c.etat==='à verser').reduce((s,c)=>s+c.com,0); });
+  renderView();
+  notify(aVerser.length+' commissions marquées payées — virement SEPA groupé simulé (démo).','ok');
+}
+
+/* — Parrainage : programme parrain ———————————————————— */
+let PARRAINS = [];   // rempli depuis om_parrains + om_filleuls
+function viewParrain(){
+  const totalFilleuls = PARRAINS.reduce((s,p)=>s+p.filleuls.length,0);
+  const signes = PARRAINS.reduce((s,p)=>s+p.filleuls.filter(f=>f.etat==='signé').length, 0);
+  const primesVersees = PARRAINS.reduce((s,p)=>s+p.filleuls.reduce((ss,f)=>ss+f.prime,0), 0);
+  const taux = totalFilleuls? Math.round(signes/totalFilleuls*100):0;
+  const kpis = kpiRow([
+    {l:'Parrains actifs', v:PARRAINS.length},
+    {l:'Filleuls en cours', v:totalFilleuls, accent:true, t:`${signes} signés`},
+    {l:'Taux signature', v:taux+' %', t:'▲ 3× le taux moyen'},
+    {l:'Primes versées', v:fmtEur(primesVersees), t:'cumul 12 mois'},
+  ]);
+  const etatColor = e => ({'signé':'green','visite agence':'amber','lien cliqué':'blue','lien envoyé':'stone'})[e] || 'stone';
+  const cards = PARRAINS.map(p=>{
+    const filleulsHtml = p.filleuls.map(f=>`
+      <div class="model-row">
+        <div><div style="font-weight:500;font-size:13px">${esc(f.nm)}</div><div class="feed-ti">${f.date}</div></div>
+        <div style="display:flex;gap:8px;align-items:center">${chip(f.etat, etatColor(f.etat))}${f.prime?`<span class="mono strong" style="font-size:12.5px">+${fmtEur(f.prime)}</span>`:''}</div>
+      </div>`).join('');
+    return `
+    <div class="card" style="padding:16px 18px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="app-nm">${esc(p.nm)}</div>
+          <div class="rc-s">Livré ${p.livre} · ${p.filleuls.length} filleul(s)${p.ref?` · code <span class="mono">${esc(p.ref)}</span>`:''}</div>
+        </div>
+        <button class="btn btn-sm" onclick="notify('Lien parrain copié — partagez-le par email/SMS${p.ref?' (code '+esc(p.ref)+')':''}','ok')">Lien parrain</button>
+      </div>
+      ${filleulsHtml}
+    </div>`;
+  }).join('');
+  return kpis + sectionTitle('Vos meilleurs parrains', 'Vos clients livrés deviennent vos meilleurs apporteurs — prime à la signature du CCMI parrainé') + cards;
+}
+
+/* ════════════════════════ PILOTAGE ════════════════════════ */
+
+/* — Attribution multi-touch ——————————————————————— */
+const ATTRIB_CONV = [
+  {nm:'Famille Teyssier',     sign:dayAgo(38), valeur:247000, parcours:[{c:'Parrainage',j:'-160j'},{c:'Configurateur',j:'-134j'},{c:'WhatsApp',j:'-91j'},{c:'Visite chantier',j:'-31j'}], canalPrim:'Parrainage'},
+  {nm:'Léa & Hugo Chaix',     sign:dayAgo(46), valeur:268000, parcours:[{c:'Apporteur (Laurent V.)',j:'-205j'},{c:'Configurateur',j:'-171j'},{c:'Email nurturing',j:'-140j'},{c:'JPO Valence',j:'-88j'},{c:'RDV agence',j:'-35j'}], canalPrim:'Apporteur'},
+  {nm:'Antoine Delorme',      sign:dayAgo(60), valeur:238000, parcours:[{c:'Google Ads',j:'-228j'},{c:'Simulateur PTZ',j:'-201j'},{c:'Email nurturing',j:'-156j'},{c:'Apporteur (Julien R.)',j:'-80j'},{c:'RDV agence',j:'-26j'}], canalPrim:'Google Ads'},
+  {nm:'Sophie & Marc Imbert', sign:dayAgo(82), valeur:289000, parcours:[{c:'Meta/Insta',j:'-187j'},{c:'Reel terrain',j:'-176j'},{c:'Chatbot IA',j:'-145j'},{c:'JPO Montélimar',j:'-67j'}], canalPrim:'Meta/Insta'},
+];
+function viewAttrib(){
+  const total = ATTRIB_CONV.length;
+  const ca = ATTRIB_CONV.reduce((s,c)=>s+c.valeur,0);
+  const touchAvg = fmtDec(ATTRIB_CONV.reduce((s,c)=>s+c.parcours.length,0)/total, 1);
+  const cycleAvg = Math.round(ATTRIB_CONV.reduce((s,c)=>{
+    const first = parseInt(c.parcours[0].j); return s + Math.abs(first);
+  },0)/total);
+  const byCanal = {};
+  ATTRIB_CONV.forEach(c=>c.parcours.forEach(p=>{byCanal[p.c]=(byCanal[p.c]||0)+c.valeur/c.parcours.length;}));
+  const sorted = Object.entries(byCanal).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxC = sorted[0][1];
+  const kpis = kpiRow([
+    {l:'Signatures attribuées', v:total},
+    {l:'CA attribué', v:fmtK(ca), accent:true},
+    {l:'Touchpoints moyens', v:touchAvg, t:'avant signature'},
+    {l:'Cycle moyen', v:cycleAvg+' j', t:'≈ '+(cycleAvg/30).toFixed(0)+' mois'},
+  ]);
+  const bars = sorted.map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-lab">${k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxC*100)}%"></div></div>
+      <div class="bar-val">${fmtK(v)}</div>
+    </div>`).join('');
+  const journeys = ATTRIB_CONV.map(c=>`
+    <div class="rc rc-block">
+      <div class="rc-top" style="align-items:center;margin-bottom:11px">
+        <div><b>${c.nm}</b> <span class="rc-s mono" style="margin-left:8px">signé ${fmtDate(c.sign)}</span></div>
+        <div class="rc-end">${chip(c.canalPrim,'neutral')}<b class="mono" style="font-weight:500">${fmtEur(c.valeur)}</b></div>
+      </div>
+      <div class="journey">${c.parcours.map((p,i)=>`<span class="step"><b>${p.c}</b><small>${p.j}</small></span>${i<c.parcours.length-1?'<span class="arrow">→</span>':''}`).join('')}</div>
+    </div>`).join('');
+  return kpis + `
+  <div class="grid2">
+    <div class="card">
+      <div class="card-t">CA attribué par canal</div>
+      <div class="card-sub">Modèle multi-touch — chaque canal du parcours reçoit sa part du CA signé</div>
+      <div class="bars" style="margin-top:14px">${bars}</div>
+    </div>
+    <div class="card">
+      <div class="card-t">Méthodologie</div>
+      <div class="card-sub">Le cycle CCMI dure 6 à 18 mois — l’attribution au « dernier clic » classique est aveugle. Ici, on garde la trace de TOUTES les interactions pour donner sa juste valeur à chaque canal.</div>
+      <div class="method">
+        <div><b>Premier touch</b> · ${ATTRIB_CONV[0].parcours[0].c}</div>
+        <div><b>Dernier touch</b> · ${ATTRIB_CONV[0].parcours[ATTRIB_CONV[0].parcours.length-1].c}</div>
+        <div><b>Modèle utilisé</b> · linéaire (uniforme entre touchpoints)</div>
+        <div><b>Cycle moyen</b> · <span class="mono">${cycleAvg}</span> jours</div>
+      </div>
+    </div>
+  </div>
+  ${sectionTitle('Parcours détaillés des signataires')}
+  ${journeys}`;
+}
+
+/* — ROI marketing par canal ——————————————————————— */
+const ROI_CANAUX = [
+  {canal:'SEO local',     invest:1200,  leads:48, signes:6, ca:1488000, panMoy:248000},
+  {canal:'Google Ads',    invest:14500, leads:73, signes:8, ca:1720000, panMoy:215000},
+  {canal:'Meta / Insta',  invest:8400,  leads:47, signes:4, ca:856000,  panMoy:214000},
+  {canal:'TikTok',        invest:2200,  leads:14, signes:1, ca:198000,  panMoy:198000},
+  {canal:'Apporteurs',    invest:11200, leads:21, signes:6, ca:1430000, panMoy:238000},
+  {canal:'Parrainage',    invest:2000,  leads:9,  signes:3, ca:740000,  panMoy:247000},
+  {canal:'Salons / JPO',  invest:6500,  leads:38, signes:5, ca:1180000, panMoy:236000},
+  {canal:'Chatbot IA',    invest:880,   leads:62, signes:4, ca:920000,  panMoy:230000},
+];
+function viewRoi(){
+  const t = ROI_CANAUX.reduce((a,r)=>({inv:a.inv+r.invest, l:a.l+r.leads, s:a.s+r.signes, ca:a.ca+r.ca}),{inv:0,l:0,s:0,ca:0});
+  const cpl = t.l? Math.round(t.inv/t.l):0;
+  const cpa = t.s? Math.round(t.inv/t.s):0;
+  const roas = (t.ca/t.inv).toFixed(0);
+  const kpis = kpiRow([
+    {l:'Investissement marketing', v:fmtEur(t.inv)},
+    {l:'CA généré', v:fmtK(t.ca), accent:true},
+    {l:'ROAS portefeuille', v:roas+'×', t:'▲ +5× vs M-3'},
+    {l:'Coût par signature', v:fmtEur(cpa), t:'CPL : '+fmtEur(cpl)},
+  ]);
+  const enriched = ROI_CANAUX.map(r=>({
+    ...r,
+    cpl: r.leads? Math.round(r.invest/r.leads) : 0,
+    cps: r.signes? Math.round(r.invest/r.signes) : 0,
+    roas: r.invest? (r.ca/r.invest).toFixed(0) : 0,
+  })).sort((a,b)=>b.roas-a.roas);
+  const rows = enriched.map(r=>`
+    <tr>
+      <td class="strong">${r.canal}</td>
+      <td class="n">${fmtEur(r.invest)}</td>
+      <td class="n">${r.leads}</td>
+      <td class="n">${fmtEur(r.cpl)}</td>
+      <td class="n strong">${r.signes}</td>
+      <td class="n">${fmtEur(r.cps)}</td>
+      <td class="n">${fmtK(r.ca)}</td>
+      <td class="n" style="color:${r.roas>=50?'var(--ok)':r.roas>=20?'var(--texte)':'var(--attente)'}">${r.roas}×</td>
+    </tr>`).join('');
+  return kpis + `
+  <div class="card scroll-x">
+    <div class="card-t">ROI par canal d’acquisition</div>
+    <div class="card-sub">Triés par ROAS décroissant — sur la base des 30 derniers jours d’investissement et des signatures attribuées sur 12-18 mois.</div>
+    <table class="tbl">
+      <thead><tr>
+        <th>Canal</th><th class="r">Invest.</th><th class="r">Leads</th><th class="r">CPL</th>
+        <th class="r">Signés</th><th class="r">CPS</th><th class="r">CA</th><th class="r">ROAS</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function viewSoon(item){
+  const feats = (item.feats||[]).map(f=>`<div class="soon-feat"><span class="ck">+</span><span>${f}</span></div>`).join('');
+  return `
+  <div class="soon-panel">
+    <div class="soon-ic-wrap">${item.ic}</div>
+    <div class="soon-tag">${item.eye||'Module'}</div>
+    <h2>${item.nm}</h2>
+    <p>${item.long||item.desc}</p>
+    <div class="soon-feats">${feats}</div>
+  </div>`;
+}
+
+/* ════════════════════════ MODALE LEAD ════════════════════════ */
+function openModal(){ document.getElementById('ov').classList.add('show'); setTimeout(()=>document.getElementById('f-name').focus(), 30); }
+function closeModal(){ document.getElementById('ov').classList.remove('show'); }
+async function saveLead(){
+  const v = id=>document.getElementById(id).value.trim();
+  const name = v('f-name');
+  if(!name){ document.getElementById('f-name').focus(); return; }
+  const lead = { name, email:v('f-email'), tel:v('f-tel'),
+                 src:v('f-src'), bud:v('f-bud'),
+                 zone:v('f-zone')||'Projet à préciser', stage:'new' };
+  /* Persistance dans le stockage de démo ; sinon ID local de repli. */
+  const dbId = await sbInsertLead(lead);
+  lead.id = dbId || (++seq);
+  LEADS.unshift(lead);
+  ['f-name','f-email','f-tel','f-zone'].forEach(i=>document.getElementById(i).value='');
+  closeModal();
+  if(current!=='leads') go('leads'); else renderView();
+}
+document.getElementById('ov').addEventListener('click',e=>{ if(e.target.id==='ov') closeModal(); });
+document.getElementById('ovApp').addEventListener('click',e=>{ if(e.target.id==='ovApp') closeAppModal(); });
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  if(document.getElementById('ov').classList.contains('show')) closeModal();
+  if(document.getElementById('ovApp').classList.contains('show')) closeAppModal();
+  if(document.getElementById('ovConfirm').classList.contains('show')) document.getElementById('cfNo').click();
+});
+
+/* Bandeau démo + actions rapides de la barre latérale */
+document.getElementById('btnTheme').addEventListener('click', ()=>setTheme(currentTheme()==='light'?'dark':'light', true));
+document.getElementById('btnReset').addEventListener('click', resetDemo);
+document.getElementById('actSync').addEventListener('click', ()=>notify('Synchronisation entre logiciels ONIQ — '+INSTALLED));
+document.getElementById('actHelp').addEventListener('click', ()=>notify('Aide et support — '+INSTALLED));
+document.getElementById('actExport').addEventListener('click', ()=>notify('Export des données — '+INSTALLED));
+
+/* ════════════════════════ DÉMARRAGE ════════════════════════ */
+(async function boot(){
+  /* 1) Stockage local de démo (instantané, sans réseau) puis chargement des tables om_*. */
+  try{
+    const ok = await initSupabase();
+    if (ok) await loadFromSupabase();
+  } catch(e){ console.warn('[OM] démarrage stockage démo:', e); }
+  /* 2) Écran repris après un rechargement (ex. réinitialisation). */
+  try { const v = sessionStorage.getItem(DEMO.prefix+'vue'); if (v && FLAT[v]) current = v; } catch(e) {}
+  renderNav();
+  renderView();
+})();
+</script>
+</body>
+</html>

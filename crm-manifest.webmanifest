@@ -1,0 +1,25 @@
+{
+  "name": "ONIQ Pilotage",
+  "short_name": "ONIQ",
+  "description": "Le CRM commercial d'ONIQ — logiciels et sur-mesure.",
+  "lang": "fr",
+  "start_url": "/crm",
+  "scope": "/crm",
+  "display": "standalone",
+  "background_color": "#08090C",
+  "theme_color": "#0E1116",
+  "icons": [
+    {
+      "src": "/crm-icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/crm-icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

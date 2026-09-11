@@ -1,0 +1,2091 @@
+<!DOCTYPE html><html lang="fr"><head><meta name="robots" content="noindex,nofollow"><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ONIQ. OniBoost — Copilote IA d'acquisition (démo)</title>
+<script>
+/* ── Thème ONIQ : clé partagée avec le CRM (même origine) `oq-theme`, sinon préférence système ── */
+(function(){
+  var t=null;
+  try{ t=localStorage.getItem('oq-theme'); }catch(e){}
+  if(t!=='dark'&&t!=='light'){
+    try{ t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'; }catch(e){ t='dark'; }
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+/* ── Mode démo : filet de sécurité réseau. Aucun appel ne quitte la page (Supabase, API
+   publiques, webhooks…) : toute requête vers un autre hôte est refusée proprement et le
+   code appelant affiche son état « simulé ». ── */
+(function(){
+  var nativeFetch=window.fetch?window.fetch.bind(window):null;
+  window.fetch=function(input,init){
+    var u=String((input&&input.url)||input||'');
+    var externe=/^([a-z]+:)?\/\//i.test(u)&&u.indexOf(location.origin+'/')!==0;
+    if(externe||!nativeFetch){
+      if(window.console)console.info('[OniBoost démo] appel réseau non effectué : '+u);
+      return Promise.reject(new Error('Mode démo : aucun appel réseau'));
+    }
+    return nativeFetch(input,init);
+  };
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   OniBoost — démo, charte ONIQ (oniq.online / CRM).
+   Sobre, technique : filets d'un pixel, monochrome sauf pour le sens,
+   une seule couleur d'accent (--signal). Thème sombre par défaut,
+   thème clair via data-theme="light" sur <html>.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --fond:#08090C; --surface:#0E1116; --surface-2:#141922; --survol:#171D26;
+  --filet:#1B212B; --filet-fort:#2A3341;
+  --texte:#EAEDF2; --attenue:#8B94A5; --faible:#59616F;
+  --signal:#7FA8FF; --signal-r:127,168,255;
+  --ok:#5FD3A6; --ok-r:95,211,166;
+  --attente:#E0B15C; --attente-r:224,177,92;
+  --retard:#E8796B; --retard-r:232,121,107;
+  --voile:rgba(0,0,0,.62);
+  --ombre-modale:0 24px 60px -30px rgba(0,0,0,.7);
+  --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --display:var(--sans);
+  --r:12px; --r-sm:10px; --pill:20px;
+  --barre-demo:32px;
+  /* Anciens noms de variables du logiciel → tokens ONIQ (styles écrits en ligne, HTML généré) */
+  --bg:var(--fond); --ink:var(--texte); --ink-2:var(--attenue); --ink-3:var(--faible);
+  --line:var(--filet); --line-2:var(--filet-fort);
+  --info:var(--signal); --warn:var(--attente); --danger:var(--retard);
+  --ok-soft:rgba(var(--ok-r),.1); --warn-soft:rgba(var(--attente-r),.1);
+  --info-soft:rgba(var(--signal-r),.1); --danger-soft:rgba(var(--retard-r),.1);
+  --signal-doux:rgba(var(--signal-r),.1);
+  --sh-sm:none; --sh:none;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme]){
+    --fond:#F7F8FA; --surface:#FFFFFF; --surface-2:#F1F3F6; --survol:#EDF0F4;
+    --filet:#E3E7ED; --filet-fort:#CFD5DE;
+    --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+    --signal:#2B5FD9; --signal-r:43,95,217;
+    --ok:#17805C; --ok-r:23,128,92;
+    --attente:#96701C; --attente-r:150,112,28;
+    --retard:#B5443A; --retard-r:181,68,58;
+    --voile:rgba(11,14,19,.34); --ombre-modale:0 24px 60px -30px rgba(11,14,19,.35);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --fond:#F7F8FA; --surface:#FFFFFF; --surface-2:#F1F3F6; --survol:#EDF0F4;
+  --filet:#E3E7ED; --filet-fort:#CFD5DE;
+  --texte:#0B0E13; --attenue:#586274; --faible:#8B94A5;
+  --signal:#2B5FD9; --signal-r:43,95,217;
+  --ok:#17805C; --ok-r:23,128,92;
+  --attente:#96701C; --attente-r:150,112,28;
+  --retard:#B5443A; --retard-r:181,68,58;
+  --voile:rgba(11,14,19,.34); --ombre-modale:0 24px 60px -30px rgba(11,14,19,.35);
+  color-scheme:light;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--fond)}
+body{font-family:var(--sans);font-size:14px;line-height:1.5;background:var(--fond);color:var(--texte);
+  -webkit-font-smoothing:antialiased;letter-spacing:-.004em;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--signal);text-decoration:none}
+b,strong{font-weight:600}
+code{font-family:var(--mono);font-size:.92em}
+h1,h2,.dh{font-family:var(--sans);letter-spacing:-.02em}
+::selection{background:rgba(var(--signal-r),.28)}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.mono{font-family:var(--mono)}
+
+/* ── Bandeau démo ─────────────────────────────────────────────────── */
+.demo-bar{position:sticky;top:0;z-index:70;height:var(--barre-demo);display:flex;align-items:center;gap:10px;
+  padding:0 16px;background:var(--surface);border-bottom:1px solid var(--filet);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible);white-space:nowrap}
+.demo-bar .pt{width:6px;height:6px;border-radius:50%;background:var(--attente);flex:none}
+.demo-bar .demo-lbl{color:var(--attenue)}
+.demo-bar .sep{color:var(--filet-fort)}
+.demo-bar .sp{flex:1}
+.demo-bar button{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--filet);border-radius:6px;
+  padding:3px 9px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--attenue);cursor:pointer;transition:color .15s,border-color .15s}
+.demo-bar button:hover{color:var(--texte);border-color:var(--filet-fort)}
+.demo-bar svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.demo-bar .i-lune{display:none}
+:root[data-theme="light"] .demo-bar .i-lune{display:block}
+:root[data-theme="light"] .demo-bar .i-soleil{display:none}
+.shell{display:flex;min-height:calc(100vh - var(--barre-demo))}
+
+/* ── Barre latérale ───────────────────────────────────────────────── */
+.side{width:244px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--filet);display:flex;flex-direction:column;
+  padding:0 12px 14px;position:sticky;top:var(--barre-demo);height:calc(100vh - var(--barre-demo));overflow-y:auto}
+.side::-webkit-scrollbar{width:6px}.side::-webkit-scrollbar-thumb{background:var(--filet-fort);border-radius:3px}
+.brand{display:flex;align-items:baseline;gap:7px;margin:0 -12px 4px;padding:18px 20px 16px;border-bottom:1px solid var(--filet);
+  font-size:15.5px;font-weight:700;letter-spacing:-.03em;white-space:nowrap}
+.brand .nm{color:var(--texte)}
+.brand .nm i{font-style:normal;color:var(--signal)}
+.brand .prod{color:var(--attenue);font-weight:600}
+.nav-lbl{display:flex;align-items:center;gap:9px;padding:16px 8px 7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faible)}
+.nav-lbl:after{content:"";flex:1;height:1px;background:var(--filet)}
+.nav-i{position:relative;display:flex;align-items:center;gap:11px;padding:8px 11px;border-radius:9px;border:1px solid transparent;
+  font-size:14px;color:var(--attenue);cursor:pointer;margin-bottom:2px;transition:background .15s,color .15s,border-color .15s}
+.nav-i svg{stroke:currentColor;opacity:.65;flex-shrink:0}
+.nav-i:hover{background:var(--survol);color:var(--texte)}
+.nav-i:hover svg{opacity:1}
+.nav-i.on{color:var(--texte);font-weight:500;background:rgba(var(--signal-r),.1);border-color:rgba(var(--signal-r),.24)}
+.nav-i.on:before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--signal)}
+.nav-i.on svg{opacity:1;stroke:var(--signal)}
+.side-bottom{margin-top:auto;padding-top:14px}
+.side-actions{display:flex;gap:6px;padding:0 0 10px}
+.side-act{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;border:1px solid var(--filet);border-radius:9px;
+  background:transparent;color:var(--attenue);font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.side-act:hover{background:var(--survol);color:var(--texte);border-color:var(--filet-fort)}
+.side-act svg{stroke:currentColor;flex-shrink:0}
+.side-foot{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--surface-2);border:1px solid var(--filet);border-radius:11px;min-width:0}
+.side-foot>div:last-child{min-width:0}
+.side-foot #ob-cname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av{width:28px;height:28px;border-radius:50%;background:var(--signal);color:var(--fond);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+
+/* ── Zone principale ──────────────────────────────────────────────── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{min-height:64px;border-bottom:1px solid var(--filet);background:var(--fond);background:color-mix(in srgb,var(--fond) 88%,transparent);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);position:sticky;top:var(--barre-demo);z-index:20;
+  display:flex;align-items:center;gap:10px;padding:11px 30px;flex-wrap:wrap}
+.top h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+.top .sub{font-size:12.5px;color:var(--faible);margin-top:1px}
+.btn{font-family:var(--sans);font-size:13.5px;font-weight:500;border:1px solid var(--filet-fort);background:var(--surface);color:var(--texte);
+  cursor:pointer;border-radius:8px;padding:8px 14px;transition:background .15s,border-color .15s,opacity .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;line-height:1.35}
+.btn:hover{background:var(--survol);border-color:var(--faible)}
+.btn svg{stroke:currentColor;flex-shrink:0}
+.btn-fort{background:var(--texte);color:var(--fond);border-color:var(--texte);font-weight:600}
+.btn-fort:hover{background:var(--texte);border-color:var(--texte);opacity:.86}
+.btn.sm{padding:5px 11px;font-size:12.5px}
+.btn:disabled,.btn[disabled]{opacity:.45;cursor:default}
+.content{padding:26px 30px 64px;max-width:1320px;width:100%;margin:0 auto}
+.view{display:none}.view.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* Bandeau d'aide IA en tête d'écran */
+.ai-band{display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--filet);border-left:2px solid var(--signal);
+  border-radius:10px;padding:12px 16px;margin-bottom:22px;font-size:13.5px;color:var(--attenue);line-height:1.55}
+.ai-band b{color:var(--texte)}
+.ai-band svg{flex-shrink:0;margin-top:1px}
+
+/* Indicateurs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+#dash-kpis{grid-template-columns:repeat(5,1fr)}
+.kpi{background:var(--surface);border:1px solid var(--filet);border-radius:12px;padding:15px 17px;min-width:0}
+.kpi .l{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-family:var(--mono);font-size:23px;font-weight:500;letter-spacing:-.03em;margin-top:9px;line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .d{font-size:12px;margin-top:6px;color:var(--attenue)}
+.up{color:var(--ok)!important}
+
+/* Panneaux et lignes */
+.grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px}
+.grid2>*{min-width:0}
+.panel{background:var(--surface);border:1px solid var(--filet);border-radius:12px;overflow:hidden}
+.panel-h{padding:13px 18px;border-bottom:1px solid var(--filet);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-height:54px}
+.panel-h .t{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.panel-h .lnk{font-size:12.5px;color:var(--signal);cursor:pointer}
+.panel-h .lnk:hover{text-decoration:underline}
+.row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--filet);transition:background .12s;flex-wrap:wrap}
+.row>div[style*="flex:1"]{flex-basis:200px!important}
+.row:last-child{border-bottom:none}.row:hover{background:var(--survol)}
+.row .nm{font-weight:500;font-size:14px}.row .mt{font-size:12.5px;color:var(--faible)}
+.row .montant{font-family:var(--mono);font-size:13px;color:var(--attenue);white-space:nowrap;margin-left:auto;font-variant-numeric:tabular-nums}
+.row>.tag:first-child{min-width:106px;text-align:center}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;border:1px solid;white-space:nowrap;line-height:1.4;vertical-align:middle}
+.t-ok{color:var(--ok);border-color:rgba(var(--ok-r),.4);background:rgba(var(--ok-r),.1)}
+.t-warn{color:var(--attente);border-color:rgba(var(--attente-r),.4);background:rgba(var(--attente-r),.1)}
+.t-danger{color:var(--retard);border-color:rgba(var(--retard-r),.4);background:rgba(var(--retard-r),.1)}
+.t-info{color:var(--signal);border-color:rgba(var(--signal-r),.4);background:rgba(var(--signal-r),.1)}
+.t-neu{color:var(--attenue);border-color:var(--filet-fort);background:var(--surface-2)}
+.muted{color:var(--faible)}
+.sec-ttl{font-size:15px;font-weight:600;letter-spacing:-.01em;margin:30px 0 12px}
+.sec-ttl .muted{font-weight:400;font-size:13px}
+.canal{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faible)}
+
+/* Sélecteur d'onglets */
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--filet);border-radius:9px;padding:3px;gap:2px;margin-bottom:20px;max-width:100%;overflow-x:auto}
+.seg b{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--attenue);padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s}
+.seg b:hover{color:var(--texte)}
+.seg b.on,.seg b.on:hover{background:var(--surface);color:var(--texte);box-shadow:inset 0 0 0 1px var(--filet-fort)}
+.seg b .sgi{display:none}
+.sub-v{display:none}.sub-v.on{display:block;animation:fade .25s ease}
+
+/* Interrupteur */
+.sw{width:36px;height:20px;border-radius:99px;background:var(--filet-fort);position:relative;cursor:pointer;transition:background .18s;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--texte);transition:left .18s,background .18s}
+.sw.on{background:var(--ok)}.sw.on::after{left:19px;background:var(--fond)}
+
+/* Assistant e-mail IA */
+.plug-badge{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.14em;border:1px solid var(--filet-fort);color:var(--faible);padding:2px 7px;border-radius:20px;margin-left:9px;position:relative;top:-1px}
+.mail-stat{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faible)}
+.mail-stat.on{color:var(--ok)}
+#mail-connect,#mail-config{padding:16px 18px 18px}
+.mail-desc{font-size:13.5px;color:var(--attenue);line-height:1.6;margin:0 0 14px;max-width:78ch}
+.mail-desc b{color:var(--texte)}
+.mail-provs{display:flex;flex-direction:column;gap:8px;max-width:560px}
+.mail-prov{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--filet-fort);border-radius:10px;background:var(--surface);
+  cursor:pointer;font-size:14px;font-weight:500;color:var(--texte);transition:background .15s,border-color .15s}
+.mail-prov:hover{background:var(--survol);border-color:var(--faible)}
+.mp-ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:500;font-size:13px;flex-shrink:0;
+  background:var(--surface-2);border:1px solid var(--filet-fort);color:var(--attenue)}
+.mp-go{margin-left:auto;font-size:12.5px;color:var(--signal);flex-shrink:0}
+.mail-on{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid rgba(var(--ok-r),.35);background:rgba(var(--ok-r),.07);border-radius:10px;margin-bottom:14px;flex-wrap:wrap}
+.mail-on .nm{font-weight:500;font-family:var(--mono);font-size:13px}.mail-on .mt{font-size:12px;color:var(--attenue)}
+.mail-on-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.mail-learn-intro{font-size:13px;color:var(--attenue);line-height:1.6;margin:0 0 14px;max-width:86ch}
+.mail-learn-intro b{color:var(--texte)}
+.mail-delay{display:flex;align-items:center;gap:12px;margin:0 0 18px;padding:11px 14px;background:var(--surface-2);border:1px solid var(--filet);border-radius:10px;flex-wrap:wrap}
+.mail-delay .md-t{font-weight:500;font-size:13px;color:var(--texte)}
+.mail-delay .md-s{font-size:12px;color:var(--faible)}
+.mail-delay select{border:1px solid var(--filet-fort);border-radius:8px;padding:6px 10px;font-size:12.5px;background:var(--surface);color:var(--texte);cursor:pointer}
+.mail-sec-h{display:flex;align-items:center;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--faible);margin:0 0 10px}
+.mail-rcount{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 6px;border-radius:9px;border:1px solid rgba(var(--signal-r),.35);background:rgba(var(--signal-r),.1);color:var(--signal);font-size:10px;margin-left:8px;letter-spacing:0}
+.mq-card{border:1px solid var(--filet);border-radius:10px;background:var(--surface);padding:12px 14px;margin-bottom:8px}
+.mq-top{display:flex;align-items:center;gap:11px}
+.mq-av{width:32px;height:32px;border-radius:8px;background:var(--surface-2);border:1px solid var(--filet);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--attenue);flex-shrink:0}
+.mq-from{font-size:13.5px;font-weight:600;color:var(--texte);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mq-subj{font-size:12.5px;color:var(--faible);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mq-theme{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:20px;border:1px solid var(--filet-fort);background:var(--surface-2);color:var(--attenue);white-space:nowrap;flex-shrink:0}
+.mq-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;font-weight:500}
+.mq-status.ok{color:var(--ok)}.mq-status.warn{color:var(--attente)}.mq-status.new{color:var(--signal)}
+.mq-link{background:none;border:none;color:var(--attenue);font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
+.mq-link:hover{color:var(--texte)}
+.mq-reply{margin-top:10px;padding:11px 13px;background:var(--surface-2);border:1px solid var(--filet);border-radius:9px;font-size:13px;color:var(--texte);line-height:1.6;white-space:pre-line}
+.mq-rf{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding-top:8px;border-top:1px solid var(--filet);font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faible);white-space:normal}
+.mq-train{margin-top:11px;padding:12px;background:var(--surface-2);border:1px solid var(--filet);border-left:2px solid var(--signal);border-radius:9px}
+.mt-q{font-size:12.5px;color:var(--texte);margin-bottom:8px}.mt-q span{color:var(--faible)}
+.mt-area{width:100%;min-height:190px;border:1px solid var(--filet-fort);border-radius:8px;padding:10px;font-size:13px;color:var(--texte);resize:vertical;background:var(--surface);line-height:1.55}
+.mt-area:focus{outline:none;border-color:var(--signal)}
+.mt-area.ia-ecrit{border-color:rgba(var(--signal-r),.5)}
+.mt-auto{display:flex;align-items:center;gap:11px;margin:10px 0;padding:9px 11px;background:var(--surface);border:1px solid var(--filet);border-radius:8px;cursor:pointer}
+.mt-auto .nm{font-size:13px;font-weight:500;color:var(--texte)}.mt-auto .mt{font-size:11.5px;color:var(--faible)}
+.mt-actions{display:flex;gap:8px;flex-wrap:wrap}
+.mr-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--filet)}
+.mr-row:last-child{border-bottom:none}
+.mr-dot{width:7px;height:7px;border-radius:50%;background:var(--faible);flex-shrink:0}.mr-dot.on{background:var(--ok)}
+.mr-t{flex:1;font-size:13px;font-weight:500;color:var(--texte)}
+.mr-badge{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;border:1px solid;white-space:nowrap}
+.mr-badge.auto{color:var(--ok);border-color:rgba(var(--ok-r),.4);background:rgba(var(--ok-r),.1)}
+.mr-badge.man{color:var(--attente);border-color:rgba(var(--attente-r),.4);background:rgba(var(--attente-r),.1)}
+.ia-pense{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--signal);padding:12px 2px}
+.ia-pense i{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;animation:iaPt 1.1s infinite ease-in-out}
+.ia-pense i:nth-child(2){animation-delay:.15s}.ia-pense i:nth-child(3){animation-delay:.3s}
+@keyframes iaPt{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
+.curseur-ia:after{content:"";display:inline-block;width:7px;height:1.05em;margin-left:2px;background:var(--signal);vertical-align:text-bottom;animation:clig .9s steps(1) infinite}
+@keyframes clig{50%{opacity:0}}
+
+/* Scénarios automatisés */
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px}
+.flow .chip{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;padding:3px 9px;border-radius:6px;background:var(--surface-2);border:1px solid var(--filet);color:var(--attenue);cursor:default}
+.flow .chip.em{color:var(--signal);border-color:rgba(var(--signal-r),.35);background:rgba(var(--signal-r),.08)}
+.arr{color:var(--faible);font-size:13px}
+
+/* Formulaires */
+.field{margin-bottom:14px}.field label{display:block;font-size:12.5px;font-weight:500;color:var(--attenue);margin-bottom:6px}
+.input{width:100%;border:1px solid var(--filet);border-radius:8px;padding:9px 12px;font-size:14px;background:var(--surface-2);color:var(--texte);outline:none;transition:border-color .15s}
+.input:focus{border-color:var(--signal)}
+.input::placeholder{color:var(--faible)}
+select.input{cursor:pointer}
+textarea.input{resize:vertical;line-height:1.5}
+input[type=checkbox]{accent-color:var(--signal)}
+.cfg-lbl{display:block;font-family:var(--mono);font-size:10px;font-weight:500;color:var(--faible);letter-spacing:.14em;text-transform:uppercase}
+.copybox{display:flex;gap:8px;align-items:center;background:var(--surface-2);border:1px dashed var(--filet-fort);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--attenue)}
+.copybox #ob-invite-link{font-family:var(--mono)!important;font-size:12.5px}
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--filet-fort);border-radius:8px;z-index:50;max-height:240px;overflow:auto;display:none;box-shadow:var(--ombre-modale)}
+.ac-list.on{display:block}
+.ac-item{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.ac-item:hover{background:var(--survol)}
+.ac-item .cp{color:var(--faible);font-family:var(--mono);font-size:11px}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip-row .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;border:1px solid var(--filet-fort);background:var(--surface);font-size:13px;font-weight:500;color:var(--attenue);cursor:pointer;user-select:none;transition:color .15s,border-color .15s,background .15s}
+.chip-row .chip:hover{color:var(--texte);border-color:var(--faible)}
+.chip-row .chip.on{background:var(--texte);border-color:var(--texte);color:var(--fond)}
+.ob-gen{width:100%;justify-content:center;margin-top:18px;padding:11px;font-size:14px}
+.ob-empty{padding:18px;color:var(--faible);font-size:13px;line-height:1.65}
+.ob-empty b{color:var(--attenue)}
+.mob-only{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--attenue);cursor:pointer;margin-left:auto}
+.mob-only input{width:15px;height:15px}
+
+/* Fenêtres modales */
+.ob-modal-ov{position:fixed;inset:0;background:var(--voile);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.ob-modal{background:var(--surface);border:1px solid var(--filet-fort);border-radius:14px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--ombre-modale)}
+.ob-modal-h{font-weight:600;font-size:15.5px;padding:16px 20px;border-bottom:1px solid var(--filet);position:sticky;top:0;background:var(--surface);z-index:2}
+.ob-modal-b{padding:8px 20px 18px}
+.ob-modal-f{display:flex;gap:8px;justify-content:flex-end;padding:13px 20px;border-top:1px solid var(--filet);align-items:center;position:sticky;bottom:0;background:var(--surface)}
+.ob-fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faible);margin:12px 0 5px}
+.ob-frow{display:flex;gap:10px}
+.aide-champ{font-size:12px;color:var(--faible);margin-top:6px;line-height:1.55}
+.btn-danger{color:var(--retard)!important}
+.btn-danger:hover{border-color:var(--retard)!important}
+
+/* Avatars de l'équipe commerciale */
+.co-av{width:32px;height:32px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11.5px;
+  background:var(--surface-2);border:1px solid var(--filet-fort);color:var(--texte)}
+/* Répartition du pipeline */
+.pipe{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pipe .pl{width:78px;font-size:12.5px;color:var(--attenue)}
+.pipe .pb{flex:1;height:8px;background:var(--surface-2);border:1px solid var(--filet);border-radius:5px;overflow:hidden}
+.pipe .pb span{display:block;height:100%;background:var(--signal);border-radius:4px}
+.pipe .pn{width:30px;text-align:right;font-family:var(--mono);font-size:12.5px}
+
+/* Toast */
+#ob-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(14px);background:var(--surface-2);color:var(--texte);border:1px solid var(--filet-fort);
+  font-size:13px;font-weight:500;padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;z-index:10000;max-width:90vw;text-align:center;box-shadow:var(--ombre-modale)}
+#ob-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#ob-toast.ok{border-color:rgba(var(--ok-r),.5)}
+#ob-toast.ok:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:9px;vertical-align:middle}
+
+/* ── Responsive : tablette (1024) puis téléphone ──────────────────── */
+@media(max-width:1180px){
+  .kpis,#dash-kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}
+  .grid2{grid-template-columns:1fr}
+}
+@media(max-width:1100px){
+  .side{width:212px}
+  .top{padding:10px 20px}
+  .content{padding:22px 20px 56px}
+}
+@media(max-width:760px){
+  .shell{flex-direction:column}
+  .side{position:sticky;top:var(--barre-demo);z-index:30;width:auto;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:6px 10px;border-right:none;border-bottom:1px solid var(--filet)}
+  .brand{border:none;margin:0 6px 0 0;padding:6px 8px}
+  .nav-lbl,.side-bottom{display:none}
+  .nav-i{white-space:nowrap;margin:0 2px}
+  .nav-i.on:before{display:none}
+  .top{position:static}
+  .content{padding:16px 14px 48px}
+  .ob-frow{flex-direction:column;gap:0}
+  .demo-bar .demo-acct,.demo-bar .sep{display:none}
+  input,select,textarea{font-size:16px}
+  #lp-wrap>div{flex-basis:100%!important;min-width:0!important}
+  .row>.tag:first-child{min-width:0}
+}
+@media(max-width:560px){.demo-bar .lbl,.demo-bar .theme-lbl{display:none}.demo-bar{gap:8px;padding:0 10px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+
+<!-- BANDEAU DÉMO -->
+<div class="demo-bar" role="note">
+  <span class="pt" aria-hidden="true"></span><span class="demo-lbl">Démo — données fictives</span>
+  <span class="sep">/</span><span class="demo-acct">Compte « Démo — Bâti Drôme »</span>
+  <span class="sp"></span>
+  <button type="button" onclick="obDemoReset()" title="Remettre les données de démonstration d'origine"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="lbl">Réinitialiser la démo</span></button>
+  <button type="button" onclick="oqToggleTheme()" title="Basculer thème clair / sombre" aria-label="Basculer thème clair / sombre"><svg class="i-soleil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="i-lune" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span class="theme-lbl">Thème</span></button>
+</div>
+<div class="shell">
+<!-- SIDEBAR -->
+<aside class="side">
+  <div class="brand" aria-label="ONIQ. OniBoost"><span class="nm">ONIQ<i>.</i></span><span class="prod">OniBoost</span></div>
+  <div class="nav-lbl">Gestion</div><div class="nav-i on" data-v="dash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Tableau de bord</div><div class="nav-i" data-v="clients"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Clients</div><div class="nav-i" data-v="commerciaux"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Commerciaux</div><div class="nav-lbl">Prospection</div><div class="nav-i" data-v="prosp-b2b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Prospection B2B</div><div class="nav-i" data-v="prosp-b2c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Prospection B2C</div><div class="nav-i" data-v="funnel"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg>Funnel / Pages</div><div class="nav-i" data-v="acquisition"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>Acquisition</div><div class="nav-lbl">Réseau d'affaires</div><div class="nav-i" data-v="affaires"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.5"/><circle cx="18" cy="7" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8.2 8.2l3 8M15.8 8.2l-3 8M8.5 6.6h7"/></svg>Affaires</div><div class="nav-lbl">Automatisation</div><div class="nav-i" data-v="auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>Automatisation</div>
+  <div class="side-bottom">
+    <div class="side-actions" role="toolbar" aria-label="Actions rapides">
+      <button class="side-act" onclick="obSync()" title="Synchroniser avec les autres logiciels ONIQ">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        <span>Sync</span>
+      </button>
+      <button class="side-act" onclick="obHelp()" title="Aide / Support">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+        <span>Aide</span>
+      </button>
+      <button class="side-act" onclick="obExport()" title="Exporter les leads (CSV)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
+      </button>
+    </div>
+    <div class="side-foot"><div class="av" id="ob-cinit">B</div><div><div id="ob-cname" style="font-size:13px;font-weight:500">Bâti Drôme</div><div style="font-size:11.5px" class="muted">Compte de démonstration</div></div></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="top">
+    <div><h1 id="pgt">Tableau de bord</h1><div class="sub" id="pgs">Vue d'ensemble de votre acquisition</div></div>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost" onclick="go('clients');var s=document.getElementById('cl-search');if(s){s.focus();}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Rechercher</button>
+    <button class="btn btn-fort" id="topcta"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle source</button>
+  </header>
+  <div class="content">
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view on" id="dash">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M5 12H2M22 12h-3"/><circle cx="12" cy="12" r="4"/></svg><span id="dash-band"><b>Copilote IA</b> — vos leads arrivent de 3 sources connectées et sont répartis automatiquement entre vos commerciaux. Des réponses e-mail préparées par l'IA attendent votre validation dans <b>Automatisation</b>.</span></div>
+      <div class="kpis" id="dash-kpis"></div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-h"><div class="t">Derniers clients</div><div class="lnk" onclick="go('clients')">Tous les clients →</div></div>
+          <div id="dash-recent"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><div class="t">Répartition du pipeline</div><div class="lnk" onclick="go('clients')">Détail →</div></div>
+          <div id="dash-origin" style="padding:16px 22px 22px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CLIENTS (CRM réel & persistant) ============ -->
+    <section class="view" id="clients">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span>Votre base clients. Ajoutez, suivez et faites avancer chaque dossier dans le pipeline. <b id="cl-band-count">0 client</b></span></div>
+      <div class="kpis" id="cl-kpis"></div>
+      <div class="panel">
+        <div class="panel-h">
+          <div class="t">Mes clients</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-ghost sm" onclick="obImportClients()">Importer CSV</button>
+            <button class="btn btn-ghost sm" onclick="obExport()">Exporter</button>
+            <button class="btn btn-fort sm" onclick="clOpenModal()">+ Ajouter un client</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:14px 18px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line)">
+          <input id="cl-search" class="input" placeholder="Rechercher (nom, ville, email, téléphone…)" style="flex:1;min-width:200px" oninput="clRender()">
+          <select id="cl-fstatut" class="input" style="max-width:170px" onchange="clRender()"><option value="">Tous les statuts</option></select>
+          <select id="cl-ftype" class="input" style="max-width:160px" onchange="clRender()"><option value="">Tous les types</option><option value="construction">Construction</option><option value="reno">Rénovation</option><option value="extension">Extension</option><option value="autre">Autre</option></select>
+        </div>
+        <div id="cl-chips" style="display:flex;gap:6px;padding:12px 18px 4px;flex-wrap:wrap"></div>
+        <div id="cl-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ PROSPECTION ============ -->
+    <section class="view" id="prosp">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>Activez vos sources de leads. <b>Clients</b> = particuliers à chiffrer · <b>Apporteurs</b> = pros qui vous enverront des clients.</span></div>
+      <div class="seg"><b class="on" onclick="subgo('prosp','b2c',this)">Clients (B2C)</b><b onclick="subgo('prosp','b2b',this)">Apporteurs (B2B)</b></div>
+
+      <!-- B2C — GÉNÉRATEUR DE LEADS -->
+      <div class="sub-v on" id="prosp-b2c">
+        <div class="panel">
+          <div class="panel-h"><div class="t">Leads clients proposés par nos partenaires</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag t-neu">contacts avec téléphone</span><button class="btn btn-ghost sm" onclick="obAddAllLeads()">Tout ajouter au CRM</button></div></div>
+          <div class="ob-empty" style="padding-bottom:10px;border-bottom:1px solid var(--filet)">Les particuliers à chiffrer remontés par le réseau ONIQ et nos partenaires arrivent ici, directement dans ton CRM — déjà contactables (nom + téléphone). <b id="b2c-count"></b></div>
+          <div id="ob-leads-b2c"></div>
+        </div>
+      </div>
+
+      <!-- B2B — TROUVEUR D'APPORTEURS -->
+      <div class="sub-v" id="prosp-b2b">
+        <div class="panel ob-cfg">
+          <div class="panel-h"><div class="t">Trouver des prospects & apporteurs</div><span class="tag t-neu">avec téléphone · recherche web</span></div>
+          <div style="padding:18px">
+            <label class="cfg-lbl">1. Zone</label>
+            <div class="ac-wrap"><input id="b2b-commune" class="input" value="Valence (26000)" placeholder="Tape ta ville (ex Valence)…" autocomplete="off" oninput="obGeoAuto(this,'b2b')" style="width:100%"><div id="b2b-ac" class="ac-list"></div></div>
+            <input id="b2b-cp" class="input" placeholder="ou code postal (ex 26000)" style="width:100%;margin-top:8px">
+            <label class="cfg-lbl" style="margin-top:16px">2. Type de partenaire</label>
+            <div id="b2b-metier" class="chip-row" onclick="obChip(event)">
+              <span class="chip on" data-naf="68.31Z" data-l="Agence immo">Agence immo</span>
+              <span class="chip" data-q="notaire" data-l="Notaire">Notaire</span>
+              <span class="chip" data-naf="66.19B" data-l="Courtier crédit">Courtier crédit</span>
+              <span class="chip" data-naf="71.11Z" data-l="Architecte">Architecte</span>
+              <span class="chip" data-naf="71.12B" data-l="Maître d'œuvre / BET">Maître d'œuvre</span>
+              <span class="chip" data-naf="41.10A" data-l="Promoteur / lotisseur">Promoteur</span>
+              <span class="chip" data-naf="81.30Z" data-l="Paysagiste">Paysagiste</span>
+              <span class="chip" data-naf="47.59A" data-l="Cuisiniste / agenceur">Cuisiniste</span>
+              <span class="chip" data-q="constructeur de maisons individuelles" data-l="Constructeur (CMI)">Constructeur</span>
+              <span class="chip" data-q="aménageur foncier lotisseur" data-l="Aménageur / lotisseur">Aménageur</span>
+              <span class="chip" data-q="terrassier travaux publics" data-l="Terrassier / TP">Terrassier</span>
+            </div>
+            <label class="cfg-lbl" style="margin-top:14px">3. Ou recherche libre (n'importe quel type d'entreprise)</label>
+            <input id="b2b-libre" class="input" placeholder="ex : constructeur maison bois, garagiste, charpentier, syndic…" style="width:100%;margin-top:6px">
+            <button class="btn btn-fort ob-gen" onclick="obGenB2B()"><span>Trouver les prospects (avec téléphone)</span></button>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:14px">
+          <div class="panel-h"><div class="t">Entreprises trouvées <span id="b2b-count" class="muted" style="font-weight:500"></span></div><label class="mob-only" title="Ne garder que les numéros mobiles (06/07) — le portable du dirigeant. Écarte les 04/05 (standards, accueil)."><input type="checkbox" id="b2b-mobonly" onchange="obRenderB2B()"> Mobiles uniquement (06/07)</label><button class="btn btn-ghost sm" onclick="appOpenModal()">+ Manuellement</button></div>
+          <div id="ob-apporteurs"><div class="ob-empty">Choisis une <b>zone</b> + un <b>métier</b> (ou tape une <b>recherche libre</b>), puis « Trouver les prospects ». Tu obtiens de <b>vraies entreprises avec leur numéro de téléphone</b> (recherche web) → ajoute-les en <b>apporteur</b> (réseau) ou en <b>client</b> (à démarcher).</div></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============ AFFAIRES ============ -->
+    <section class="view" id="affaires">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.5"/><circle cx="18" cy="7" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8.2 8.2l3 8M15.8 8.2l-3 8M8.5 6.6h7"/></svg><span id="aff-band">Gérez votre réseau d'apporteurs : chaque partenaire suit en direct les dossiers qu'il vous apporte.</span></div>
+      <div class="seg">
+        <b class="on" onclick="subgo('affaires','reseau',this)"><span class="sgi"></span>Réseau</b>
+        <b onclick="subgo('affaires','inviter',this)"><span class="sgi"></span>Inviter</b>
+        <b onclick="subgo('affaires','notifs',this);appRenderNotifs()"><span class="sgi"></span>Notifications</b>
+      </div>
+
+      <!-- RÉSEAU -->
+      <div class="sub-v on" id="affaires-reseau">
+        <div class="kpis" id="app-kpis" style="grid-template-columns:repeat(3,1fr)"></div>
+        <div class="panel">
+          <div class="panel-h"><div class="t">Mes apporteurs</div><button class="btn btn-fort sm" onclick="appOpenModal()">+ Ajouter un apporteur</button></div>
+          <div id="app-list"></div>
+        </div>
+      </div>
+
+      <!-- INVITER -->
+      <div class="sub-v" id="affaires-inviter">
+        <div class="panel" style="max-width:680px">
+          <div class="panel-h"><div class="t">Inviter un apporteur</div></div>
+          <div style="padding:20px">
+            <div class="field"><label class="cfg-lbl">Commission par affaire signée</label>
+              <div style="display:flex;gap:10px;margin-top:6px"><input id="aff-com-val" class="input" value="3" style="max-width:90px"/><select id="aff-com-type" class="input" style="max-width:140px"><option>% du montant</option><option>€ fixe</option></select><input id="aff-com-min" class="input" placeholder="ou 500 € mini" style="flex:1"/></div>
+            </div>
+            <div class="field" style="margin-top:14px"><label class="cfg-lbl">Lien d'inscription du partenaire</label>
+              <div class="copybox" style="margin-top:6px"><span id="ob-invite-link" class="mono" style="flex:1">oniq.app/p/votre-entreprise</span><button class="btn btn-ghost sm" onclick="obCopyInvite()">Copier</button></div>
+            </div>
+            <div class="field" style="margin-top:14px"><label class="cfg-lbl">Envoyer l'invitation à un apporteur de mon réseau</label>
+              <select id="aff-invite-app" class="input" style="width:100%;margin-top:6px"></select>
+            </div>
+            <button class="btn btn-fort" style="width:100%;justify-content:center;margin-top:16px;padding:11px" onclick="appSendInvite()">Envoyer l'invitation</button>
+            <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px;text-align:center">Le partenaire reçoit une notification et est suivi à chaque étape de ses dossiers.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div class="sub-v" id="affaires-notifs">
+        <div class="panel" style="max-width:820px">
+          <div class="panel-h"><div class="t">Envoyer une notification</div></div>
+          <div style="padding:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:150px"><label class="cfg-lbl">Apporteur</label><select id="notif-app" class="input" style="width:100%;margin-top:5px"></select></div>
+            <div style="flex:1;min-width:180px"><label class="cfg-lbl">Étape / type</label><select id="notif-type" class="input" style="width:100%;margin-top:5px"><option>Lead pris en charge</option><option>RDV planifié</option><option>Devis envoyé</option><option>Devis signé — commission débloquée</option><option>Paiement reçu</option><option>Chantier livré</option><option>Message libre</option></select></div>
+            <input id="notif-msg" class="input" placeholder="Message (optionnel)" style="flex:2;min-width:200px">
+            <button class="btn btn-fort sm" onclick="appNotify()">Envoyer</button>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:14px">
+          <div class="panel-h"><div class="t">Historique des notifications</div><div class="lnk" onclick="appClearNotifs()">Vider</div></div>
+          <div id="notif-log"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMMERCIAUX ============ -->
+    <section class="view" id="commerciaux">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><span>Pilotez votre équipe commerciale : attribuez les leads, suivez le pipeline et les résultats de chaque commercial.</span></div>
+      <div class="kpis" id="co-kpis" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="panel">
+        <div class="panel-h"><div class="t">Mon équipe commerciale</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost sm" onclick="coDistribute()">Répartir les leads non attribués</button>
+            <button class="btn btn-fort sm" onclick="coOpenModal()">+ Ajouter un commercial</button>
+          </div>
+        </div>
+        <div id="co-list"></div>
+      </div>
+      <div class="panel" id="co-detail-panel" style="margin-top:14px;display:none">
+        <div class="panel-h"><div class="t" id="co-detail-title">Leads du commercial</div><div class="lnk" onclick="coCloseDetail()">Fermer</div></div>
+        <div id="co-detail"></div>
+      </div>
+    </section>
+
+    <!-- ============ ACQUISITION — CENTRE DE SOURCES DE LEADS ============ -->
+    <section class="view" id="acquisition">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Tes <b>3 canaux de leads</b> au même endroit. Connecte tes sources → chaque lead tombe dans le CRM, auto-attribué à un commercial. <b>Pour du volume de particuliers, l'achat de leads est la seule source autonome.</b></span></div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px">
+        <div class="panel" style="padding:18px">
+          <div class="canal">Canal 01</div>
+          <div style="font-weight:600;font-size:15px;margin-top:6px">Achat de leads <span class="tag t-neu">payant au lead</span></div>
+          <p style="color:var(--attenue);font-size:12.5px;margin-top:8px;line-height:1.55">Connecte tes <b>sources de leads externes</b>. Leurs leads particuliers (avec tél) tombent <b>automatiquement</b> dans ton CRM. Payant au lead, mais c'est <b>la seule source autonome de volume</b>.</p>
+          <button class="btn btn-fort sm" style="margin-top:12px" onclick="srcOpenModal(null,'externe')">+ Connecter une plateforme</button>
+        </div>
+        <div class="panel" style="padding:18px">
+          <div class="canal">Canal 02</div>
+          <div style="font-weight:600;font-size:15px;margin-top:6px">Formulaire inbound <span class="tag t-neu">sans coût</span></div>
+          <p style="color:var(--attenue);font-size:12.5px;margin-top:8px;line-height:1.55">Un formulaire à partager (lien, QR, site) → le prospect laisse son numéro → lead dans le CRM. Gratuit ; il faut amener du trafic (pub/lien).</p>
+          <button class="btn btn-ghost sm" style="margin-top:12px" onclick="go('funnel')">Créer mon formulaire</button>
+        </div>
+        <div class="panel" style="padding:18px">
+          <div class="canal">Canal 03</div>
+          <div style="font-weight:600;font-size:15px;margin-top:6px">Prospection web <span class="tag t-neu">sans coût</span></div>
+          <p style="color:var(--attenue);font-size:12.5px;margin-top:8px;line-height:1.55">Trouve des entreprises / apporteurs (notaires, courtiers, agences…) <b>avec téléphone</b>, par zone. Gratuit — c'est du B2B (pas des particuliers).</p>
+          <button class="btn btn-ghost sm" style="margin-top:12px" onclick="go('prosp')">Lancer la prospection</button>
+        </div>
+      </div>
+
+      <div class="kpis" id="src-kpis" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div class="panel">
+        <div class="panel-h"><div class="t">Mes sources connectées</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost sm" onclick="srcPullAll()">Tout récupérer</button>
+            <button class="btn btn-fort sm" onclick="srcOpenModal()">+ Connecter une source</button>
+          </div>
+        </div>
+        <div id="src-list"></div>
+      </div>
+
+      <div class="sec-ttl">Fournisseurs de leads payants <span class="muted">— coût par lead, signatures et ROI</span></div>
+      <div class="kpis" id="pv-kpis"></div>
+      <div class="panel">
+        <div class="panel-h"><div class="t">Mes fournisseurs</div><button class="btn btn-fort sm" onclick="pvOpenModal()">+ Ajouter un fournisseur</button></div>
+        <div id="pv-list"></div>
+      </div>
+      <div class="panel" id="pv-detail-panel" style="margin-top:14px;display:none">
+        <div class="panel-h"><div class="t" id="pv-detail-title">Leads du fournisseur</div><div class="lnk" onclick="pvCloseDetail()">Fermer</div></div>
+        <div id="pv-detail"></div>
+      </div>
+    </section>
+
+    <!-- ============ FUNNEL / PAGES DE CAPTURE ============ -->
+    <section class="view" id="funnel">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg><span>Génère <b>tes propres leads</b> : crée une page d'atterrissage premium par marque, partage le lien (ou lance de la pub dessus) → les prospects remplissent le formulaire et tombent direct dans ton CRM.</span></div>
+      <div id="lp-wrap" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex:0 0 330px;max-width:100%;display:flex;flex-direction:column;gap:12px">
+          <div class="panel">
+            <div class="panel-h"><div class="t">Mes pages</div><button class="btn btn-fort sm" onclick="lpNew()">+ Nouvelle page</button></div>
+            <div id="lp-list"></div>
+          </div>
+          <div class="panel" id="lp-editor-panel" style="display:none">
+            <div class="panel-h"><div class="t">Personnaliser</div></div>
+            <div id="lp-editor" style="padding:14px"></div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:300px">
+          <div class="panel">
+            <div class="panel-h"><div class="t">Aperçu en direct</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-ghost sm" onclick="lpFull()">Plein écran</button>
+                <button class="btn btn-ghost sm" onclick="lpCopyLink()">Lien</button>
+                <button class="btn btn-fort sm" onclick="lpDownload()">Télécharger</button>
+              </div>
+            </div>
+            <div style="padding:10px"><iframe id="lp-frame" title="aperçu" style="width:100%;height:660px;border:1px solid var(--filet);border-radius:10px;background:#fff;display:block"></iframe></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AUTOMATISATION ============ -->
+    <section class="view" id="auto">
+      <div class="ai-band"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M2 12h4M18 12h4"/><circle cx="12" cy="12" r="3.5"/></svg><span>Relances et notifs partent toutes seules par <b>e-mail</b> — au bon moment. <b>L'IA rédige chaque message</b>, vous validez ce que vous voulez.</span></div>
+
+      <div class="seg">
+        <b class="on" onclick="subgo('auto','mail',this)"><span class="sgi"></span>Assistant email</b>
+        <b onclick="subgo('auto','scenarios',this)"><span class="sgi"></span>Scénarios</b>
+      </div>
+
+      <!-- ASSISTANT EMAIL -->
+      <div class="sub-v on" id="auto-mail">
+      <!-- ░░ PLUGIN — Assistant email IA (connecter sa boîte mail → réponses auto) ░░ -->
+      <div class="panel mail-plugin">
+        <div class="panel-h">
+          <div class="t"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:7px"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Assistant email IA<span class="plug-badge">PLUGIN</span></div>
+          <span class="mail-stat" id="mail-stat">● Non connectée</span>
+        </div>
+        <div id="mail-connect">
+          <p class="mail-desc">Connectez votre boîte mail pro : l'IA lit chaque email entrant et <b>rédige — ou envoie — la réponse toute seule</b> (devis, RDV, relances, questions clients). Vous gardez la main quand vous le souhaitez.</p>
+          <div class="mail-provs">
+            <button class="mail-prov" onclick="obConnectMail('Gmail')"><span class="mp-ic">G</span><span>Gmail / Google Workspace</span><span class="mp-go">Connecter →</span></button>
+            <button class="mail-prov" onclick="obConnectMail('Outlook')"><span class="mp-ic">O</span><span>Outlook / Microsoft 365</span><span class="mp-go">Connecter →</span></button>
+            <button class="mail-prov" onclick="obConnectMail('IMAP')"><span class="mp-ic">@</span><span>Autre — IMAP (OVH, Gandi, Infomaniak…)</span><span class="mp-go">Connecter →</span></button>
+          </div>
+        </div>
+        <div id="mail-config" style="display:none">
+          <div class="mail-on"><span class="mail-on-dot"></span><div style="flex:1"><div class="nm" id="mail-addr">contact@votre-entreprise.fr</div><div class="mt" id="mail-prov-lbl">Boîte connectée · l'IA surveille les entrants en temps réel</div></div><button class="btn btn-ghost sm" onclick="obDisconnectMail()">Déconnecter</button></div>
+          <p class="mail-learn-intro">À chaque email entrant, l'IA détecte la <b>thématique</b>. Si elle la connaît, elle répond toute seule. Sinon, elle vous demande la bonne réponse — et si vous voulez l'<b>automatiser</b> pour les prochains.</p>
+          <div class="mail-delay">
+            <div style="flex:1;min-width:200px">
+              <div class="md-t">Délai avant réponse automatique</div>
+              <div class="md-s">Une réponse instantanée fait « robot » — un léger délai fait humain et reste ultra-réactif.</div>
+            </div>
+            <select id="mail-delay-sel" onchange="obSetDelay(this.value)" aria-label="Délai avant réponse automatique">
+              <option value="0">Immédiat</option>
+              <option value="3" selected>3 min — recommandé</option>
+              <option value="10">10 min</option>
+              <option value="30">30 min</option>
+              <option value="60">1 heure</option>
+            </select>
+          </div>
+          <div class="mail-sec-h">Emails entrants</div>
+          <div id="mail-queue"></div>
+          <div class="mail-sec-h" style="margin-top:18px">Règles apprises par l'IA<span class="mail-rcount" id="mail-rcount">0</span></div>
+          <div id="mail-rules"></div>
+        </div>
+      </div>
+      </div><!-- /auto-mail -->
+
+      <!-- SCÉNARIOS -->
+      <div class="sub-v" id="auto-scenarios">
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="l">Emails envoyés (30 j)</div><div class="v">1 558</div><div class="d up">100 % par e-mail</div></div>
+        <div class="kpi"><div class="l">Taux d'ouverture</div><div class="v">68 %</div><div class="d up">▲ +6 pts</div></div>
+        <div class="kpi"><div class="l">RDV générés en auto</div><div class="v">23</div><div class="d up">sans intervention</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><div class="t">Scénarios automatisés <span class="tag t-neu" style="margin-left:6px">Tout par e-mail</span></div><button class="btn btn-fort sm" onclick="obToast('Éditeur de scénarios : disponible dans la version installée')">+ Nouveau scénario</button></div>
+        <div class="row"><span class="tag t-neu">Nouveau lead</span><div style="flex:1"><div class="nm">Achat terrain / permis détecté → prise de contact</div><div class="flow"><span class="chip em">Email · J0</span><span class="arr">→</span><span class="chip em">Email · J+3</span><span class="arr">→</span><span class="chip">Tâche rappel · J+7</span></div></div><span class="tag t-ok">Active · 12</span></div>
+        <div class="row"><span class="tag t-neu">Relance</span><div style="flex:1"><div class="nm">Devis sans réponse</div><div class="flow"><span class="chip em">Email · J+2</span><span class="arr">→</span><span class="chip em">Email · J+7</span><span class="arr">→</span><span class="chip em">Email · J+14</span></div></div><span class="tag t-ok">Active</span></div>
+        <div class="row"><span class="tag t-neu">Réseau</span><div style="flex:1"><div class="nm">Notifier l'apporteur à chaque étape</div><div class="flow"><span class="chip">Push app</span><span class="arr">→</span><span class="chip em">Email récap hebdo</span></div></div><span class="tag t-ok">Active</span></div>
+        <div class="row"><span class="tag t-neu">Cycle long</span><div style="flex:1"><div class="nm">Réveil ancien lead (CCMI 6–18 mois)</div><div class="flow"><span class="chip em">Email mensuel personnalisé</span></div></div><span class="tag t-warn">En pause</span></div>
+        <div class="row"><span class="tag t-neu">Fidélisation</span><div style="flex:1"><div class="nm">Demande d'avis Google post-livraison</div><div class="flow"><span class="chip em">Email · J+7</span><span class="arr">→</span><span class="chip em">Email rappel</span></div></div><span class="tag t-ok">Active</span></div>
+      </div>
+      </div><!-- /auto-scenarios -->
+    </section>
+
+  </div>
+</div>
+</div><!-- /shell -->
+
+<script>
+const TITLES={
+  dash:['Tableau de bord',"Vue d'ensemble de votre activité"],
+  clients:['Clients','Votre base clients — ajoutez, suivez et faites avancer chaque dossier'],
+  prosp:['Prospection','Générez des leads clients (B2C) et des apporteurs (B2B)'],
+  affaires:['Affaires',"Gérez votre réseau d'apporteurs d'affaires"],
+  commerciaux:['Commerciaux','Pilotez votre équipe : leads attribués, pipeline et résultats par commercial'],
+  acquisition:['Acquisition','Toutes vos sources de leads au même endroit — achat de leads, formulaire inbound, prospection web'],
+  funnel:['Funnel / Pages de capture','Créez des pages d\'atterrissage premium pour générer vos propres leads — éditables par marque'],
+  auto:['Automatisation',"Relances et réponses par e-mail — automatiques, rédigées par l'IA"]
+};
+const CTA={dash:'+ Ajouter un client',clients:'+ Ajouter un client',prosp:'+ Ajouter un client',affaires:'+ Ajouter un apporteur',commerciaux:'+ Ajouter un commercial',acquisition:'+ Connecter une source',funnel:'+ Nouvelle page',auto:'+ Ajouter un client'};
+const CTA_FN={dash:function(){clOpenModal();},clients:function(){clOpenModal();},prosp:function(){clOpenModal();},affaires:function(){appOpenModal();},commerciaux:function(){coOpenModal();},acquisition:function(){srcOpenModal();},funnel:function(){lpNew();},auto:function(){clOpenModal();}};
+function goProsp(sub){
+  if(typeof go==='function') go('prosp');
+  document.querySelectorAll('.nav-i').forEach(function(n){ n.classList.toggle('on', n.dataset.v==='prosp-'+sub); });
+  /* ne montrer QUE le côté concerné : on masque le bouton du toggle opposé (B2B→cache Clients B2C, et inversement) */
+  var seg=document.querySelector('#prosp .seg');
+  if(seg){ seg.querySelectorAll('b').forEach(function(x){ var keep=(x.getAttribute('onclick')||'').indexOf("'"+sub+"'")>=0; x.style.display=keep?'':'none'; }); }
+  var b=document.querySelector('[onclick*="subgo(\'prosp\',\''+sub+'\'"]');
+  if(b) b.click();
+}
+
+function go(v){
+  if(v==='prosp-b2b'||v==='prosp-b2c'){ if(typeof goProsp==='function') goProsp(v.slice(6)); return; }
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id===v));
+  document.querySelectorAll('.nav-i').forEach(n=>n.classList.toggle('on',n.dataset.v===v));
+  document.getElementById('pgt').textContent=TITLES[v][0];
+  document.getElementById('pgs').textContent=TITLES[v][1];
+  var cta=document.getElementById('topcta');
+  cta.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'+CTA[v].replace('+ ','');
+  cta.onclick = (typeof CTA_FN!=='undefined' && CTA_FN[v]) ? CTA_FN[v] : function(){ clOpenModal(); };
+  if(v==='clients' && typeof clRender==='function'){ clRender(); clKpis(); }
+  if(v==='dash' && typeof dashRender==='function'){ dashRender(); }
+  if(v==='affaires' && typeof appRender==='function'){ appRender(); }
+  if(v==='commerciaux' && typeof coRender==='function'){ coRender(); }
+  if(v==='acquisition' && typeof srcRender==='function'){ srcRender(); if(typeof pvRender==='function')pvRender(); }
+  if(v==='prosp' && typeof obRenderPartnerLeads==='function'){ obRenderPartnerLeads(); }
+  if(v==='funnel' && typeof lpRender==='function'){ lpRender(); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function subgo(view,sub,el){
+  document.querySelectorAll('#'+view+' .sub-v').forEach(s=>s.classList.toggle('on',s.id===view+'-'+sub));
+  el.parentNode.querySelectorAll('b').forEach(b=>b.classList.toggle('on',b===el));
+}
+function obConnectMail(prov){
+  /* Version installée : Gmail en OAuth 1-clic (fenêtre Google), Outlook / IMAP via le worker.
+     Démo : autorisation simulée, aucune fenêtre externe ni appel réseau. */
+  obToast('Connexion sécurisée à '+prov+'… (simulation démo)');
+  setTimeout(function(){ obMailConnected(prov, prov==='IMAP'?'devis@batidrome-demo.fr':'contact@batidrome-demo.fr'); },1100);
+}
+/* Affiche l'état connecté (appelé après OAuth réussi, ou en démo pour Outlook/IMAP) */
+function obMailConnected(prov,email,silent){
+  document.getElementById('mail-connect').style.display='none';
+  document.getElementById('mail-config').style.display='block';
+  document.getElementById('mail-addr').textContent=email||document.getElementById('mail-addr').textContent;
+  document.getElementById('mail-prov-lbl').textContent=prov+" · l'IA surveille les entrants en temps réel";
+  var st=document.getElementById('mail-stat');st.textContent='● Connectée';st.classList.add('on');
+  obInitDelay();
+  if(silent){obRenderMail();return;}
+  /* Démo : l'IA « analyse » la boîte avant d'afficher la file d'e-mails */
+  var q=document.getElementById('mail-queue');if(q)q.innerHTML=obDemoThinking("L'IA analyse les e-mails entrants et détecte les thématiques…");
+  var rl=document.getElementById('mail-rules');if(rl)rl.innerHTML='';
+  setTimeout(function(){ if(OB_API){obLoadReal();}else{obRenderMail();} },1400);
+  obToast('Boîte '+prov+" connectée · l'IA peut répondre toute seule",true);
+}
+/* Retour de la fenêtre OAuth Google */
+window.addEventListener('message',function(ev){
+  if(ev&&ev.data&&ev.data.oniboost==='connected'){ obMailConnected('Gmail',ev.data.email); }
+});
+function obLoadReal(){
+  /* Version installée : file d'e-mails et règles lues sur le worker Gmail (Supabase).
+     Démo : la file vient des e-mails de démonstration, aucun appel réseau. */
+  obRenderMail();
+}
+/* MODE DÉMO — aucun backend. Dans la version installée, ces constantes pointent vers les
+   fonctions Supabase d'ONIQ (worker Gmail, OAuth, recherche web de prospects, DVF).
+   Ici elles sont vides : toutes les actions sont simulées localement. */
+var ONIBOOST_MAIL_API="";
+var ONIBOOST_DVF_API="";
+var OB_PROSPECT_API="";
+var OB_SUPA_KEY="";
+var OB_B2B_SECTEUR={'Agence immo':'agence immobilière','Notaire':'notaire','Courtier crédit':'courtier en crédit immobilier','Architecte':'architecte',"Maître d'œuvre / BET":"maître d'œuvre construction (MOE / BET)",'Promoteur / lotisseur':'promoteur immobilier et lotisseur','Paysagiste':'paysagiste','Cuisiniste / agenceur':'cuisiniste'};
+var ONIBOOST_OAUTH_API="";
+var ONIBOOST_WORKER_API="";
+var OB_OWNER="demo";
+var OB_API=ONIBOOST_WORKER_API,OB_RULES=null;
+/* Délai de réponse « humain » — recommandé 3 min, réglable par le client */
+function obSetDelay(v){
+  try{localStorage.setItem(obKey('reply-delay'),String(v));}catch(e){}
+  var lbl=(String(v)==='0')?'immédiat':(parseFloat(v)<60?v+' min':'1 heure');
+  /* Version installée : le délai est aussi enregistré sur le worker Gmail. Démo : local. */
+  obToast('Délai de réponse réglé : '+lbl,true);
+}
+function obInitDelay(){
+  var sel=document.getElementById('mail-delay-sel');if(!sel)return;
+  var saved=null;try{saved=localStorage.getItem(obKey('reply-delay'));}catch(e){}
+  if(saved!==null&&saved!==''){sel.value=saved;}
+}
+/* Version installée : la file vient de la vraie boîte connectée (worker Gmail).
+   Démo : e-mails de démonstration chargés par obDemoBoot (couche démo en bas de page). */
+var OB_MAILS=[];
+function obInitials(n){return n.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();}
+function obRenderMail(){
+  var q=document.getElementById('mail-queue');if(!q)return;
+  if(!OB_MAILS||!OB_MAILS.length){
+    q.innerHTML='<div style="padding:18px;color:var(--faible);font-size:13px">Aucun email pour le moment. Connectez votre boîte mail ci-dessus : l\'IA analysera les entrants et préparera les réponses.</div>';
+    obRenderRules();return;
+  }
+  q.innerHTML=OB_MAILS.map(function(m){
+    var head=`<div class="mq-top"><div class="mq-av">${obInitials(m.from)}</div><div style="flex:1;min-width:0"><div class="mq-from">${m.from}</div><div class="mq-subj">${m.subj}</div></div><span class="mq-theme">${m.theme}</span></div>`;
+    var body='';
+    if(m.state==='auto'){
+      body=`<div class="mq-status ok">✓ Répondu automatiquement<button class="mq-link" onclick="obToggleSeen(${m.id})">voir la réponse</button></div><div class="mq-reply" id="mq-reply-${m.id}" style="display:none">${m.reply}<div class="mq-rf"><span>Envoyé par l'IA · règle « ${m.theme} » automatisée</span></div></div>`;
+    }else if(m.state==='manual'){
+      body=`<div class="mq-status warn">✓ Brouillon prêt — validation requise</div><div class="mq-reply">${m.reply}<div class="mq-rf"><span>Rédigé par l'IA</span><button class="btn btn-fort sm" onclick="obSendDraft(${m.id})">Valider &amp; envoyer</button></div></div>`;
+    }else{
+      body=`<div class="mq-status new">Nouvelle thématique — l'IA ne sait pas encore répondre<button class="btn btn-fort sm" onclick="obLearn(${m.id})">Apprendre à répondre</button></div><div class="mq-train" id="mq-train-${m.id}" style="display:none"></div>`;
+    }
+    return `<div class="mq-card">${head}${body}</div>`;
+  }).join('');
+  obRenderRules();
+}
+function obToggleSeen(id){var el=document.getElementById('mq-reply-'+id);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+function obLearn(id){
+  var m=OB_MAILS.find(function(x){return x.id===id;});var t=document.getElementById('mq-train-'+id);if(!t||!m)return;
+  t.style.display='block';
+  t.innerHTML=`<div class="mt-q">Comment dois-je répondre à « <b>${m.theme}</b> » ? <span>L'IA propose, vous ajustez.</span></div><textarea class="mt-area" id="mt-area-${id}" placeholder="L'IA rédige une proposition de réponse…"></textarea><div class="mt-auto" id="mt-auto-${id}" onclick="this.querySelector('.sw').classList.toggle('on')"><div class="sw on"></div><div><div class="nm">Automatiser ce type d'email</div><div class="mt">À l'avenir, l'IA répond seule à « ${m.theme} » sans vous demander</div></div></div><div class="mt-actions"><button class="btn btn-fort sm" onclick="obSaveRule(${id})">Enregistrer la réponse</button><button class="btn btn-ghost sm" onclick="obCancelLearn(${id})">Annuler</button></div>`;
+  obDemoType(document.getElementById('mt-area-'+id), m.draft||'');
+}
+function obCancelLearn(id){var t=document.getElementById('mq-train-'+id);if(t){t.style.display='none';t.innerHTML='';}}
+function obSaveRule(id){
+  var m=OB_MAILS.find(function(x){return x.id===id;});if(!m)return;
+  var area=document.getElementById('mt-area-'+id);var sw=document.querySelector('#mt-auto-'+id+' .sw');
+  var guide=area?area.value:m.draft;var automate=sw?sw.classList.contains('on'):true;
+  if(OB_API){
+    fetch(OB_API+'?action=rules',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:m.theme,guide:guide,automated:automate,uid:id})})
+      .then(function(){obToast(automate?('Règle « '+m.theme+" » automatisée — l'IA répondra seule"):"Réponse enregistrée — brouillon prêt",true);obLoadReal();})
+      .catch(function(){obToast('Échec enregistrement (backend injoignable).');});
+    return;
+  }
+  m.reply=guide;m.state=automate?'auto':'manual';m.automated=automate;
+  obRenderMail();
+  obToast(automate?('Règle « '+m.theme+" » automatisée — l'IA répondra seule"):"Réponse enregistrée — brouillon prêt à valider",true);
+}
+function obSendDraft(id){
+  var m=OB_MAILS.find(function(x){return x.id===id;});if(!m)return;
+  if(OB_API){
+    fetch(OB_API+'?action=send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:m.addr,subject:'Re: '+m.subj,text:m.reply,uid:id})})
+      .then(function(){obToast('Email envoyé ✓',true);obLoadReal();}).catch(function(){obToast('Échec envoi (backend).');});
+    return;
+  }
+  m.state='auto';m.automated=false;obRenderMail();obToast('E-mail envoyé ✓ (démo : aucun envoi réel)',true);
+}
+function obRenderRules(){
+  var r=document.getElementById('mail-rules');if(!r)return;var rules;
+  if(OB_RULES){rules=OB_RULES;}else{var seen={};rules=[];OB_MAILS.forEach(function(m){if((m.state==='auto'||m.state==='manual')&&!seen[m.theme]){seen[m.theme]=1;rules.push({t:m.theme,auto:m.state==='auto'});}});}
+  var c=document.getElementById('mail-rcount');if(c)c.textContent=rules.length;
+  r.innerHTML=rules.map(function(x){return `<div class="mr-row"><span class="mr-dot ${x.auto?'on':''}"></span><span class="mr-t">${x.t}</span><span class="mr-badge ${x.auto?'auto':'man'}">${x.auto?'Automatique':'Validation manuelle'}</span></div>`;}).join('');
+}
+function obDisconnectMail(){
+  document.getElementById('mail-config').style.display='none';
+  document.getElementById('mail-connect').style.display='block';
+  var st=document.getElementById('mail-stat');st.textContent='● Non connectée';st.classList.remove('on');
+  obToast('Boîte mail déconnectée');
+}
+function obTone(el){el.parentNode.querySelectorAll('b').forEach(function(b){b.classList.toggle('on',b===el);});}
+function obToast(msg,ok){
+  let t=document.getElementById('ob-toast');
+  if(!t){t=document.createElement('div');t.id='ob-toast';document.body.appendChild(t);}
+  t.textContent=msg;t.className='show'+(ok?' ok':'');
+  clearTimeout(window.__obt);window.__obt=setTimeout(function(){t.className='';},2800);
+}
+function obSync(){obToast('Synchronisé · BatiManager · OniMetri · OniPilote · OniCompta (simulation démo)',true);}
+function obHelp(){obToast('Aide ONIQ — support@oniq.online · réponse sous 24 h');}
+function obExport(){
+  if(typeof OB_CLIENTS==='undefined'||!OB_CLIENTS.length){obToast('Aucun client à exporter — ajoutez-en d\'abord');return;}
+  var head=['Nom','Type','Ville','CP','Surface m²','Téléphone','Email','Statut','Montant €','Score','Source','Notes','Créé le'];
+  var rows=[head].concat(OB_CLIENTS.map(function(c){return [c.nom,clTypeLabel(c.type),c.ville||'',c.cp||'',c.surface||'',c.tel||'',c.email||'',clStatut(c.statut).label,c.montant||'',c.score||'',c.source||'',String(c.notes||'').replace(/\n/g,' '),c.created?new Date(c.created).toLocaleDateString('fr-FR'):''];}));
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c==null?'':c).replace(/"/g,'""')+'"';}).join(';');}).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='oniboost-clients.csv';
+  document.body.appendChild(a);a.click();a.remove();
+  obToast('Export CSV — '+OB_CLIENTS.length+' client(s) ✓',true);
+}
+function obFetchTerrains(){
+  var el=document.getElementById('ob-zone');var zone=((el&&el.value)||'').trim();
+  var box=document.getElementById('ob-terrains');
+  if(!zone){obToast('Entre un code postal (ex 26400) ou une commune');return;}
+  if(!ONIBOOST_DVF_API){obToast('Source DVF non encore déployée — voir le guide');return;}
+  if(box)box.innerHTML='<div style="padding:14px 18px;color:var(--faible);font-size:13px">Recherche des ventes de terrains (open data DVF)…</div>';
+  var q=/^\d{5}$/.test(zone)?('cp='+zone):('commune='+encodeURIComponent(zone));
+  fetch(ONIBOOST_DVF_API+'?'+q).then(function(r){return r.json();}).then(function(j){
+    if(!j.ok){if(box)box.innerHTML='<div style="padding:14px 18px;color:var(--retard);font-size:13px">'+(j.error||'Erreur')+'</div>';return;}
+    if(!j.leads||!j.leads.length){if(box)box.innerHTML='<div style="padding:14px 18px;color:var(--faible);font-size:13px">Aucune vente de terrain trouvée pour cette zone (les données DVF couvrent les mois déjà publiés par l\'État).</div>';return;}
+    window.__obDVF=j.leads;
+    box.innerHTML=j.leads.map(function(l,i){
+      var d=l.date?new Date(l.date).toLocaleDateString('fr-FR'):'';
+      var sub=[l.adresse,l.prix?Math.round(l.prix).toLocaleString('fr-FR')+' €':'',d,'DVF'].filter(Boolean).join(' · ');
+      return '<div class="row"><span class="tag t-info">Terrain</span><div style="flex:1"><div class="nm">'+l.commune+(l.surface?(' · '+l.surface+' m²'):'')+'</div><div class="mt">'+sub+'</div></div><button class="btn btn-fort sm" onclick="obAddFromDVF(window.__obDVF&&window.__obDVF['+i+'])">+ Ajouter au CRM</button></div>';
+    }).join('');
+    obToast(j.count+' achat(s) de terrain réel(s) trouvé(s) ✓',true);
+  }).catch(function(){if(box)box.innerHTML='<div style="padding:14px 18px;color:var(--retard);font-size:13px">Source DVF injoignable — vérifie le déploiement de la fonction.</div>';});
+}
+/* ════════════════════════════════════════════════════════════════════
+   OniBoost — BASE CLIENTS réelle, persistante, multi-clients.
+   Zéro donnée fictive : tout vient de la saisie / import CSV / DVF.
+   Persistance localStorage isolée par entreprise (pont de session du hub).
+   ════════════════════════════════════════════════════════════════════ */
+/* Styles des fenêtres modales : dans la feuille de style principale (charte ONIQ). */
+var OB_UID='demo', OB_COMPANY='Bâti Drôme';
+var OB_CLIENTS=[], OB_APPORTEURS=[], OB_COMM=[], OB_PROV=[], OB_LP=[], OB_LPSEL=null, OB_SOURCES=[], OB_RR=0;
+var CO_COLORS=['neutre']; /* avatars monochromes (charte ONIQ) — conservé pour la compatibilité des données */
+var CL_STATUTS=[{k:'nouveau',label:'Nouveau',cls:'t-info'},{k:'contacte',label:'Contacté',cls:'t-info'},{k:'rdv',label:'RDV',cls:'t-warn'},{k:'devis',label:'Devis',cls:'t-neu'},{k:'signe',label:'Signé',cls:'t-ok'},{k:'perdu',label:'Perdu',cls:'t-danger'}];
+var CL_TYPES={construction:'Construction',reno:'Rénovation',extension:'Extension',autre:'Autre'};
+function clTypeLabel(t){return CL_TYPES[t]||'Autre';}
+function clTypeTag(t){return 't-neu';}
+function clStatut(k){for(var i=0;i<CL_STATUTS.length;i++)if(CL_STATUTS[i].k===k)return CL_STATUTS[i];return CL_STATUTS[0];}
+function obKey(n){return 'oniq-demo-oniboost-'+n;} /* démo : préfixe isolé des autres démos et du CRM */
+function obEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function obNum(v){var n=parseFloat(String(v==null?'':v).replace(/\s/g,'').replace(',','.').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;}
+function obFmt(n){return Math.round(n).toLocaleString('fr-FR');}
+function obId(){return 'c'+Date.now().toString(36)+Math.floor(Math.random()*1e5).toString(36);}
+function obLoad(){try{OB_CLIENTS=JSON.parse(localStorage.getItem(obKey('clients'))||'[]')||[];}catch(e){OB_CLIENTS=[];}try{OB_APPORTEURS=JSON.parse(localStorage.getItem(obKey('apporteurs'))||'[]')||[];}catch(e){OB_APPORTEURS=[];}try{OB_COMM=JSON.parse(localStorage.getItem(obKey('comm'))||'[]')||[];}catch(e){OB_COMM=[];}try{OB_PROV=JSON.parse(localStorage.getItem(obKey('prov'))||'[]')||[];}catch(e){OB_PROV=[];}try{OB_LP=JSON.parse(localStorage.getItem(obKey('lp'))||'[]')||[];}catch(e){OB_LP=[];}try{OB_SOURCES=JSON.parse(localStorage.getItem(obKey('sources'))||'[]')||[];}catch(e){OB_SOURCES=[];}}
+function obSaveSrc(){try{localStorage.setItem(obKey('sources'),JSON.stringify(OB_SOURCES));}catch(e){}}
+function obSaveCo(){try{localStorage.setItem(obKey('comm'),JSON.stringify(OB_COMM));}catch(e){}}
+function obSavePv(){try{localStorage.setItem(obKey('prov'),JSON.stringify(OB_PROV));}catch(e){}}
+function obSaveLp(){try{localStorage.setItem(obKey('lp'),JSON.stringify(OB_LP));}catch(e){}}
+function obSaveC(){try{localStorage.setItem(obKey('clients'),JSON.stringify(OB_CLIENTS));}catch(e){}}
+function obSaveA(){try{localStorage.setItem(obKey('apporteurs'),JSON.stringify(OB_APPORTEURS));}catch(e){}}
+function clField(label,k,val,type){return '<div style="flex:1"><label class="ob-fl">'+label+'</label><input class="input" id="cl-f-'+k+'" type="'+(type||'text')+'" value="'+obEsc(val)+'" style="width:100%"></div>';}
+function clSel(label,k,opts){return '<div style="flex:1"><label class="ob-fl">'+label+'</label><select class="input" id="cl-f-'+k+'" style="width:100%">'+opts+'</select></div>';}
+function clVal(k){var el=document.getElementById('cl-f-'+k);return el?String(el.value).trim():'';}
+function clOpenModal(id,pf){
+  var c=id?OB_CLIENTS.filter(function(x){return x.id===id;})[0]:null;
+  pf=pf||{};
+  var statutOpts=CL_STATUTS.map(function(s){return '<option value="'+s.k+'"'+(c&&c.statut===s.k?' selected':'')+'>'+s.label+'</option>';}).join('');
+  var typeOpts=Object.keys(CL_TYPES).map(function(t){return '<option value="'+t+'"'+((c&&c.type===t)||(!c&&pf.type===t)?' selected':'')+'>'+CL_TYPES[t]+'</option>';}).join('');
+  var appOpts='<option value="">— Aucun —</option>'+OB_APPORTEURS.map(function(a){return '<option value="'+obEsc(a.id)+'"'+(c&&c.apporteur===a.id?' selected':'')+'>'+obEsc(a.nom)+'</option>';}).join('');
+  var comOpts='<option value="">— Non attribué —</option>'+OB_COMM.map(function(m){return '<option value="'+obEsc(m.id)+'"'+((c&&c.commercial===m.id)||(!c&&pf.commercial===m.id)?' selected':'')+'>'+obEsc(m.nom)+'</option>';}).join('');
+  var ov=document.createElement('div');ov.className='ob-modal-ov';ov.id='cl-modal';
+  ov.innerHTML='<div class="ob-modal"><div class="ob-modal-h">'+(c?'Modifier le client':'Nouveau client')+'</div><div class="ob-modal-b">'
+   +'<div class="ob-frow">'+clField('Nom / Raison sociale *','nom',c?c.nom:'')+'</div>'
+   +'<div class="ob-frow">'+clSel('Type','type',typeOpts)+clSel('Statut','statut',statutOpts)+'</div>'
+   +'<div class="ob-frow">'+clField('Ville','ville',c?c.ville:(pf.ville||''))+clField('Code postal','cp',c?c.cp:(pf.cp||''))+'</div>'
+   +'<div class="ob-frow">'+clField('Téléphone','tel',c?c.tel:'')+clField('Email','email',c?c.email:'')+'</div>'
+   +'<div class="ob-frow">'+clField('Surface (m²)','surface',c?c.surface:'','number')+clField('Montant estimé (€)','montant',c?c.montant:'','number')+'</div>'
+   +'<div class="ob-frow">'+clField('Score (0-100)','score',c?c.score:'','number')+clField('Source','source',c?c.source:(pf.source||''))+'</div>'
+   +'<div class="ob-frow">'+clSel('Apporteur','apporteur',appOpts)+clSel('Commercial','commercial',comOpts)+'</div>'
+   +'<label class="ob-fl">Notes</label><textarea class="input" id="cl-f-notes" style="min-height:64px;width:100%">'+obEsc(c?c.notes:'')+'</textarea>'
+   +'</div><div class="ob-modal-f">'+(c?'<button class="btn btn-ghost sm" style="margin-right:auto;color:var(--retard)" onclick="clDelete(\''+c.id+'\')">Supprimer</button>':'')
+   +'<button class="btn btn-ghost sm" onclick="clCloseModal()">Annuler</button><button class="btn btn-fort sm" onclick="clSaveModal('+(c?'\''+c.id+'\'':'')+')">Enregistrer</button></div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)clCloseModal();});
+  var nm=document.getElementById('cl-f-nom');if(nm)nm.focus();
+}
+function clCloseModal(){var m=document.getElementById('cl-modal');if(m)m.remove();}
+function clSaveModal(id){
+  var nom=clVal('nom');if(!nom){obToast('Le nom est obligatoire');return;}
+  var data={nom:nom,type:clVal('type')||'autre',statut:clVal('statut')||'nouveau',ville:clVal('ville'),cp:clVal('cp'),tel:clVal('tel'),email:clVal('email'),surface:clVal('surface'),montant:clVal('montant'),score:clVal('score'),source:clVal('source')||'Manuel',apporteur:clVal('apporteur'),commercial:clVal('commercial'),notes:clVal('notes')};
+  if(id){var c=OB_CLIENTS.filter(function(x){return x.id===id;})[0];if(c){for(var k in data)c[k]=data[k];c.updated=Date.now();}}
+  else{data.id=obId();data.created=Date.now();data.updated=Date.now();OB_CLIENTS.unshift(data);}
+  obSaveC();clCloseModal();clRender();clKpis();dashRender();appRender();coRender();obToast(id?'Client mis à jour ✓':'Client ajouté ✓',true);
+}
+function clDelete(id){if(!confirm('Supprimer ce client définitivement ?'))return;OB_CLIENTS=OB_CLIENTS.filter(function(x){return x.id!==id;});obSaveC();clCloseModal();clRender();clKpis();dashRender();appRender();obToast('Client supprimé');}
+function clSetStatut(id,k){var c=OB_CLIENTS.filter(function(x){return x.id===id;})[0];if(!c)return;c.statut=k;c.updated=Date.now();obSaveC();clRender();clKpis();dashRender();}
+function clFiltered(){
+  var q=((document.getElementById('cl-search')||{}).value||'').toLowerCase().trim();
+  var fs=(document.getElementById('cl-fstatut')||{}).value||'';
+  var ft=(document.getElementById('cl-ftype')||{}).value||'';
+  return OB_CLIENTS.filter(function(c){
+    if(fs&&c.statut!==fs)return false;
+    if(ft&&c.type!==ft)return false;
+    if(q){var hay=(c.nom+' '+(c.ville||'')+' '+(c.email||'')+' '+(c.tel||'')+' '+(c.source||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}
+    return true;
+  });
+}
+function clRender(){
+  var list=document.getElementById('cl-list');if(!list)return;
+  var fsSel=document.getElementById('cl-fstatut');
+  if(fsSel&&fsSel.options.length<=1){CL_STATUTS.forEach(function(s){var o=document.createElement('option');o.value=s.k;o.textContent=s.label;fsSel.appendChild(o);});}
+  var chips=document.getElementById('cl-chips');
+  if(chips){var counts={};OB_CLIENTS.forEach(function(c){counts[c.statut]=(counts[c.statut]||0)+1;});
+    chips.innerHTML='<span class="tag t-info">Total : '+OB_CLIENTS.length+'</span>'+CL_STATUTS.map(function(s){return '<span class="tag '+s.cls+'" style="opacity:'+((counts[s.k]||0)?1:.4)+'">'+s.label+' : '+(counts[s.k]||0)+'</span>';}).join('');}
+  var band=document.getElementById('cl-band-count');if(band)band.textContent=OB_CLIENTS.length+' client'+(OB_CLIENTS.length>1?'s':'');
+  if(!OB_CLIENTS.length){list.innerHTML='<div style="padding:30px 18px;text-align:center;color:var(--faible)"><div style="font-size:14px;margin-bottom:10px">Aucun client pour l\'instant.</div><button class="btn btn-fort sm" onclick="clOpenModal()">+ Ajouter votre premier client</button></div>';return;}
+  var rows=clFiltered();
+  if(!rows.length){list.innerHTML='<div style="padding:24px 18px;color:var(--faible);font-size:13px">Aucun client ne correspond à ce filtre.</div>';return;}
+  var MAX=300;var shown=rows.slice(0,MAX);
+  list.innerHTML=shown.map(function(c){
+    var sub=[c.ville||'',c.surface?c.surface+' m²':'',c.tel||'',c.source||''].filter(Boolean).join(' · ');
+    return '<div class="row"><span class="tag '+clTypeTag(c.type)+'">'+clTypeLabel(c.type)+'</span>'
+      +'<div style="flex:1;min-width:0;cursor:pointer" onclick="clOpenModal(\''+c.id+'\')"><div class="nm">'+obEsc(c.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+      +(obNum(c.montant)?'<span class="montant">'+obFmt(obNum(c.montant))+' €</span>':'')
+      +'<select class="input" style="max-width:130px;padding:5px 8px" onchange="clSetStatut(\''+c.id+'\',this.value)">'+CL_STATUTS.map(function(s){return '<option value="'+s.k+'"'+(s.k===c.statut?' selected':'')+'>'+s.label+'</option>';}).join('')+'</select>'
+      +'<button class="btn btn-ghost sm" onclick="clOpenModal(\''+c.id+'\')">Ouvrir</button></div>';
+  }).join('')+(rows.length>MAX?'<div style="padding:12px 18px;color:var(--faible);font-size:12px">Affichage des '+MAX+' premiers sur '+rows.length+' — affinez la recherche.</div>':'');
+}
+function obStats(){var now=new Date();var mois=OB_CLIENTS.filter(function(c){var d=new Date(c.created||0);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;var signe=OB_CLIENTS.filter(function(c){return c.statut==='signe';});var actifs=OB_CLIENTS.filter(function(c){return c.statut!=='perdu';}).length;return {mois:mois,signe:signe.length,conv:actifs?Math.round(signe.length/actifs*100):0,ca:signe.reduce(function(s,c){return s+obNum(c.montant);},0)};}
+function clKpis(){var box=document.getElementById('cl-kpis');if(!box)return;var s=obStats();var k=[['Clients',OB_CLIENTS.length],['Nouveaux ce mois',s.mois],['Taux de signature',s.conv+' %'],['CA signé',obFmt(s.ca)+' €']];box.innerHTML=k.map(function(x){return '<div class="kpi"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>';}).join('');}
+function dashRender(){
+  var k=document.getElementById('dash-kpis');
+  if(k){var s=obStats();var arr=[['Clients',OB_CLIENTS.length],['Nouveaux ce mois',s.mois],['Apporteurs',OB_APPORTEURS.length],['Taux de signature',s.conv+' %'],['CA signé',obFmt(s.ca)+' €']];k.innerHTML=arr.map(function(x){return '<div class="kpi"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>';}).join('');}
+  var rec=document.getElementById('dash-recent');
+  if(rec){var last=OB_CLIENTS.slice().sort(function(a,b){return (b.created||0)-(a.created||0);}).slice(0,5);
+    if(!last.length){rec.innerHTML='<div style="padding:22px 18px;color:var(--faible);font-size:13px">Aucun client encore. <a href="#" onclick="clOpenModal();return false;" style="color:var(--signal);font-weight:600">Ajoutez votre premier client</a>.</div>';}
+    else{rec.innerHTML=last.map(function(c){var st=clStatut(c.statut);return '<div class="row"><span class="tag '+clTypeTag(c.type)+'">'+clTypeLabel(c.type)+'</span><div style="flex:1;min-width:0;cursor:pointer" onclick="go(\'clients\')"><div class="nm">'+obEsc(c.nom)+'</div><div class="mt">'+obEsc([c.ville||'',c.source||''].filter(Boolean).join(' · '))+'</div></div><span class="tag '+st.cls+'">'+st.label+'</span></div>';}).join('');}}
+  var org=document.getElementById('dash-origin');
+  if(org){if(!OB_CLIENTS.length){org.innerHTML='<div style="color:var(--faible);font-size:13px">Le pipeline s\'affichera dès vos premiers clients.</div>';}
+    else{var counts={};OB_CLIENTS.forEach(function(c){counts[c.statut]=(counts[c.statut]||0)+1;});var max=1;CL_STATUTS.forEach(function(s){if((counts[s.k]||0)>max)max=counts[s.k];});
+      org.innerHTML=CL_STATUTS.map(function(s){var n=counts[s.k]||0;return '<div class="pipe"><span class="pl">'+s.label+'</span><span class="pb"><span style="width:'+Math.round(n/max*100)+'%;'+(s.k==='signe'?'background:var(--ok)':(s.k==='perdu'?'background:var(--faible)':''))+'"></span></span><b class="pn">'+n+'</b></div>';}).join('');}}
+}
+function obAddFromDVF(l){if(!l){obToast('Lead introuvable');return;}var c={id:obId(),nom:(l.commune||'Lead DVF')+(l.surface?(' · terrain '+l.surface+' m²'):''),type:'construction',statut:'nouveau',ville:l.commune||'',cp:l.cp||'',surface:l.surface||'',montant:l.prix?Math.round(l.prix):'',source:'DVF (achat terrain)',notes:[l.adresse,l.date?('vente du '+new Date(l.date).toLocaleDateString('fr-FR')):''].filter(Boolean).join(' — '),created:Date.now(),updated:Date.now()};OB_CLIENTS.unshift(c);obSaveC();clKpis();dashRender();obToast('Lead ajouté à vos clients ✓',true);}
+function appOpenModal(id){
+  var a=id?OB_APPORTEURS.filter(function(x){return x.id===id;})[0]:null;
+  var ov=document.createElement('div');ov.className='ob-modal-ov';ov.id='app-modal';
+  ov.innerHTML='<div class="ob-modal"><div class="ob-modal-h">'+(a?'Modifier l\'apporteur':'Nouvel apporteur')+'</div><div class="ob-modal-b">'
+   +'<div class="ob-frow">'+clField('Nom / Société *','anom',a?a.nom:'')+'</div>'
+   +'<div class="ob-frow">'+clField('Métier','ametier',a?a.metier:'')+clField('Ville','aville',a?a.ville:'')+'</div>'
+   +'<div class="ob-frow">'+clField('Téléphone','atel',a?a.tel:'')+clField('Email','aemail',a?a.email:'')+'</div>'
+   +'<div class="ob-frow">'+clSel('Type de commission','acomtype','<option value="pct"'+((a&&a.comType==='pct')||!a?' selected':'')+'>% du montant signé</option><option value="fixe"'+(a&&a.comType==='fixe'?' selected':'')+'>€ fixe par affaire signée</option>')+clField('Valeur (ex 3 ou 500)','acomval',a?(a.comVal!=null?a.comVal:a.com):'')+'</div>'
+   +'<div class="aide-champ">« Aux résultats » : tu ne paies QUE sur les affaires <b>signées</b>. Le dû se calcule tout seul.</div>'
+   +'</div><div class="ob-modal-f">'+(a?'<button class="btn btn-ghost sm" style="margin-right:auto;color:var(--retard)" onclick="appDelete(\''+a.id+'\')">Supprimer</button>':'')
+   +'<button class="btn btn-ghost sm" onclick="appClose()">Annuler</button><button class="btn btn-fort sm" onclick="appSave('+(a?'\''+a.id+'\'':'')+')">Enregistrer</button></div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)appClose();});
+}
+function appClose(){var m=document.getElementById('app-modal');if(m)m.remove();}
+function appSave(id){var nom=clVal('anom');if(!nom){obToast('Le nom est obligatoire');return;}var data={nom:nom,metier:clVal('ametier'),ville:clVal('aville'),tel:clVal('atel'),email:clVal('aemail'),comType:clVal('acomtype')||'pct',comVal:obNum(clVal('acomval'))};if(id){var a=OB_APPORTEURS.filter(function(x){return x.id===id;})[0];if(a)for(var k in data)a[k]=data[k];}else{data.id=obId();data.created=Date.now();OB_APPORTEURS.unshift(data);}obSaveA();appClose();appRender();dashRender();obToast(id?'Apporteur mis à jour ✓':'Apporteur ajouté ✓',true);}
+function appDelete(id){if(!confirm('Supprimer cet apporteur ?'))return;OB_APPORTEURS=OB_APPORTEURS.filter(function(x){return x.id!==id;});obSaveA();appClose();appRender();dashRender();obToast('Apporteur supprimé');}
+function appCom(a){ var s=(window.__appBy&&window.__appBy[a.id])||{signe:0,ca:0}; return a.comType==='fixe' ? (s.signe*(obNum(a.comVal)||0)) : (s.ca*(obNum(a.comVal)||0)/100); }
+function appRender(){
+  var by={};OB_CLIENTS.forEach(function(c){if(c.apporteur){by[c.apporteur]=by[c.apporteur]||{leads:0,signe:0,ca:0};by[c.apporteur].leads++;if(c.statut==='signe'){by[c.apporteur].signe++;by[c.apporteur].ca+=obNum(c.montant);}}});
+  window.__appBy=by;
+  var totalDue=OB_APPORTEURS.reduce(function(t,a){return t+appCom(a);},0);
+  var kp=document.getElementById('app-kpis');
+  if(kp){var totalSigne=OB_CLIENTS.filter(function(c){return c.apporteur&&c.statut==='signe';}).length;
+    kp.innerHTML=[['Apporteurs',OB_APPORTEURS.length],['Affaires signées',totalSigne],['Commission à verser',obFmt(totalDue)+' €']].map(function(x){return '<div class="kpi"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>';}).join('');}
+  /* La liste du réseau = #app-list (onglet Affaires › Réseau). #ob-apporteurs sert
+     désormais aux RÉSULTATS de recherche SIRENE (onglet Prospection › B2B). */
+  var el=document.getElementById('app-list');
+  if(el){
+    if(!OB_APPORTEURS.length){el.innerHTML='<div style="padding:22px 18px;color:var(--faible);font-size:13px">Aucun apporteur. <a href="#" onclick="go(\'prosp\');subgo(\'prosp\',\'b2b\',document.querySelectorAll(\'#prosp .seg b\')[1]);return false;" style="color:var(--signal);font-weight:600">Trouve des apporteurs</a> (Prospection › Apporteurs) ou ajoute-les manuellement.</div>';}
+    else{ el.innerHTML=OB_APPORTEURS.map(function(a){var s=by[a.id]||{leads:0,signe:0,ca:0};var due=appCom(a);
+      var comLbl=a.comType==='fixe'?((obNum(a.comVal)||0)+' €/affaire'):((obNum(a.comVal)||0)+' % du CA');
+      var sub=[a.metier||'',comLbl,s.leads+' lead'+(s.leads>1?'s':''),s.signe+' signé'+(s.signe>1?'s':''),(s.ca>0?(obFmt(s.ca)+' € CA'):'')].filter(Boolean).join(' · ');
+      var dueTag=due>0?('<span class="tag t-ok" style="margin-right:8px">'+obFmt(due)+' € à verser</span>'):'';
+      return '<div class="row"><span class="tag t-neu">Apporteur</span><div style="flex:1;min-width:0;cursor:pointer" onclick="appOpenModal(\''+a.id+'\')"><div class="nm">'+obEsc(a.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'+dueTag+'<button class="btn btn-ghost sm" onclick="appOpenModal(\''+a.id+'\')">Ouvrir</button></div>';}).join(''); }
+  }
+  if(typeof appFillSelects==='function') appFillSelects();
+}
+/* ════════════════════ MODULE COMMERCIAUX ════════════════════ */
+function coNextRR(){ if(!OB_COMM.length)return ''; var id=OB_COMM[OB_RR%OB_COMM.length].id; OB_RR++; return id; }
+function coOpenModal(id){
+  var m=id?OB_COMM.filter(function(x){return x.id===id;})[0]:null;
+  var ov=document.createElement('div');ov.className='ob-modal-ov';ov.id='co-modal';
+  ov.innerHTML='<div class="ob-modal"><div class="ob-modal-h">'+(m?'Modifier le commercial':'Nouveau commercial')+'</div><div class="ob-modal-b">'
+   +'<div class="ob-frow">'+clField('Nom / Prénom *','cnom',m?m.nom:'')+'</div>'
+   +'<div class="ob-frow">'+clField('Email','cemail',m?m.email:'')+clField('Téléphone','ctel',m?m.tel:'')+'</div>'
+   +'<div class="ob-frow">'+clField('Zone / secteur','czone',m?m.zone:'')+'</div>'
+   +'</div><div class="ob-modal-f">'+(m?'<button class="btn btn-ghost sm" style="margin-right:auto;color:var(--retard)" onclick="coDelete(\''+m.id+'\')">Supprimer</button>':'')
+   +'<button class="btn btn-ghost sm" onclick="coClose()">Annuler</button><button class="btn btn-fort sm" onclick="coSave('+(m?'\''+m.id+'\'':'')+')">Enregistrer</button></div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)coClose();});
+  var nm=document.getElementById('cl-f-cnom');if(nm)nm.focus();
+}
+function coClose(){var x=document.getElementById('co-modal');if(x)x.remove();}
+function coSave(id){
+  var nom=clVal('cnom');if(!nom){obToast('Le nom est obligatoire');return;}
+  var data={nom:nom,email:clVal('cemail'),tel:clVal('ctel'),zone:clVal('czone')};
+  if(id){var m=OB_COMM.filter(function(x){return x.id===id;})[0];if(m)for(var k in data)m[k]=data[k];}
+  else{data.id=obId();data.created=Date.now();data.couleur=CO_COLORS[OB_COMM.length%CO_COLORS.length];OB_COMM.push(data);}
+  obSaveCo();coClose();coRender();obToast(id?'Commercial mis à jour ✓':'Commercial ajouté ✓',true);
+}
+function coDelete(id){
+  if(!confirm('Supprimer ce commercial ? Ses leads repasseront « non attribués ».'))return;
+  OB_COMM=OB_COMM.filter(function(x){return x.id!==id;});
+  OB_CLIENTS.forEach(function(c){if(c.commercial===id)c.commercial='';});
+  obSaveCo();obSaveC();coClose();coCloseDetail();coRender();if(typeof clRender==='function')clRender();obToast('Commercial supprimé');
+}
+function coRender(){
+  var by={};
+  OB_CLIENTS.forEach(function(c){ if(c.commercial){ by[c.commercial]=by[c.commercial]||{leads:0,signe:0,ca:0,actifs:0}; var b=by[c.commercial]; b.leads++; if(c.statut==='signe'){b.signe++;b.ca+=obNum(c.montant);} if(c.statut!=='perdu')b.actifs++; } });
+  var assigned=OB_CLIENTS.filter(function(c){return c.commercial;}).length;
+  var unassigned=OB_CLIENTS.filter(function(c){return !c.commercial;}).length;
+  var totSigne=OB_CLIENTS.filter(function(c){return c.commercial&&c.statut==='signe';}).length;
+  var kp=document.getElementById('co-kpis');
+  if(kp)kp.innerHTML=[['Commerciaux',OB_COMM.length],['Leads attribués',assigned],['Non attribués',unassigned],['Signés (équipe)',totSigne]].map(function(x){return '<div class="kpi"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>';}).join('');
+  var el=document.getElementById('co-list');if(!el)return;
+  if(!OB_COMM.length){ el.innerHTML='<div style="padding:22px 18px;color:var(--faible);font-size:13px">Aucun commercial. Ajoute ton équipe, puis « Répartir les leads non attribués » pour leur distribuer automatiquement les contacts. Les leads générés ensuite seront répartis tout seuls.</div>'; return; }
+  el.innerHTML=OB_COMM.map(function(m){
+    var s=by[m.id]||{leads:0,signe:0,ca:0,actifs:0}; var taux=s.actifs?Math.round(s.signe/s.actifs*100):0;
+    var sub=[m.zone||'',m.email||'',s.leads+' lead'+(s.leads>1?'s':''),s.signe+' signé'+(s.signe>1?'s':''),obFmt(s.ca)+' € CA','taux '+taux+' %'].filter(Boolean).join(' · ');
+    return '<div class="row"><span class="co-av">'+obEsc(obInitials(m.nom||'?'))+'</span>'
+      +'<div style="flex:1;min-width:0;cursor:pointer" onclick="coLeads(\''+m.id+'\')"><div class="nm">'+obEsc(m.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+      +'<button class="btn btn-ghost sm" onclick="coLeads(\''+m.id+'\')">Ses leads</button>'
+      +'<button class="btn btn-ghost sm" onclick="coOpenModal(\''+m.id+'\')">Modifier</button></div>';
+  }).join('');
+}
+function coLeads(id){
+  var m=OB_COMM.filter(function(x){return x.id===id;})[0];if(!m)return;
+  var panel=document.getElementById('co-detail-panel'),box=document.getElementById('co-detail'),ttl=document.getElementById('co-detail-title');
+  var leads=OB_CLIENTS.filter(function(c){return c.commercial===id;});
+  if(ttl)ttl.textContent='Leads de '+m.nom+' ('+leads.length+')';
+  if(panel)panel.style.display='block';
+  if(box){
+    if(!leads.length){ box.innerHTML='<div style="padding:20px;color:var(--faible);font-size:13px">Aucun lead attribué à '+obEsc(m.nom)+'. Clique « Répartir » ou attribue depuis une fiche client.</div>'; }
+    else{
+      var statOpts=function(cur){return CL_STATUTS.map(function(s){return '<option value="'+s.k+'"'+(cur===s.k?' selected':'')+'>'+s.label+'</option>';}).join('');};
+      box.innerHTML=leads.map(function(c){
+        var sub=[CL_TYPES[c.type]||c.type||'',c.ville||'',c.tel||'',c.montant?(obFmt(obNum(c.montant))+' €'):''].filter(Boolean).join(' · ');
+        return '<div class="row"><div style="flex:1;min-width:0;cursor:pointer" onclick="clOpenModal(\''+c.id+'\')"><div class="nm">'+obEsc(c.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+          +'<select class="input" style="max-width:128px" onchange="clSetStatut(\''+c.id+'\',this.value);coLeads(\''+id+'\')">'+statOpts(c.statut)+'</select>'
+          +'<button class="btn btn-ghost sm" onclick="clOpenModal(\''+c.id+'\')">Ouvrir</button></div>';
+      }).join('');
+    }
+  }
+  if(panel)panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function coCloseDetail(){var p=document.getElementById('co-detail-panel');if(p)p.style.display='none';}
+function coDistribute(){
+  if(!OB_COMM.length){obToast('Ajoute au moins un commercial d\'abord');return;}
+  var un=OB_CLIENTS.filter(function(c){return !c.commercial&&c.statut!=='perdu';});
+  if(!un.length){obToast('Aucun lead à répartir — tout est déjà attribué',true);return;}
+  var n=OB_COMM.length,k=0;
+  un.forEach(function(c){ c.commercial=OB_COMM[k%n].id; c.updated=Date.now(); k++; });
+  obSaveC();coRender();if(typeof clRender==='function')clRender();
+  obToast(un.length+' lead(s) répartis sur '+n+' commercial'+(n>1?'aux':'')+' ✓',true);
+}
+/* ════════════════════ MODULE FUNNEL / PAGES DE CAPTURE ════════════════════ */
+function lpE(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function lpDefaultCfg(brand){
+  return { brand:brand||'Votre Constructeur', logo:'🏠', tel:'06 00 00 00 00', ville:'votre région',
+    cprim:'#1763ff', cacc:'#12A37A',
+    headline:'Recevez votre étude de construction gratuite', sub:'Laissez vos coordonnées : un expert vous recontacte sous 24h.',
+    cta:'Recevoir mon étude gratuite', redirect:'', endpoint:'' };
+}
+function lpNew(){
+  var name=prompt('Nom de la marque / du constructeur pour cette page :','Mon Constructeur');
+  if(name===null)return; name=(name||'').trim()||'Mon Constructeur';
+  var pg={id:obId(),name:name,cfg:lpDefaultCfg(name),created:Date.now()};
+  OB_LP.unshift(pg); OB_LPSEL=pg.id; obSaveLp(); lpRender();
+  obToast('Page « '+name+' » créée — personnalise-la à droite ✓',true);
+}
+function lpDelete(id){
+  if(!confirm('Supprimer cette page ?'))return;
+  OB_LP=OB_LP.filter(function(x){return x.id!==id;});
+  if(OB_LPSEL===id)OB_LPSEL=OB_LP.length?OB_LP[0].id:null;
+  obSaveLp(); lpRender(); obToast('Page supprimée');
+}
+function lpSelect(id){ OB_LPSEL=id; lpRender(); }
+function lpCur(){ return OB_LP.filter(function(x){return x.id===OB_LPSEL;})[0]||null; }
+function lpSet(key,val){ var p=lpCur(); if(!p)return; p.cfg[key]=val; if(key==='__name'){p.name=val;} obSaveLp(); lpRefresh(); var li=document.getElementById('lp-li-'+p.id); if(li&&key==='__name')li.textContent=val; }
+function lpInput(label,key,val,type){ return '<label class="ob-fl" style="margin-top:9px">'+label+'</label><input class="input" style="width:100%" type="'+(type||'text')+'" value="'+lpE(val)+'" oninput="lpSet(\''+key+'\',this.value)">'; }
+function lpArea(label,key,val){ return '<label class="ob-fl" style="margin-top:9px">'+label+'</label><textarea class="input" style="width:100%;min-height:56px" oninput="lpSet(\''+key+'\',this.value)">'+lpE(val)+'</textarea>'; }
+function lpColor(label,key,val){ return '<div style="flex:1"><label class="ob-fl">'+label+'</label><input type="color" value="'+lpE(val)+'" oninput="lpSet(\''+key+'\',this.value)" style="width:100%;height:36px;border:1px solid var(--filet-fort);border-radius:8px;background:var(--surface-2);cursor:pointer;padding:3px"></div>'; }
+function lpRender(){
+  var list=document.getElementById('lp-list'); if(!list)return;
+  if(!OB_LP.length){ list.innerHTML='<div style="padding:18px;color:var(--faible);font-size:13px">Aucune page. Clique « + Nouvelle page » pour créer ta première landing de capture.</div>';
+    var ed0=document.getElementById('lp-editor-panel'); if(ed0)ed0.style.display='none';
+    var fr0=document.getElementById('lp-frame'); if(fr0)fr0.srcdoc='<div style="font-family:sans-serif;color:#888;padding:40px;text-align:center">Crée une page pour voir l\'aperçu </div>';
+    return; }
+  if(!OB_LPSEL||!lpCur())OB_LPSEL=OB_LP[0].id;
+  list.innerHTML=OB_LP.map(function(p){
+    var on=p.id===OB_LPSEL;
+    return '<div class="row" style="'+(on?'background:var(--survol);':'')+'cursor:pointer" onclick="lpSelect(\''+p.id+'\')">'
+      +'<span style="width:26px;height:26px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;background:'+lpE(p.cfg.cprim)+';color:#fff;font-size:12px;font-weight:600">'+lpE((p.name||'?').charAt(0).toUpperCase())+'</span>'
+      +'<div style="flex:1;min-width:0"><div class="nm" id="lp-li-'+p.id+'">'+lpE(p.name)+'</div><div class="mt">'+lpE(p.cfg.ville||'')+'</div></div>'
+      +(on?'<span class="tag t-info">éditée</span>':'')+'</div>';
+  }).join('');
+  var ed=document.getElementById('lp-editor-panel'); if(ed)ed.style.display='block';
+  lpEditor(); lpRefresh();
+}
+function lpEditor(){
+  var p=lpCur(); var box=document.getElementById('lp-editor'); if(!p||!box)return; var c=p.cfg;
+  box.innerHTML=
+    '<div class="cfg-lbl">Marque</div>'
+    +lpInput('Nom de la marque','__name',p.name)
+    +lpInput('Logo (emoji)','logo',c.logo)
+    +'<div style="display:flex;gap:8px;margin-top:9px">'+lpColor('Couleur principale','cprim',c.cprim)+lpColor('Couleur accent','cacc',c.cacc)+'</div>'
+    +lpInput('Téléphone','tel',c.tel)+lpInput('Zone / ville','ville',c.ville)
+    +'<div class="cfg-lbl" style="margin-top:16px">Accroche</div>'
+    +lpInput('Titre principal','headline',c.headline)+lpArea('Sous-titre','sub',c.sub)+lpInput('Texte du bouton','cta',c.cta)
+    +'<div class="cfg-lbl" style="margin-top:16px">Après l\'envoi du formulaire</div>'
+    +lpInput('Site du client (redirection après envoi)','redirect',c.redirect)
+    +'<div class="aide-champ">Dès que la personne valide, le lead tombe dans ton CRM ET elle est redirigée vers ce site (celui de ton client constructeur). Ex : https://maisons-dupont.fr</div>'
+    +'<div class="cfg-lbl" style="margin-top:16px">Réception des leads</div>'
+    +lpInput('Endpoint formulaire (optionnel — URL Formspree/Web3Forms/Supabase)','endpoint',c.endpoint)
+    +'<div class="aide-champ">Vide = les leads de l\'aperçu tombent dans ce CRM. En démo, aucun envoi externe n\'est effectué.</div>'
+    +'<button class="btn btn-ghost sm" style="margin-top:14px;color:var(--retard)" onclick="lpDelete(\''+p.id+'\')">Supprimer cette page</button>';
+}
+function lpRefresh(){ var p=lpCur(); var fr=document.getElementById('lp-frame'); if(!p||!fr)return; fr.srcdoc=lpHtml(p.cfg,true); }
+function lpFull(){ var p=lpCur(); if(!p)return; var b=new Blob([lpHtml(p.cfg,false)],{type:'text/html'}); window.open(URL.createObjectURL(b),'_blank'); }
+function lpDownload(){ var p=lpCur(); if(!p){obToast('Crée une page d\'abord');return;} var b=new Blob([lpHtml(p.cfg,false)],{type:'text/html'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='page-'+obSlug(p.name)+'.html'; document.body.appendChild(a); a.click(); a.remove(); obToast('Page téléchargée — héberge-la (Netlify/Cloudflare) et lance ta pub dessus ✓',true); }
+function lpCopyLink(){ obToast('Télécharge la page puis héberge-la (Netlify Drop, Cloudflare Pages…) pour obtenir un lien public à partager / sponsoriser.',true); }
+/* Capture des leads de l'aperçu (iframe → CRM), une seule fois */
+if(!window.__lpCapture){ window.__lpCapture=true; window.addEventListener('message',function(e){
+  if(!e.data||e.data.type!=='oniboost-lead'||!e.data.lead)return;
+  var l=e.data.lead;
+  OB_CLIENTS.unshift({id:obId(),nom:l.nom||'Lead page',type:l.type||'construction',statut:'nouveau',ville:l.ville||'',cp:l.cp||'',tel:l.tel||'',email:l.email||'',surface:'',montant:l.budget||'',score:'',source:'Page de capture'+(l.brand?(' — '+l.brand):''),commercial:(OB_COMM.length?coNextRR():''),notes:l.message||'Lead via funnel inbound',created:Date.now(),updated:Date.now()});
+  obSaveC(); if(typeof clRender==='function')clRender(); clKpis(); dashRender(); coRender();
+  obToast('Nouveau lead reçu via ta page : '+(l.nom||'')+' ✓',true);
+}); }
+function lpHtml(c,preview){
+  var P=c.cprim||'#1763ff', A=c.cacc||'#12A37A';
+  var endpoint='' /* démo : jamais d'envoi vers un endpoint externe */, redirect=c.redirect||'';
+  var head='<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+lpE(c.brand)+'</title>';
+  var css='<style>'
+    +'*{margin:0;padding:0;box-sizing:border-box}'
+    +':root{--p:'+P+';--a:'+A+'}'
+    +'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#13203a;background:linear-gradient(165deg,#f7f9fc,#eaeef6);min-height:100vh}'
+    +'a{color:inherit;text-decoration:none}'
+    +'.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;max-width:560px;margin:0 auto}'
+    +'.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}'
+    +'.brand .lg{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--p),var(--a));font-size:19px}'
+    +'.navtel{font-weight:800;color:var(--p);font-size:15px}'
+    +'.wrap{max-width:460px;margin:8px auto 40px;padding:0 18px}'
+    +'h1{font-size:29px;line-height:1.18;font-weight:900;text-align:center;letter-spacing:-.02em}'
+    +'.sub{font-size:16px;color:#475569;text-align:center;margin:13px 0 20px}'
+    +'.card{background:#fff;border-radius:20px;box-shadow:0 24px 60px -24px rgba(20,30,60,.32);padding:22px;border:1px solid rgba(0,0,0,.04)}'
+    +'.fld,.sel{width:100%;padding:14px 15px;border:2px solid #e6eaf2;border-radius:12px;font-size:15px;margin-bottom:11px;font-family:inherit;background:#fff;color:#13203a}'
+    +'.fld:focus,.sel:focus{outline:none;border-color:var(--p)}'
+    +'.btn{width:100%;background:linear-gradient(135deg,var(--p),var(--a));color:#fff;font-weight:800;padding:15px;border-radius:12px;border:none;cursor:pointer;font-size:16px;box-shadow:0 14px 30px -10px var(--p)}'
+    +'.btn:hover{opacity:.94}'
+    +'.tr{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}'
+    +'.tr span{background:#fff;border:1px solid #e6eaf2;border-radius:30px;padding:7px 13px;font-weight:700;font-size:12.5px;color:#475569}'
+    +'.foot{text-align:center;color:#94a3b8;font-size:12.5px;margin-top:20px}'
+    +'.ok{text-align:center}.ok .big{font-size:48px}'
+    +'</style>';
+  var navHtml='<div class="nav"><div class="brand"><span class="lg">'+lpE(c.logo)+'</span>'+lpE(c.brand)+'</div><a href="tel:'+lpE(c.tel)+'" class="navtel">📞 '+lpE(c.tel)+'</a></div>';
+  var form='<form id="lf" class="card">'
+    +'<select class="sel" name="type"><option value="construction">🏗️ Construction neuve</option><option value="reno">🔨 Rénovation</option><option value="extension">📐 Extension</option><option value="terrain">🏞️ J\'ai déjà un terrain</option></select>'
+    +'<input class="fld" name="nom" placeholder="Prénom et nom" required>'
+    +'<input class="fld" name="tel" placeholder="Téléphone" inputmode="tel" required>'
+    +'<input class="fld" name="email" type="email" placeholder="Email" required>'
+    +'<div style="display:flex;gap:10px"><input class="fld" name="ville" placeholder="Ville" style="flex:2" required><input class="fld" name="cp" placeholder="CP" inputmode="numeric" style="flex:1"></div>'
+    +'<button type="submit" class="btn">'+lpE(c.cta)+'</button>'
+    +'<div style="font-size:11px;color:#94a3b8;margin-top:10px;text-align:center">🔒 Vos données restent confidentielles · sans engagement</div>'
+    +'</form>'
+    +'<div id="okmsg" class="card ok" style="display:none;margin-top:0"><div class="big">✅</div><h1 style="font-size:24px;margin-top:8px">Merci !</h1><p style="color:#64748b;margin-top:10px" id="okp">Votre demande est bien envoyée.</p></div>';
+  var hero='<div class="wrap"><h1>'+lpE(c.headline)+'</h1><p class="sub">'+lpE(c.sub)+'</p>'+form
+    +'<div class="tr"><span>🛡️ Décennale</span><span>💶 Sans engagement</span><span>⏱️ Réponse sous 24h</span></div>'
+    +'<div class="foot">© '+lpE(c.brand)+' · '+lpE(c.ville)+'</div></div>';
+  var js='<scr'+'ipt>'
+    +'var EP='+JSON.stringify(endpoint)+';var RED='+JSON.stringify(redirect)+';var PREVIEW='+(preview?'true':'false')+';var BRAND='+JSON.stringify(c.brand)+';'
+    +'document.getElementById("lf").addEventListener("submit",function(e){e.preventDefault();var f=e.target;'
+    +'var D={brand:BRAND,type:f.type.value,nom:f.nom.value,tel:f.tel.value,email:f.email.value,ville:f.ville.value,cp:f.cp.value};'
+    +'if(EP){try{fetch(EP,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(D)});}catch(err){}}'
+    +'try{if(window.parent&&window.parent!==window)window.parent.postMessage({type:"oniboost-lead",lead:D},"*");}catch(err){}'
+    +'f.style.display="none";document.getElementById("okmsg").style.display="block";'
+    +'if(RED){document.getElementById("okp").textContent=PREVIEW?("↪ En ligne : redirection vers "+RED) : "Redirection en cours…";if(!PREVIEW){setTimeout(function(){window.location.href=RED;},800);}}'
+    +'else{document.getElementById("okp").textContent=BRAND+" vous recontacte très vite.";}'
+    +'});'
+    +'<\/scr'+'ipt>';
+  return head+css+'</head><body>'+navHtml+hero+js+'</body></html>';
+}
+/* ════════════════════ MODULE FOURNISSEURS DE LEADS ════════════════════ */
+var PV_TYPES={construction:'Construction',reno:'Rénovation',mixte:'Mixte / tout type'};
+function obCsvToLeads(txt){
+  var lines=String(txt||'').split(/\r?\n/).filter(function(l){return l.trim();});
+  if(lines.length<2)return [];
+  var sep=lines[0].indexOf(';')>=0?';':(lines[0].indexOf('\t')>=0?'\t':',');
+  var head=lines[0].split(sep).map(function(h){return h.replace(/^﻿/,'').replace(/^"|"$/g,'').trim().toLowerCase();});
+  function col(row,names){for(var i=0;i<names.length;i++){var idx=head.indexOf(names[i]);if(idx>=0&&row[idx]!=null)return row[idx].replace(/^"|"$/g,'').trim();}return '';}
+  var out=[];
+  for(var i=1;i<lines.length;i++){
+    var row=lines[i].split(sep);
+    var nom=col(row,['nom','client','contact','raison sociale','name','prénom','prenom','nom complet']);
+    var tel=col(row,['téléphone','telephone','tel','phone','mobile','portable','gsm']);
+    var email=col(row,['email','mail','e-mail','courriel']);
+    if(!nom&&!tel&&!email)continue;
+    var typ=(col(row,['type','besoin','projet'])||'').toLowerCase();
+    out.push({nom:nom||(tel||email),
+      type:(typ.indexOf('rén')>=0||typ.indexOf('ren')>=0)?'reno':(typ.indexOf('constr')>=0?'construction':(typ.indexOf('ext')>=0?'extension':'autre')),
+      ville:col(row,['ville','commune','city']),cp:col(row,['cp','code postal','postal','zip','code_postal']),
+      tel:tel,email:email,surface:col(row,['surface','surface m²','m²']),
+      montant:col(row,['montant','montant €','budget','prix','valeur']),notes:col(row,['notes','note','message','commentaire','remarque'])});
+  }
+  return out;
+}
+function pvStats(id){
+  var leads=OB_CLIENTS.filter(function(c){return c.provId===id;});
+  var p=OB_PROV.filter(function(x){return x.id===id;})[0]||{};
+  var signe=leads.filter(function(c){return c.statut==='signe';});
+  var cout=(obNum(p.cout)||0)*leads.length;
+  var ca=signe.reduce(function(s,c){return s+obNum(c.montant);},0);
+  return {leads:leads.length,signe:signe.length,cout:cout,ca:ca,
+    coutSign:signe.length?Math.round(cout/signe.length):null,
+    roi:cout>0?Math.round((ca-cout)/cout*100):null};
+}
+function pvOpenModal(id){
+  var p=id?OB_PROV.filter(function(x){return x.id===id;})[0]:null;
+  var typeOpts=Object.keys(PV_TYPES).map(function(t){return '<option value="'+t+'"'+(p&&p.type===t?' selected':'')+'>'+PV_TYPES[t]+'</option>';}).join('');
+  var ov=document.createElement('div');ov.className='ob-modal-ov';ov.id='pv-modal';
+  ov.innerHTML='<div class="ob-modal"><div class="ob-modal-h">'+(p?'Modifier le fournisseur':'Nouveau fournisseur de leads')+'</div><div class="ob-modal-b">'
+   +'<div class="ob-frow">'+clField('Nom du fournisseur *','pnom',p?p.nom:'')+'</div>'
+   +'<div class="ob-frow">'+clSel('Type de leads','ptype',typeOpts)+clField('Coût par lead (€)','pcout',p?p.cout:'','number')+'</div>'
+   +'<div class="ob-frow">'+clField('Site / contact','psite',p?p.site:'')+'</div>'
+   +'<label class="ob-fl">Notes</label><textarea class="input" id="cl-f-pnotes" style="min-height:54px;width:100%">'+obEsc(p?p.notes:'')+'</textarea>'
+   +'</div><div class="ob-modal-f">'+(p?'<button class="btn btn-ghost sm" style="margin-right:auto;color:var(--retard)" onclick="pvDelete(\''+p.id+'\')">Supprimer</button>':'')
+   +'<button class="btn btn-ghost sm" onclick="pvClose()">Annuler</button><button class="btn btn-fort sm" onclick="pvSave('+(p?'\''+p.id+'\'':'')+')">Enregistrer</button></div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)pvClose();});
+  var nm=document.getElementById('cl-f-pnom');if(nm)nm.focus();
+}
+function pvClose(){var x=document.getElementById('pv-modal');if(x)x.remove();}
+function pvSave(id){
+  var nom=clVal('pnom');if(!nom){obToast('Le nom est obligatoire');return;}
+  var data={nom:nom,type:clVal('ptype')||'mixte',cout:clVal('pcout'),site:clVal('psite'),notes:clVal('pnotes')};
+  if(id){var p=OB_PROV.filter(function(x){return x.id===id;})[0];if(p)for(var k in data)p[k]=data[k];}
+  else{data.id=obId();data.created=Date.now();OB_PROV.push(data);}
+  obSavePv();pvClose();pvRender();obToast(id?'Fournisseur mis à jour ✓':'Fournisseur ajouté ✓',true);
+}
+function pvDelete(id){
+  if(!confirm('Supprimer ce fournisseur ? Ses leads déjà importés restent dans le CRM (juste « détachés »).'))return;
+  OB_PROV=OB_PROV.filter(function(x){return x.id!==id;});
+  OB_CLIENTS.forEach(function(c){if(c.provId===id)c.provId='';});
+  obSavePv();obSaveC();pvClose();pvCloseDetail();pvRender();if(typeof clRender==='function')clRender();obToast('Fournisseur supprimé');
+}
+function pvRender(){
+  var totLeads=OB_CLIENTS.filter(function(c){return c.provId;}).length;
+  var totCout=0,totCa=0;
+  OB_PROV.forEach(function(p){var s=pvStats(p.id);totCout+=s.cout;totCa+=s.ca;});
+  var roiG=totCout>0?Math.round((totCa-totCout)/totCout*100):null;
+  var kp=document.getElementById('pv-kpis');
+  if(kp)kp.innerHTML=[['Fournisseurs',OB_PROV.length],['Leads achetés',totLeads],['Coût total',obFmt(totCout)+' €'],['ROI global',roiG==null?'—':(roiG+' %')]].map(function(x){return '<div class="kpi"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>';}).join('');
+  var el=document.getElementById('pv-list');if(!el)return;
+  if(!OB_PROV.length){ el.innerHTML='<div style="padding:22px 18px;color:var(--faible);font-size:13px">Aucune source. Ajoute tes sources de leads payantes, puis importe leurs leads (CSV ou copier-coller). Tu suivras le <b>coût, les signés et le ROI</b> de chacune.</div>'; return; }
+  el.innerHTML=OB_PROV.map(function(p){
+    var s=pvStats(p.id);
+    var roiTag=s.roi==null?'<span class="tag t-neu">ROI —</span>':('<span class="tag '+(s.roi>=0?'t-ok':'t-danger')+'">ROI '+obFmt(s.roi)+' %</span>');
+    var sub=[PV_TYPES[p.type]||p.type,(obNum(p.cout)?(obNum(p.cout)+' €/lead'):''),s.leads+' lead'+(s.leads>1?'s':''),s.signe+' signé'+(s.signe>1?'s':''),'coût '+obFmt(s.cout)+' €',(s.coutSign!=null?('coût/signature '+obFmt(s.coutSign)+' €'):''),obFmt(s.ca)+' € CA'].filter(Boolean).join(' · ');
+    return '<div class="row">'
+      +'<div style="flex:1;min-width:0;cursor:pointer" onclick="pvLeads(\''+p.id+'\')"><div class="nm">'+obEsc(p.nom)+' '+roiTag+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+      +'<button class="btn btn-fort sm" onclick="pvImport(\''+p.id+'\')">Importer</button>'
+      +'<button class="btn btn-ghost sm" onclick="pvPaste(\''+p.id+'\')">Coller</button>'
+      +'<button class="btn btn-ghost sm" onclick="pvLeads(\''+p.id+'\')">Ses leads</button>'
+      +'<button class="btn btn-ghost sm" onclick="pvOpenModal(\''+p.id+'\')">Modifier</button></div>';
+  }).join('');
+}
+function pvImport(id){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.csv,.txt,text/csv';
+  inp.onchange=function(){var f=inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){pvImportText(id,String(rd.result||''));};rd.readAsText(f);};
+  inp.click();
+}
+function pvPaste(id){
+  var p=OB_PROV.filter(function(x){return x.id===id;})[0];if(!p)return;
+  var ov=document.createElement('div');ov.className='ob-modal-ov';ov.id='pv-paste';
+  ov.innerHTML='<div class="ob-modal"><div class="ob-modal-h">Coller les leads — '+obEsc(p.nom)+'</div><div class="ob-modal-b">'
+   +'<div style="font-size:12.5px;color:var(--attenue);margin-bottom:8px">Colle un tableau (Excel/CSV) avec une <b>ligne d\'en-têtes</b>. Colonnes reconnues : nom, téléphone, email, ville, cp, type, montant, notes.</div>'
+   +'<textarea class="input" id="pv-paste-txt" style="min-height:170px;width:100%;font-family:var(--mono);font-size:12px" placeholder="nom;téléphone;email;ville;cp;type&#10;Dupont Jean;0600000000;jean@mail.fr;Montélimar;26200;construction"></textarea>'
+   +'</div><div class="ob-modal-f"><button class="btn btn-ghost sm" onclick="(function(){var m=document.getElementById(\'pv-paste\');if(m)m.remove();})()">Annuler</button><button class="btn btn-fort sm" onclick="pvImportText(\''+p.id+'\',(document.getElementById(\'pv-paste-txt\')||{}).value||\'\');(function(){var m=document.getElementById(\'pv-paste\');if(m)m.remove();})()">Importer</button></div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+}
+function pvImportText(id,txt){
+  var p=OB_PROV.filter(function(x){return x.id===id;})[0];if(!p){obToast('Fournisseur introuvable');return;}
+  var rows=obCsvToLeads(txt);
+  if(!rows.length){obToast('Aucun lead lisible (besoin d\'une ligne d\'en-têtes + au moins nom/tel/email)');return;}
+  rows.forEach(function(r){ OB_CLIENTS.unshift({id:obId(),nom:r.nom,type:r.type||(p.type==='mixte'?'autre':p.type),statut:'nouveau',ville:r.ville,cp:r.cp,tel:r.tel,email:r.email,surface:r.surface,montant:r.montant,score:'',source:p.nom,provId:p.id,commercial:(OB_COMM.length?coNextRR():''),notes:r.notes,created:Date.now(),updated:Date.now()}); });
+  obSaveC();pvRender();coRender();if(typeof clRender==='function')clRender();clKpis();dashRender();
+  obToast(rows.length+' lead(s) importés depuis '+p.nom+(OB_COMM.length?' et répartis aux commerciaux ✓':' ✓'),true);
+}
+function pvLeads(id){
+  var p=OB_PROV.filter(function(x){return x.id===id;})[0];if(!p)return;
+  var panel=document.getElementById('pv-detail-panel'),box=document.getElementById('pv-detail'),ttl=document.getElementById('pv-detail-title');
+  var leads=OB_CLIENTS.filter(function(c){return c.provId===id;});
+  if(ttl)ttl.textContent='Leads de '+p.nom+' ('+leads.length+')';
+  if(panel)panel.style.display='block';
+  if(box){
+    if(!leads.length){ box.innerHTML='<div style="padding:20px;color:var(--faible);font-size:13px">Aucun lead importé pour '+obEsc(p.nom)+'. Clique « Importer » (CSV) ou « Coller ».</div>'; }
+    else{
+      var statOpts=function(cur){return CL_STATUTS.map(function(s){return '<option value="'+s.k+'"'+(cur===s.k?' selected':'')+'>'+s.label+'</option>';}).join('');};
+      box.innerHTML=leads.map(function(c){
+        var co=OB_COMM.filter(function(x){return x.id===c.commercial;})[0];
+        var sub=[CL_TYPES[c.type]||c.type||'',c.ville||'',c.tel||'',(co?(''+co.nom):'non attribué')].filter(Boolean).join(' · ');
+        return '<div class="row"><div style="flex:1;min-width:0;cursor:pointer" onclick="clOpenModal(\''+c.id+'\')"><div class="nm">'+obEsc(c.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+          +'<select class="input" style="max-width:128px" onchange="clSetStatut(\''+c.id+'\',this.value);pvLeads(\''+id+'\');pvRender()">'+statOpts(c.statut)+'</select>'
+          +'<button class="btn btn-ghost sm" onclick="clOpenModal(\''+c.id+'\')">Ouvrir</button></div>';
+      }).join('');
+    }
+  }
+  if(panel)panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function pvCloseDetail(){var p=document.getElementById('pv-detail-panel');if(p)p.style.display='none';}
+function obImportClients(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.csv,text/csv';
+  inp.onchange=function(){var f=inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){
+    var txt=String(rd.result||'');var lines=txt.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2){obToast('CSV vide ou invalide');return;}
+    var sep=lines[0].indexOf(';')>=0?';':',';var head=lines[0].split(sep).map(function(h){return h.replace(/^﻿/,'').replace(/^"|"$/g,'').trim().toLowerCase();});
+    function col(row,names){for(var i=0;i<names.length;i++){var idx=head.indexOf(names[i]);if(idx>=0&&row[idx]!=null)return row[idx].replace(/^"|"$/g,'').trim();}return '';}
+    var n=0;for(var i=1;i<lines.length;i++){var row=lines[i].split(sep);var nom=col(row,['nom','client','contact','raison sociale','name']);if(!nom)continue;var typ=(col(row,['type'])||'').toLowerCase();
+      OB_CLIENTS.unshift({id:obId(),nom:nom,type:typ.indexOf('rén')>=0||typ.indexOf('ren')>=0?'reno':(typ.indexOf('constr')>=0?'construction':(typ.indexOf('ext')>=0?'extension':'autre')),statut:'nouveau',ville:col(row,['ville','commune','city']),cp:col(row,['cp','code postal','postal']),tel:col(row,['téléphone','telephone','tel','phone']),email:col(row,['email','mail','e-mail']),surface:col(row,['surface','surface m²','m²']),montant:col(row,['montant','montant €','budget','prix']),score:col(row,['score']),source:col(row,['source'])||'Import CSV',notes:col(row,['notes','note']),created:Date.now(),updated:Date.now()});n++;}
+    obSaveC();clRender();clKpis();dashRender();appRender();obToast(n+' client(s) importé(s) ✓',true);
+  };rd.readAsText(f);};inp.click();
+}
+function obSlug(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'votre-entreprise';}
+function obApplyCompany(){var n=document.getElementById('ob-cname');if(n&&OB_COMPANY)n.textContent=OB_COMPANY;var av=document.getElementById('ob-cinit');if(av&&OB_COMPANY)av.textContent=(OB_COMPANY[0]||'E').toUpperCase();var lk=document.getElementById('ob-invite-link');if(lk)lk.textContent='oniq.app/p/'+obSlug(OB_COMPANY);}
+function obCopyInvite(){var lk=document.getElementById('ob-invite-link');var txt=lk?lk.textContent:'';try{navigator.clipboard.writeText(txt);obToast('Lien d\'invitation copié ✓',true);}catch(e){obToast('Copie : '+txt);}}
+function obInitRenderAll(){clRender();clKpis();dashRender();appRender();coRender();lpRender();srcRender();pvRender();}
+function obRequestSession(){
+  /* Version installée : session et entreprise demandées au hub parent (postMessage
+     om:get-session / oniq-get-user). Démo : compte fictif local, aucun échange avec le parent. */
+  OB_UID='demo'; OB_COMPANY='Bâti Drôme'; obApplyCompany();
+}
+
+document.querySelectorAll('.nav-i').forEach(n=>n.addEventListener('click',()=>go(n.dataset.v)));
+document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>s.classList.toggle('on')));
+/* ════════════════════════════════════════════════════════════════════
+   OniBoost PREMIUM — Générateur de leads (B2C DVF / B2B SIRENE), zone géo
+   réelle (geo.api.gouv.fr), notifications apporteurs in-app. Données 100% réelles.
+   ════════════════════════════════════════════════════════════════════ */
+/* Styles du générateur de leads : dans la feuille de style principale (charte ONIQ). */
+
+var OB_GEO={b2c:null,b2b:null}, OB_LASTLEADS=[];
+function obGeoAuto(inp,pre){
+  var q=(inp.value||'').trim(); var box=document.getElementById(pre+'-ac'); OB_GEO[pre]=null;
+  if(q.length<2){ if(box){box.className='ac-list';box.innerHTML='';} return; }
+  clearTimeout(window['__geo_'+pre]);
+  window['__geo_'+pre]=setTimeout(function(){
+    /* Démo : autocomplétion sur une liste locale de communes (au lieu de geo.api.gouv.fr) */
+    Promise.resolve(obDemoCommunes(q)).then(function(arr){
+      if(!box)return;
+      if(!Array.isArray(arr)||!arr.length){box.className='ac-list';box.innerHTML='';return;}
+      window['__geores_'+pre]=arr;
+      box.innerHTML=arr.map(function(c,i){return '<div class="ac-item" onclick="obGeoPick(\''+pre+'\','+i+')"><span>'+c.nom+'</span><span class="cp">'+((c.codesPostaux||[])[0]||'')+' · '+c.codeDepartement+'</span></div>';}).join('');
+      box.className='ac-list on';
+    }).catch(function(){});
+  },220);
+}
+function obGeoPick(pre,i){
+  var c=(window['__geores_'+pre]||[])[i]; if(!c)return; OB_GEO[pre]=c;
+  var inp=document.getElementById(pre+'-commune'); if(inp)inp.value=c.nom+' ('+((c.codesPostaux||[])[0]||'')+')';
+  var box=document.getElementById(pre+'-ac'); if(box){box.className='ac-list';box.innerHTML='';}
+}
+function obDist(a,b){var R=6371,dLat=(b[1]-a[1])*Math.PI/180,dLon=(b[0]-a[0])*Math.PI/180,la1=a[1]*Math.PI/180,la2=b[1]*Math.PI/180;var h=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.sin(dLon/2)*Math.sin(dLon/2)*Math.cos(la1)*Math.cos(la2);return 2*R*Math.asin(Math.sqrt(h));}
+function obChip(ev){var t=ev.target.closest('.chip');if(t)t.classList.toggle('on');}
+function obChips(id){return [].slice.call(document.querySelectorAll('#'+id+' .chip.on')).map(function(c){return c.dataset;});}
+async function obTargetCPs(pre){
+  var cps={}; var raw=(document.getElementById(pre+'-cp')||{}).value||'';
+  raw.split(/[\s,;]+/).forEach(function(t){t=t.trim();if(/^\d{5}$/.test(t))cps[t]=1;});
+  var g=OB_GEO[pre];
+  if(g){
+    var ray=parseFloat((document.getElementById(pre+'-rayon')||{}).value||'0');
+    if(!ray){ (g.codesPostaux||[]).forEach(function(p){cps[p]=1;}); }
+    else{ try{
+      var arr=OB_DEMO_COMMUNES.filter(function(c){return c.codeDepartement===g.codeDepartement;}); /* démo : liste locale */ var c0=g.centre&&g.centre.coordinates;
+      (Array.isArray(arr)?arr:[]).forEach(function(c){ if(c.centre&&c0&&obDist(c0,c.centre.coordinates)<=ray){ (c.codesPostaux||[]).forEach(function(p){cps[p]=1;}); } });
+    }catch(e){ (g.codesPostaux||[]).forEach(function(p){cps[p]=1;}); } }
+  }
+  return Object.keys(cps).slice(0,12);
+}
+var OB_ADEME={existants:'meg-83tjwtg8dyz4vv7h1dqe', neufs:'g3cgx7jb3cmys5voxz1mrm22', audits:'ync2epx48x9azbdnggbygqp0'};
+async function obFetchADEME(ds,cp,filterClause,srcTag,leadType,label,freshDays){
+  var f=filterClause||'';
+  if(freshDays){ var dd=new Date(Date.now()-freshDays*86400000).toISOString().slice(0,10); var fc='date_etablissement_dpe:['+dd+' TO *]'; f=f?('('+f+') AND '+fc):fc; }
+  var q=encodeURIComponent('code_postal_ban:'+cp+(f?(' AND '+f):''));
+  var u='https://data.ademe.fr/data-fair/api/v1/datasets/'+ds+'/lines?size=20&sort=-date_etablissement_dpe&qs='+q;
+  var j={results:[]}; /* démo : pas d'appel à l'open data (ADEME / DVF) */
+  return (j.results||[]).map(function(x){
+    var surf=x.surface_habitable_logement||x.surface_chauffee_installation_chauffage_n1||x.surface_ventilee||x.surface_habitable_immeuble;
+    var et=x.etiquette_dpe;
+    return { _src:srcTag, type:leadType, commune:x.nom_commune_ban||x.nom_commune_brut||'', cp:cp,
+      adresse:x.adresse_ban||x.adresse_brut||'', surface:surf, etiquette:et, periode:x.periode_construction||x.annee_construction,
+      nom:((x.type_batiment||'Logement'))+' '+(surf?Math.round(surf)+' m²':'')+(et?(' ['+et+']'):''),
+      notes:label+(x.periode_construction?(' · '+x.periode_construction):'')+(et?(' · DPE '+et):'') };
+  });
+}
+/* DVF EN DIRECT (open data officiel, CORS OK, AUCUN backend) : on récupère les
+   ACHETEURS DE TERRAIN À BÂTIR (= futurs chantiers de construction). Filtre : mutation
+   sans bâti (type_local nul), terrain 200–5000 m², vente réelle. Triés du plus récent. */
+async function obFetchDVF(cp){
+  try{
+    var ds='buildingref-france-demande-de-valeurs-foncieres-geolocalisee-millesime';
+    var where='code_postal="'+cp+'" AND type_local IS NULL AND surface_terrain>=200 AND surface_terrain<=5000 AND valeur_fonciere>0 AND nature_mutation="Vente"';
+    var u='https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/'+ds+'/records?where='+encodeURIComponent(where)+'&order_by='+encodeURIComponent('date_mutation DESC')+'&limit=25&select='+encodeURIComponent('date_mutation,valeur_fonciere,surface_terrain,adresse_numero,adresse_nom_voie,com_name,code_postal');
+    var j={results:[]}; /* démo : pas d'appel à l'open data (ADEME / DVF) */ var seen={}, out=[];
+    (j.results||[]).forEach(function(x){
+      var k=x.date_mutation+'|'+(x.adresse_nom_voie||'')+'|'+x.valeur_fonciere;
+      if(seen[k])return; seen[k]=1;
+      var surf=x.surface_terrain?Math.round(x.surface_terrain):'';
+      out.push({ _src:'DVF', type:'construction', commune:x.com_name||'', cp:x.code_postal||cp,
+        adresse:[x.adresse_numero,x.adresse_nom_voie].filter(Boolean).join(' '),
+        prix:x.valeur_fonciere, surface:x.surface_terrain, date:x.date_mutation,
+        nom:'Acheteur terrain'+(surf?(' '+surf+' m²'):'')+' · '+(x.com_name||''),
+        notes:'Achat d\'un terrain à bâtir'+(x.date_mutation?(' (vente du '+new Date(x.date_mutation).toLocaleDateString('fr-FR')+')'):'')+' — prospect construction neuve. Source : DVF (État).' });
+    });
+    return out;
+  }catch(e){ return []; }
+}
+var OB_SRC={
+  dvf:    function(cp,fr){return obFetchDVF(cp);},
+  dpe_fg: function(cp,fr){return obFetchADEME(OB_ADEME.existants,cp,'(etiquette_dpe:F OR etiquette_dpe:G)','DPE','reno','Passoire thermique — rénovation énergétique',fr);},
+  dpe_e:  function(cp,fr){return obFetchADEME(OB_ADEME.existants,cp,'etiquette_dpe:E','DPEE','reno','Classe E — à rénover prochainement',fr);},
+  audit:  function(cp,fr){return obFetchADEME(OB_ADEME.audits,cp,'','AUDIT','reno','Audit énergétique réalisé — rénovation imminente',fr);},
+  neuf:   function(cp,fr){return obFetchADEME(OB_ADEME.neufs,cp,'','NEUF','extension','Logement neuf récent — extension / aménagement',fr);}
+};
+var OB_SRCTAG={DVF:['t-info','Terrain'],DPE:['t-warn',''],DPEE:['t-warn','E'],AUDIT:['t-neu','Audit'],NEUF:['t-info','Neuf']};
+async function obGenB2C(){
+  var btn=document.querySelector('#prosp-b2c .ob-gen'), box=document.getElementById('ob-leads-b2c');
+  if(!obChips('b2c-besoin').length){obToast('Choisis au moins un besoin');return;}
+  var srcs=obChips('b2c-sources').map(function(d){return d.v;});
+  if(!srcs.length){obToast('Choisis au moins une source');return;}
+  if(btn)btn.querySelector('span').textContent='Génération…';
+  if(box)box.innerHTML='<div class="ob-empty">Recherche des leads sur l\'open data (DVF · ADEME)…</div>';
+  var cps=await obTargetCPs('b2c');
+  if(!cps.length){ if(box)box.innerHTML='<div class="ob-empty">Indique une commune ou un code postal pour cibler ta zone.</div>'; if(btn)btn.querySelector('span').textContent='Générer mes leads gratuitement'; return; }
+  var fr=parseInt((document.getElementById('b2c-fresh')||{}).value||'0')||0;
+  var leads=[];
+  for(var i=0;i<cps.length;i++){
+    for(var s=0;s<srcs.length;s++){ var fn=OB_SRC[srcs[s]]; if(fn){ try{ var res=await fn(cps[i],fr); (res||[]).forEach(function(l){leads.push(l);}); }catch(e){} } }
+    if(leads.length>=200)break;
+  }
+  OB_LASTLEADS=leads;
+  if(btn)btn.querySelector('span').textContent='Générer mes leads gratuitement';
+  var nReno=leads.filter(function(l){return l.type==='reno';}).length, nCons=leads.length-nReno;
+  var cnt=document.getElementById('b2c-count'); if(cnt)cnt.textContent='· '+leads.length+' lead(s) ('+nCons+' construction · '+nReno+' rénovation) sur '+cps.length+' commune(s)';
+  if(!leads.length){ box.innerHTML='<div class="ob-empty">Aucun lead sur cette zone. Élargis le rayon ou ajoute d\'autres sources.</div>'; return; }
+  box.innerHTML=leads.map(function(l,i){
+    var t=OB_SRCTAG[l._src]||['t-info','Lead'];
+    var tag='<span class="tag '+t[0]+'">'+(l._src==='DPE'?(''+(l.etiquette||'F/G')):t[1])+'</span>';
+    var sub=(l._src==='DVF')? [l.adresse||'',(l.prix?Math.round(l.prix).toLocaleString('fr')+' €':''),(l.date?new Date(l.date).toLocaleDateString('fr-FR'):''),'DVF'].filter(Boolean).join(' · ')
+                            : [l.adresse,l.periode,(l._src==='AUDIT'?'audit · ADEME':(l._src==='NEUF'?'neuf · ADEME':'rénovation · ADEME'))].filter(Boolean).join(' · ');
+    var title=obEsc(l.commune||l.nom||'Lead')+(l.surface?(' · '+Math.round(l.surface)+' m²'):'');
+    return '<div class="row">'+tag+'<div style="flex:1;min-width:0"><div class="nm">'+title+'</div><div class="mt">'+obEsc(sub)+'</div></div><button class="btn btn-fort sm" onclick="obAddLeadIdx('+i+')">+ CRM</button></div>';
+  }).join('');
+  obToast(leads.length+' lead(s) réel(s) ✓',true);
+}
+function obAddLead(l){
+  if(!l)return;
+  var c={ id:obId(), nom: l.nom || ((l.commune||'Lead')+(l.surface?(' · '+l.surface+' m²'):'')),
+    type: l.type || 'construction', statut:'nouveau', ville:l.commune||'', cp:l.cp||l._cp||'',
+    surface:l.surface?(''+Math.round(l.surface)):'', montant:l.prix?Math.round(l.prix):'',
+    source: l.source || (l._src==='DPE'?('Rénovation — passoire '+(l.etiquette||'')+' (ADEME)'):'DVF (achat terrain)'),
+    tel:l.tel||'', email:l.email||'',
+    score:'', commercial: l.commercial || (OB_COMM.length?coNextRR():''),
+    notes: l.notes || [l.adresse, l.date?('vente du '+new Date(l.date).toLocaleDateString('fr-FR')):''].filter(Boolean).join(' — '),
+    created:Date.now(), updated:Date.now() };
+  OB_CLIENTS.unshift(c); obSaveC(); clKpis(); dashRender(); coRender();
+}
+function obAddLeadIdx(i){var l=OB_LASTLEADS[i];if(!l)return;if(l.tel&&OB_CLIENTS.some(function(c){return c.tel===l.tel;})){obToast('Déjà dans ton CRM');return;}obAddLead(l);obToast('Lead ajouté au CRM ✓',true);if(typeof obRenderPartnerLeads==='function')obRenderPartnerLeads();}
+function obAddAllLeads(){ if(!OB_LASTLEADS.length){obToast('Génère d\'abord des leads');return;} var n=0; OB_LASTLEADS.forEach(function(l){ if(l.tel&&OB_CLIENTS.some(function(c){return c.tel===l.tel;}))return; obAddLead(l); n++; }); obToast(n?(n+' lead(s) ajouté(s) au CRM ✓'):'Tous ces leads sont déjà dans ton CRM',!!n); if(typeof obRenderPartnerLeads==='function')obRenderPartnerLeads(); }
+async function obGenB2B(){
+  var btn=document.querySelector('#prosp-b2b .ob-gen'), box=document.getElementById('ob-apporteurs');
+  var chips=[].slice.call(document.querySelectorAll('#b2b-metier .chip.on'));
+  var libre=((document.getElementById('b2b-libre')||{}).value||'').trim();
+  /* liste des secteurs à chercher = chips cochés + la recherche libre */
+  var secteurs=chips.map(function(c){var d=c.dataset;return {label:d.l||'Apporteur',secteur:OB_B2B_SECTEUR[d.l]||d.q||d.l};});
+  if(libre)secteurs.push({label:libre,secteur:libre});
+  if(!secteurs.length){obToast('Choisis un métier OU tape une recherche libre');return;}
+  var g=OB_GEO['b2b']; var ville=g?g.nom:''; var cp=((document.getElementById('b2b-cp')||{}).value||'').trim();
+  if(!ville && g)ville=(g.codesPostaux||[])[0]||''; var region=ville||cp||(((document.getElementById('b2b-commune')||{}).value)||'').trim();
+  if(!region){obToast('Indique une commune ou un code postal');return;}
+  if(btn)btn.querySelector('span').textContent='Recherche web (tél)…';
+  if(box)box.innerHTML='<div class="ob-empty">Recherche d\'entreprises <b>avec téléphone</b> (recherche web)… ça prend quelques secondes.</div>';
+  var found=[],seen={};
+  for(var m=0;m<secteurs.length;m++){ try{
+    var label=secteurs[m].label, secteur=secteurs[m].secteur;
+    /* Version installée : fonction ONIQ « prospect-search » (recherche web). Démo : résultats simulés. */
+    await obDemoWait(m===0?1200:450);
+    var j={entreprises:obDemoProspects(label,secteur,region)};
+    (j.entreprises||[]).forEach(function(e){ if(!e.nom)return; var k=(e.nom||'').toLowerCase().trim(); if(seen[k])return; seen[k]=1;
+      found.push({metier:label,nom:e.nom,ville:e.ville||region,tel:e.tel||'',email:e.email||'',site:e.site||'',score:e.score||'',raison:e.raison||''});});
+  }catch(e){} }
+  /* tél d'abord */
+  found.sort(function(a,b){return (b.tel?1:0)-(a.tel?1:0);});
+  if(btn)btn.querySelector('span').textContent='Trouver les prospects (avec téléphone)';
+  var nTel=found.filter(function(a){return a.tel;}).length;
+  var cnt=document.getElementById('b2b-count'); if(cnt)cnt.textContent='· '+found.length+' entreprise(s) · '+nTel+' avec tél';
+  window.__obB2B=found;
+  obRenderB2B();
+  obToast(found.length+' entreprise(s) · '+nTel+' avec téléphone ✓',true);
+}
+/* OniBoost — numéro MOBILE français : 06/07 uniquement (portable du dirigeant).
+   Écarte les fixes/standards 01-05, 08, 09. Normalise +33 / 0033 / espaces / points. */
+function obIsMobileFR(tel){
+  var d=String(tel||'').replace(/\D/g,'');
+  if(d.slice(0,4)==='0033') d=d.slice(4);
+  else if(d.slice(0,2)==='33' && d.length>=11) d=d.slice(2);
+  if(d.length===9) d='0'+d;               /* numéro sans le 0 initial */
+  return d.length===10 && d.charAt(0)==='0' && (d.charAt(1)==='6' || d.charAt(1)==='7');
+}
+/* Rendu des résultats B2B — respecte le toggle « Mobiles only ». Les index restent ceux de
+   window.__obB2B pour que « + Client » / « + Apporteur » pointent la bonne entreprise. */
+function obRenderB2B(){
+  var box=document.getElementById('ob-apporteurs'); if(!box) return;
+  var found=window.__obB2B||[];
+  var only=!!((document.getElementById('b2b-mobonly')||{}).checked);
+  var rows=[];
+  found.forEach(function(a,i){
+    if(only && !obIsMobileFR(a.tel)) return;
+    var mob=obIsMobileFR(a.tel);
+    var contact=[a.tel?(''+a.tel):'', a.email?(''+a.email):''].filter(Boolean).join(' &nbsp; ');
+    var sub=[a.metier, a.ville, contact].filter(Boolean).join(' · ');
+    rows.push('<div class="row"><span class="tag '+(a.tel?(mob?'t-info':'t-neu'):'t-neu')+'">'+(a.tel?(mob?'Mobile':'Standard'):'web')+'</span>'
+      +'<div style="flex:1;min-width:0"><div class="nm">'+obEsc(a.nom)+(a.score?(' <span class="mono" style="font-size:11px;color:var(--faible);font-weight:400">· score '+obEsc(a.score)+'</span>'):'')+'</div><div class="mt">'+sub+'</div></div>'
+      +(a.site?('<button class="btn btn-ghost sm" title="'+obEsc(a.site)+'" onclick="obToast(\'Site web : lien externe désactivé en démo\')">site</button>'):'')
+      +'<button class="btn btn-ghost sm" onclick="obAddClientB2B('+i+')" title="Ajouter comme client/prospect à démarcher">+ Client</button>'
+      +'<button class="btn btn-fort sm" onclick="obInviteB2B('+i+')">+ Apporteur</button></div>');
+  });
+  var nTel=found.filter(function(a){return a.tel;}).length;
+  var nMob=found.filter(function(a){return obIsMobileFR(a.tel);}).length;
+  var cnt=document.getElementById('b2b-count');
+  if(cnt) cnt.textContent='· '+found.length+' entreprise(s) · '+nTel+' avec tél · '+nMob+' mobile(s)'+(only?(' · '+rows.length+' affiché(s)'):'');
+  if(!rows.length){ box.innerHTML='<div class="ob-empty">'+((only&&found.length)?'Aucun mobile (06/07) dans ces résultats — décoche « Mobiles only » pour voir aussi les standards.':'Aucune entreprise trouvée. Essaie une ville plus grande à côté, un autre métier, ou une recherche libre plus simple.')+'</div>'; return; }
+  box.innerHTML=rows.join('');
+}
+
+function obAddClientB2B(i){
+  var a=(window.__obB2B||[])[i]; if(!a)return;
+  OB_CLIENTS.unshift({id:obId(),nom:a.nom,type:'autre',statut:'nouveau',ville:a.ville||'',cp:'',tel:a.tel||'',email:a.email||'',surface:'',montant:'',score:a.score||'',source:'Prospection web'+(a.metier?(' — '+a.metier):''),commercial:(OB_COMM.length?coNextRR():''),notes:[a.raison,a.site].filter(Boolean).join(' · '),created:Date.now(),updated:Date.now()});
+  obSaveC(); if(typeof clRender==='function')clRender(); clKpis(); dashRender(); coRender();
+  obToast('« '+a.nom+' » ajouté en client'+(a.tel?(' ('+a.tel+')'):'')+' ✓',true);
+}
+function obInviteB2B(i){
+  var a=(window.__obB2B||[])[i]; if(!a)return;
+  if(OB_APPORTEURS.some(function(x){return (x.nom||'').toLowerCase()===(a.nom||'').toLowerCase();})){obToast('Déjà dans ton réseau');return;}
+  var nid=obId();
+  OB_APPORTEURS.unshift({id:nid,nom:a.nom,metier:a.metier,ville:a.ville,tel:a.tel||'',email:a.email||'',com:'',site:a.site||'',created:Date.now()});
+  obSaveA(); appRender();
+  appPushNotif(nid,'Ajouté au réseau','Apporteur ajouté'+(a.tel?(' — '+a.tel):'')+'.');
+  obToast('« '+a.nom+' » ajouté'+(a.tel?(' ('+a.tel+')'):'')+' ✓',true);
+}
+function obNotifs(){ try{return JSON.parse(localStorage.getItem(obKey('notifs'))||'[]')||[];}catch(e){return window.__obDemoNotifs||[];} }
+function obSaveNotifs(a){ try{localStorage.setItem(obKey('notifs'),JSON.stringify(a));}catch(e){} }
+function appPushNotif(appId,titre,msg){ var n=obNotifs(); n.unshift({id:obId(),app:appId,titre:titre,msg:msg||'',date:Date.now()}); obSaveNotifs(n.slice(0,200)); }
+function appFillSelects(){ var opts='<option value="">— Choisir un apporteur —</option>'+OB_APPORTEURS.map(function(a){return '<option value="'+a.id+'">'+obEsc(a.nom)+'</option>';}).join(''); ['notif-app','aff-invite-app'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=opts;}); }
+function appNotify(){
+  var appId=(document.getElementById('notif-app')||{}).value; if(!appId){obToast('Choisis un apporteur');return;}
+  var t=(document.getElementById('notif-type')||{}).value||'Notification'; var m=(document.getElementById('notif-msg')||{}).value||'';
+  appPushNotif(appId,t,m); var inp=document.getElementById('notif-msg'); if(inp)inp.value=''; appRenderNotifs();
+  var a=OB_APPORTEURS.filter(function(x){return x.id===appId;})[0]; obToast('Notification envoyée à '+((a&&a.nom)||'l\'apporteur')+' ✓',true);
+}
+function appSendInvite(){
+  var appId=(document.getElementById('aff-invite-app')||{}).value; if(!appId){obToast('Choisis un apporteur à inviter');return;}
+  var com=((document.getElementById('aff-com-val')||{}).value||'')+' '+((document.getElementById('aff-com-type')||{}).value||'');
+  appPushNotif(appId,'Invitation envoyée','Lien d\'inscription transmis · commission '+com+'.');
+  var a=OB_APPORTEURS.filter(function(x){return x.id===appId;})[0]; obToast('Invitation envoyée à '+((a&&a.nom)||'l\'apporteur')+' ✓',true);
+}
+function appRenderNotifs(){
+  appFillSelects(); var el=document.getElementById('notif-log'); if(!el)return; var n=obNotifs();
+  if(!n.length){ el.innerHTML='<div class="ob-empty">Aucune notification pour l\'instant. Envoie-en une ci-dessus, ou invite un apporteur.</div>'; return; }
+  el.innerHTML=n.map(function(x){ var a=OB_APPORTEURS.filter(function(y){return y.id===x.app;})[0]; var dt=new Date(x.date).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return '<div class="row"><div style="flex:1;min-width:0"><div class="nm">'+obEsc(x.titre)+' <span class="muted" style="font-weight:500">→ '+obEsc((a&&a.nom)||'?')+'</span></div><div class="mt">'+(x.msg?obEsc(x.msg)+' · ':'')+dt+'</div></div></div>';
+  }).join('');
+}
+function appClearNotifs(){ if(!confirm('Vider l\'historique des notifications ?'))return; obSaveNotifs([]); appRenderNotifs(); }
+/* fermer les autocomplétions au clic extérieur */
+document.addEventListener('click',function(e){ if(!e.target.closest('.ac-wrap')){ ['b2c-ac','b2b-ac'].forEach(function(id){var b=document.getElementById(id);if(b){b.className='ac-list';}}); } });
+
+/* ════════ CAPTURE WEB — landing page inbound (leads frais, temps réel, légal) ════════ */
+function obLPCfg(){var g=function(id){return (document.getElementById(id)||{}).value||'';};return {titre:g('lp-titre')||'Faites construire votre maison',sub:g('lp-sub'),type:g('lp-type'),ville:g('lp-ville'),tel:g('lp-tel'),color:g('lp-color')||'#2B5FD9',webhook:g('lp-webhook').trim(),entreprise:OB_COMPANY||'Notre entreprise'};}
+function obRenderCapture(){ obLPPull(); }
+function obLPHtml(c){
+  var col=c.color;
+  var typeLabel=({construction:'construction de maison',reno:'rénovation',extension:'extension',tous:'projet'})[c.type]||'projet';
+  var W=JSON.stringify(c.webhook), ENT=JSON.stringify(c.entreprise);
+  var h='';
+  h+='<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+  h+='<title>'+obEsc(c.titre)+' — '+obEsc(c.entreprise)+'</title><style>';
+  h+='*{box-sizing:border-box;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}body{color:#0b0e13;background:#f7f8fa}';
+  h+='.hero{background:linear-gradient(135deg,'+col+',#0b0e13);color:#fff;padding:54px 22px 64px;text-align:center}';
+  h+='.hero h1{font-size:30px;font-weight:800;line-height:1.15;max-width:640px;margin:0 auto}.hero p{font-size:17px;opacity:.92;margin:14px auto 0;max-width:560px}';
+  h+='.tp{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:22px;font-size:13.5px;opacity:.92}';
+  h+='.wrap{max-width:560px;margin:-40px auto 30px;padding:0 18px}.card{background:#fff;border-radius:16px;box-shadow:0 24px 60px -20px rgba(0,0,0,.3);padding:26px}';
+  h+='.card h2{font-size:19px;margin-bottom:4px}.card .s{color:#586274;font-size:14px;margin-bottom:14px}';
+  h+='label{display:block;font-size:12.5px;font-weight:700;color:#3b4250;margin:12px 0 5px}input,select,textarea{width:100%;padding:12px 13px;border:1.5px solid #e3e7ed;border-radius:9px;font-size:15px;font-family:inherit}';
+  h+='button{width:100%;margin-top:18px;padding:15px;background:'+col+';color:#fff;border:0;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer}';
+  h+='.ok{display:none;text-align:center;padding:26px}.ok .e{font-size:46px}.foot{text-align:center;color:#8b94a5;font-size:12px;padding:18px}</style></head><body>';
+  h+='<div class="hero"><h1>'+obEsc(c.titre)+'</h1><p>'+obEsc(c.sub||('Votre projet de '+typeLabel+(c.ville?(' dans '+c.ville):'')+' commence ici.'))+'</p>';
+  h+='<div class="tp"><span>✅ Étude gratuite</span><span>✅ Sans engagement</span><span>✅ Réponse sous 48 h</span></div></div>';
+  h+='<div class="wrap"><div class="card"><div id="form"><h2>Recevez votre étude gratuite</h2><div class="s">Laissez vos coordonnées, '+obEsc(c.entreprise)+' vous recontacte rapidement.</div>';
+  h+='<label>Votre nom *</label><input id="f_nom" placeholder="Nom et prénom">';
+  h+='<label>Téléphone *</label><input id="f_tel" placeholder="06 12 34 56 78">';
+  h+='<label>Email</label><input id="f_email" type="email" placeholder="vous@email.fr">';
+  h+='<label>Code postal du projet</label><input id="f_cp" placeholder="ex 26000">';
+  h+='<label>Votre projet</label><select id="f_type"><option value="construction">Construction maison</option><option value="reno">Rénovation</option><option value="extension">Extension</option><option value="terrain">Je possède un terrain</option></select>';
+  h+='<label>Message (optionnel)</label><textarea id="f_msg" rows="3" placeholder="Décrivez votre projet"></textarea>';
+  h+='<button onclick="obSend()">Recevoir mon étude gratuite →</button></div>';
+  h+='<div class="ok" id="ok"><div class="e">🎉</div><h2>Merci !</h2><div class="s">Votre demande est bien reçue. '+obEsc(c.entreprise)+' vous recontacte très vite.</div></div></div>';
+  h+=(c.tel?('<div class="foot">Une question ? Appelez le <b>'+obEsc(c.tel)+'</b></div>'):'')+'</div>';
+  h+='<scr'+'ipt>var WH='+W+',ENT='+ENT+';function obSend(){var n=document.getElementById("f_nom").value.trim(),t=document.getElementById("f_tel").value.trim();if(!n||!t){alert("Nom et téléphone obligatoires");return;}';
+  h+='var d={nom:n,tel:t,email:document.getElementById("f_email").value.trim(),cp:document.getElementById("f_cp").value.trim(),type:document.getElementById("f_type").value,message:document.getElementById("f_msg").value.trim(),source:"Landing page",entreprise:ENT,date:new Date().toISOString()};';
+  h+='function ok(){document.getElementById("form").style.display="none";document.getElementById("ok").style.display="block";}';
+  h+='if(WH){fetch(WH,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(d)}).then(ok).catch(ok);}else{ok();}}</scr'+'ipt></body></html>';
+  return h;
+}
+function obLPPreview(){ var b=new Blob([obLPHtml(obLPCfg())],{type:'text/html'}); window.open(URL.createObjectURL(b),'_blank'); }
+function obLPDownload(){ var b=new Blob([obLPHtml(obLPCfg())],{type:'text/html'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='page-capture-'+obSlug(OB_COMPANY)+'.html'; document.body.appendChild(a); a.click(); a.remove(); obToast('Page téléchargée — héberge-la et partage le lien ✓',true); }
+var OB_LPLEADS=[];
+async function obLPPull(){
+  var wh=((document.getElementById('lp-webhook')||{}).value||'').trim(); var box=document.getElementById('lp-leads'); if(!wh)return;
+  if(box)box.innerHTML='<div class="ob-empty">Récupération des leads…</div>';
+  try{
+    var r=await fetch(wh+(wh.indexOf('?')<0?'?':'&')+'action=list'); var j=await r.json();
+    var arr=(j&&(j.leads||j.results))||[]; OB_LPLEADS=arr;
+    if(!arr.length){ box.innerHTML='<div class="ob-empty">Aucun lead reçu pour l\'instant.</div>'; return; }
+    box.innerHTML=arr.map(function(l,i){var sub=[l.tel,l.email,l.cp,l.type].filter(Boolean).join(' · ');
+      return '<div class="row"><span class="tag t-ok">Frais</span><div style="flex:1;min-width:0"><div class="nm">'+obEsc(l.nom||'Lead web')+'</div><div class="mt">'+obEsc(sub)+(l.message?(' — '+obEsc(l.message)):'')+'</div></div><button class="btn btn-fort sm" onclick="obAddWebLeadIdx('+i+')">+ CRM</button></div>';
+    }).join('');
+  }catch(e){ if(box)box.innerHTML='<div class="ob-empty">Endpoint injoignable, ou il ne supporte pas la lecture (Formspree = email uniquement). Pour le temps réel dans le CRM, branche ta fonction Supabase.</div>'; }
+}
+function obAddWebLeadIdx(i){ var l=OB_LPLEADS[i]; if(!l)return; OB_CLIENTS.unshift({id:obId(),nom:l.nom||'Lead web',type:l.type||'construction',statut:'nouveau',ville:'',cp:l.cp||'',tel:l.tel||'',email:l.email||'',surface:'',montant:'',source:'Landing page (inbound)',score:'',notes:l.message||'',created:Date.now(),updated:Date.now()}); obSaveC(); clKpis(); dashRender(); obToast('Lead web ajouté au CRM ✓',true); }
+
+/* ════════════════════ CENTRE D'ACQUISITION — sources de leads ════════════════════ */
+var SRC_TYPES={externe:'Achat de leads', inbound:'Formulaire inbound', autre:'Autre source'};
+function srcRender(){
+  var totLeads=OB_CLIENTS.filter(function(c){return c.srcId;}).length;
+  var lastAll=OB_SOURCES.reduce(function(m,s){return Math.max(m,s.lastPull||0);},0);
+  var kp=document.getElementById('src-kpis');
+  if(kp)kp.innerHTML=[['Sources connectées',OB_SOURCES.length],['Leads reçus',totLeads],['Dernière récup.', lastAll?new Date(lastAll).toLocaleDateString('fr-FR'):'—']].map(function(x){return '<div class="kpi"><div class="l">'+x[0]+'</div><div class="v">'+x[1]+'</div></div>';}).join('');
+  var el=document.getElementById('src-list');if(!el)return;
+  if(!OB_SOURCES.length){ el.innerHTML='<div style="padding:22px 18px;color:var(--faible);font-size:13px">Aucune source connectée. « + Connecter une source » : un nom + l\'URL où tes leads arrivent (webhook de ta plateforme d\'achat, Formspree/Getform de ton formulaire, un flux Zapier…). « Tout récupérer » importe les nouveaux leads dans le CRM, auto-attribués.</div>'; return; }
+  el.innerHTML=OB_SOURCES.map(function(s){
+    var n=OB_CLIENTS.filter(function(c){return c.srcId===s.id;}).length;
+    var sub=[SRC_TYPES[s.type]||s.type, s.endpoint?(''+s.endpoint.replace(/^https?:\/\//,'').slice(0,38)):'(sans URL)', n+' lead'+(n>1?'s':''), s.lastPull?('récup. '+new Date(s.lastPull).toLocaleDateString('fr-FR')):'jamais'].filter(Boolean).join(' · ');
+    return '<div class="row"><span class="tag '+(s.type==='inbound'?'t-info':'t-neu')+'">'+({externe:'Achat',inbound:'Inbound',autre:'Autre'}[s.type]||'Source')+'</span>'
+      +'<div style="flex:1;min-width:0"><div class="nm">'+obEsc(s.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+      +(s.endpoint?'<button class="btn btn-fort sm" onclick="srcPull(\''+s.id+'\')">Récupérer</button>':'')
+      +'<button class="btn btn-ghost sm" onclick="srcOpenModal(\''+s.id+'\')">Modifier</button></div>';
+  }).join('');
+}
+function srcOpenModal(id,presetType){
+  var s=id?OB_SOURCES.filter(function(x){return x.id===id;})[0]:null;
+  var typeOpts=Object.keys(SRC_TYPES).map(function(t){return '<option value="'+t+'"'+((s&&s.type===t)||(!s&&presetType===t)?' selected':'')+'>'+SRC_TYPES[t]+'</option>';}).join('');
+  var ov=document.createElement('div');ov.className='ob-modal-ov';ov.id='src-modal';
+  ov.innerHTML='<div class="ob-modal"><div class="ob-modal-h">'+(s?'Modifier la source':'Connecter une source de leads')+'</div><div class="ob-modal-b">'
+   +'<div class="ob-frow">'+clField('Nom de la source (ex Flux leads A, Mon formulaire…) *','snom',s?s.nom:'')+'</div>'
+   +'<div class="ob-frow">'+clSel('Type','stype',typeOpts)+'</div>'
+   +'<label class="ob-fl">URL de réception des leads (webhook / endpoint JSON)</label><input class="input" id="cl-f-sendpoint" value="'+obEsc(s?s.endpoint:'')+'" placeholder="https://…  (Formspree, Getform, Zapier, webhook plateforme)" style="width:100%">'
+   +'<div class="aide-champ">L\'endroit où tes leads arrivent en JSON. « Récupérer » lit cette URL (<code>?action=list</code>) et importe les nouveaux leads (dédup par tél/email) dans le CRM. Laisse vide pour une source remplie à la main / par CSV (onglet Clients).</div>'
+   +'</div><div class="ob-modal-f">'+(s?'<button class="btn btn-ghost sm" style="margin-right:auto;color:var(--retard)" onclick="srcDelete(\''+s.id+'\')">Supprimer</button>':'')
+   +'<button class="btn btn-ghost sm" onclick="srcClose()">Annuler</button><button class="btn btn-fort sm" onclick="srcSave('+(s?'\''+s.id+'\'':'')+')">Enregistrer</button></div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)srcClose();});
+}
+function srcClose(){var x=document.getElementById('src-modal');if(x)x.remove();}
+function srcSave(id){
+  var nom=clVal('snom');if(!nom){obToast('Le nom est obligatoire');return;}
+  var data={nom:nom,type:clVal('stype')||'externe',endpoint:(((document.getElementById('cl-f-sendpoint')||{}).value)||'').trim()};
+  if(id){var s=OB_SOURCES.filter(function(x){return x.id===id;})[0];if(s)for(var k in data)s[k]=data[k];}
+  else{data.id=obId();data.created=Date.now();data.lastPull=0;OB_SOURCES.unshift(data);}
+  obSaveSrc();srcClose();srcRender();obToast(id?'Source mise à jour ✓':'Source connectée ✓',true);
+}
+function srcDelete(id){
+  if(!confirm('Supprimer cette source ? (les leads déjà importés restent dans le CRM)'))return;
+  OB_SOURCES=OB_SOURCES.filter(function(x){return x.id!==id;});obSaveSrc();srcClose();srcRender();obToast('Source supprimée');
+}
+async function srcPull(id){
+  var s=OB_SOURCES.filter(function(x){return x.id===id;})[0];if(!s)return;
+  if(!s.endpoint){obToast('Cette source n\'a pas d\'URL — importe ses leads en CSV (onglet Clients)');return;}
+  obToast('Récupération depuis '+s.nom+'…');
+  try{
+    /* Version installée : lecture de l'endpoint (?action=list). Démo : nouveaux leads simulés. */
+    await obDemoWait(900);
+    var j={leads:obDemoIncoming(s)};
+    var arr=(j&&(j.leads||j.results||j.data))||(Array.isArray(j)?j:[]);
+    var added=0;
+    (arr||[]).forEach(function(l){
+      var tel=String(l.tel||l.telephone||l.phone||'').trim(), email=String(l.email||l.mail||'').trim();
+      var nom=l.nom||l.name||l.prenom||(tel||email||'Lead');
+      if((tel&&OB_CLIENTS.some(function(c){return c.tel===tel;}))||(email&&OB_CLIENTS.some(function(c){return c.email&&c.email===email;})))return;
+      OB_CLIENTS.unshift({id:obId(),nom:nom,type:l.type||'construction',statut:'nouveau',ville:l.ville||l.city||'',cp:l.cp||l.code_postal||'',tel:tel,email:email,surface:l.surface||'',montant:l.budget||l.montant||'',score:'',source:s.nom,srcId:s.id,commercial:(OB_COMM.length?coNextRR():''),notes:l.message||l.notes||'',created:Date.now(),updated:Date.now()});
+      added++;
+    });
+    s.lastPull=Date.now();obSaveSrc();
+    if(added){obSaveC();clKpis();dashRender();coRender();if(typeof clRender==='function')clRender();}
+    srcRender();
+    obToast(added?(added+' nouveau(x) lead(s) importé(s) depuis '+s.nom+(OB_COMM.length?' et répartis ✓':' ✓')):('Aucun nouveau lead sur '+s.nom),true);
+  }catch(e){ obToast('Source '+s.nom+' injoignable — vérifie l\'URL (ou elle ne renvoie pas de JSON lisible)'); }
+}
+async function srcPullAll(){
+  var withEp=OB_SOURCES.filter(function(s){return s.endpoint;});
+  if(!withEp.length){obToast('Aucune source avec URL. Connecte une source avec son webhook/endpoint.');return;}
+  for(var i=0;i<withEp.length;i++){ await srcPull(withEp[i].id); }
+}
+
+/* Démarrage : voir la couche démo en bas de page (obDemoBoot). */
+</script>
+
+
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   OniBoost — COUCHE DÉMO
+   Compte « Démo — Bâti Drôme » : données fictives cohérentes (constructeur /
+   rénovateur Drôme-Ardèche-Lyon), simulations des appels qui partaient vers
+   Supabase, l'OAuth Gmail, la recherche web et les webhooks de leads.
+   Tout vit dans localStorage sous le préfixe `oniq-demo-oniboost-`.
+   Téléphones : plages ARCEP réservées à la fiction (06 39 98…, 04 65 71…).
+   ════════════════════════════════════════════════════════════════════ */
+var OB_DEMO_PREFIX='oniq-demo-oniboost-';
+var OB_DEMO_VERSION='1';
+function obDemoWait(ms){return new Promise(function(res){setTimeout(res,ms);});}
+function obDemoPad(n){n=Math.abs(n)%100;return (n<10?'0':'')+n;}
+/* Numéros fictifs : mobiles 06 39 98 xx xx, fixes 04 65 71 xx xx (réservés ARCEP) */
+function obDemoTel(i,fixe){return (fixe?'04 65 71 ':'06 39 98 ')+obDemoPad(i)+' '+obDemoPad(i*37+11);}
+function obDemoNorm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim();}
+function obDemoHash(s){var h=2166136261;s=String(s||'');for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h|0);}
+
+/* ── Thème : même clé que le CRM ONIQ ── */
+function oqTheme(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';}
+function oqApplyTheme(t){document.documentElement.setAttribute('data-theme',t);var l=document.querySelector('.demo-bar .theme-lbl');if(l)l.textContent=(t==='light'?'Clair':'Sombre');}
+function oqToggleTheme(){var t=oqTheme()==='light'?'dark':'light';oqApplyTheme(t);try{localStorage.setItem('oq-theme',t);}catch(e){}}
+window.addEventListener('storage',function(e){if(e.key==='oq-theme'&&(e.newValue==='dark'||e.newValue==='light'))oqApplyTheme(e.newValue);});
+try{window.matchMedia('(prefers-color-scheme: light)').addEventListener('change',function(ev){var s=null;try{s=localStorage.getItem('oq-theme');}catch(e){}if(s!=='dark'&&s!=='light')oqApplyTheme(ev.matches?'light':'dark');});}catch(e){}
+
+/* ── Communes de la zone (remplace l'API geo.api.gouv.fr en démo) ── */
+var OB_DEMO_COMMUNES=[
+  ['Valence','26362','26',['26000'],[4.8918,44.9334]],['Romans-sur-Isère','26281','26',['26100'],[5.0515,45.0431]],
+  ['Montélimar','26198','26',['26200'],[4.7500,44.5581]],['Crest','26108','26',['26400'],[5.0225,44.7286]],
+  ['Bourg-lès-Valence','26058','26',['26500'],[4.8947,44.9489]],['Pierrelatte','26235','26',['26700'],[4.6969,44.3778]],
+  ['Livron-sur-Drôme','26165','26',['26250'],[4.8431,44.7722]],['Portes-lès-Valence','26252','26',['26800'],[4.8761,44.8756]],
+  ['Loriol-sur-Drôme','26166','26',['26270'],[4.8228,44.7497]],["Tain-l'Hermitage",'26347','26',['26600'],[4.8458,45.0697]],
+  ['Saint-Vallier','26333','26',['26240'],[4.8183,45.1797]],['Chabeuil','26071','26',['26120'],[5.0200,44.8981]],
+  ['Dieulefit','26114','26',['26220'],[5.0619,44.5256]],['Nyons','26220','26',['26110'],[5.1397,44.3608]],
+  ['Die','26113','26',['26150'],[5.3697,44.7536]],['Marsanne','26176','26',['26740'],[4.8744,44.6431]],
+  ['Étoile-sur-Rhône','26124','26',['26800'],[4.8903,44.8386]],['Saulce-sur-Rhône','26339','26',['26270'],[4.8003,44.7039]],
+  ['Beaumont-lès-Valence','26037','26',['26760'],[4.9431,44.8617]],['Saint-Marcel-lès-Valence','26313','26',['26320'],[4.9567,44.9722]],
+  ['Guilherand-Granges','07102','07',['07500'],[4.8747,44.9328]],['Tournon-sur-Rhône','07324','07',['07300'],[4.8325,45.0672]],
+  ['Privas','07186','07',['07000'],[4.5992,44.7353]],['Annonay','07010','07',['07100'],[4.6711,45.2397]],
+  ['Vienne','38544','38',['38200'],[4.8742,45.5253]],['Saint-Marcellin','38416','38',['38160'],[5.3206,45.1522]],
+  ['Grenoble','38185','38',['38000','38100'],[5.7245,45.1885]],
+  ['Lyon','69123','69',['69001','69002','69003','69004','69005','69006','69007','69008','69009'],[4.8357,45.7640]],
+  ['Villeurbanne','69266','69',['69100'],[4.8800,45.7667]],['Vénissieux','69259','69',['69200'],[4.8867,45.6975]]
+].map(function(c){return {nom:c[0],code:c[1],codeDepartement:c[2],codesPostaux:c[3],centre:{type:'Point',coordinates:c[4]}};});
+
+function obDemoCommunes(q){
+  var n=obDemoNorm(q); if(!n)return [];
+  var hits=OB_DEMO_COMMUNES.filter(function(c){var nn=obDemoNorm(c.nom);return nn.indexOf(n)>=0||c.codesPostaux.some(function(p){return p.indexOf(n.replace(/ /g,''))===0;});});
+  hits.sort(function(a,b){return (obDemoNorm(a.nom).indexOf(n)===0?0:1)-(obDemoNorm(b.nom).indexOf(n)===0?0:1);});
+  return hits.slice(0,6);
+}
+
+/* ── Données de démonstration (dates relatives au moment du chargement) ── */
+function obDemoData(){
+  var J=86400000, now=Date.now();
+  function ago(d,h){return now-d*J-(h||0)*3600000;}
+  var comm=[
+    {id:'co1',nom:'Julien Faure',email:'j.faure@batidrome-demo.fr',tel:obDemoTel(21),zone:'Valence · Nord Drôme',couleur:'',created:ago(400)},
+    {id:'co2',nom:'Sophie Marchand',email:'s.marchand@batidrome-demo.fr',tel:obDemoTel(22),zone:'Montélimar · Sud Drôme',couleur:'',created:ago(380)},
+    {id:'co3',nom:'Karim Benali',email:'k.benali@batidrome-demo.fr',tel:obDemoTel(23),zone:'Lyon Sud · Nord Isère',couleur:'',created:ago(120)}
+  ];
+  var app=[
+    {id:'a1',nom:'Agence Immo Rhône-Vercors',metier:'Agence immo',ville:'Valence',tel:obDemoTel(31,true),email:'contact@immo-rhone-vercors.fr',comType:'pct',comVal:3,created:ago(300)},
+    {id:'a2',nom:'Office notarial des Trois Becs',metier:'Notaire',ville:'Crest',tel:obDemoTel(32,true),email:'office@troisbecs-notaires.fr',comType:'fixe',comVal:500,created:ago(260)},
+    {id:'a3',nom:'Drôme Courtage Habitat',metier:'Courtier crédit',ville:'Montélimar',tel:obDemoTel(33),email:'dossiers@drome-courtage.fr',comType:'pct',comVal:2,created:ago(210)},
+    {id:'a4',nom:'Atelier Lignes & Volumes',metier:'Architecte',ville:'Romans-sur-Isère',tel:obDemoTel(34),email:'atelier@lignes-volumes.fr',comType:'pct',comVal:3,created:ago(150)},
+    {id:'a5',nom:'Paysages de la Valloire',metier:'Paysagiste',ville:'Saint-Vallier',tel:obDemoTel(35),email:'bonjour@paysages-valloire.fr',comType:'fixe',comVal:300,created:ago(60)}
+  ];
+  var prov=[
+    {id:'p1',nom:'LeadHabitat Rhône',type:'construction',cout:'42',site:'leadhabitat-rhone.example',notes:'Leads maisons individuelles Drôme / Ardèche, exclusivité 48 h.',created:ago(200)},
+    {id:'p2',nom:'Réno-Direct Leads',type:'reno',cout:'26',site:'reno-direct.example',notes:'Rénovation énergétique, lead partagé à 3 artisans maximum.',created:ago(170)},
+    {id:'p3',nom:'Terrain & Maison',type:'mixte',cout:'35',site:'terrain-maison.example',notes:'Acheteurs de terrain et projets d\'extension. Test démarré cet été.',created:ago(75)}
+  ];
+  var src=[
+    {id:'s1',nom:'Flux LeadHabitat Rhône',type:'externe',endpoint:'https://api.leadhabitat-rhone.example/v1/leads',created:ago(200),lastPull:ago(1,3)},
+    {id:'s2',nom:'Formulaire site Bâti Drôme',type:'inbound',endpoint:'https://formulaire.batidrome.example/leads',created:ago(140),lastPull:ago(0,2)},
+    {id:'s3',nom:'Réno-Direct Leads — export',type:'externe',endpoint:'https://hooks.reno-direct.example/export',created:ago(170),lastPull:ago(2,5)}
+  ];
+  /* nom, type, statut, ville, cp, n° tél, surface, montant, score, source, apporteur, commercial, fournisseur, source connectée, notes, jours */
+  var C=[
+    ['Claire et Thomas Roux','construction','signe','Chabeuil','26120',40,118,246000,92,'Apporteur — Agence Immo Rhône-Vercors','a1','co1','','','Plain-pied 4 chambres, terrain de 820 m² acquis. CCMI signé fin août.',58],
+    ['Famille Garnier','reno','devis','Valence','26000',41,96,48500,78,'Réno-Direct Leads','','co1','p2','s3','Isolation des combles + PAC air/eau, DPE F. Devis envoyé, relance prévue.',12],
+    ['Mehdi Haddad','construction','rdv','Étoile-sur-Rhône','26800',42,105,228000,81,'LeadHabitat Rhône','','co1','p1','s1','Terrain de 650 m² en cours d\'achat. RDV au bureau de Valence mardi 10 h.',6],
+    ['Isabelle Chazal','extension','signe','Crest','26400',43,32,64000,88,'Apporteur — Atelier Lignes & Volumes','a4','co1','','','Extension ossature bois 32 m² + terrasse. Acompte de 30 % reçu.',41],
+    ['Nicolas et Laura Blanc','construction','devis','Montélimar','26200',44,132,289000,74,'Page de capture — Bâti Drôme Maisons','','co2','','','Maison R+1, 5 chambres, garage double. Comparent deux constructeurs.',18],
+    ['Josiane Morel','reno','contacte','Dieulefit','26220',45,74,22800,55,'Réno-Direct Leads','','co2','p2','s3','Remplacement des menuiseries + VMC. Rappeler après 18 h.',3],
+    ['Antoine Vidal','construction','nouveau','Pierrelatte','26700',46,110,215000,69,'LeadHabitat Rhône','','co2','p1','s1','Primo-accédant, dossier PTZ en cours auprès de sa banque.',1],
+    ['Sarah et Julien Perrin','extension','rdv','Bourg-lès-Valence','26500',47,28,52000,72,'Formulaire site Bâti Drôme','','co1','','s2','Garage transformé en suite parentale + surélévation partielle.',5],
+    ['Gérard Fayolle','reno','perdu',"Tain-l'Hermitage",'26600',48,140,67000,40,'Réno-Direct Leads','','co1','p2','','A retenu un concurrent (écart de prix de 9 %).',49],
+    ['Élodie Martinez','construction','contacte','Livron-sur-Drôme','26250',49,98,205000,63,'Terrain & Maison','','co2','p3','','Terrain viabilisé de 540 m², lotissement Les Vignes.',9],
+    ['Famille Bouvier','construction','signe','Romans-sur-Isère','26100',50,125,268000,90,'Apporteur — Office notarial des Trois Becs','a2','co1','','','Contrat signé. Ouverture de chantier prévue en novembre.',66],
+    ['Hugo Lefèvre','reno','nouveau','Guilherand-Granges','07500',51,85,31000,58,'Formulaire site Bâti Drôme','','','','s2','Rénovation salle de bain + cuisine, maison des années 80.',0],
+    ['Céline Arnaud','extension','devis','Chabeuil','26120',52,40,88000,76,'Apporteur — Agence Immo Rhône-Vercors','a1','co1','','','Extension de 40 m² + véranda côté jardin.',22],
+    ['Marc et Aline Dumas','construction','rdv','Saulce-sur-Rhône','26270',53,115,238000,79,'Apporteur — Drôme Courtage Habitat','a3','co2','','','Financement validé par le courtier. RDV jeudi 14 h.',8],
+    ['Patrick Giraud','reno','signe','Marsanne','26740',54,160,72500,86,'Réno-Direct Leads','','co2','p2','','Rénovation globale d\'une longère, objectif BBC rénovation.',35],
+    ['Inès Benoît','construction','nouveau','Vienne','38200',55,100,225000,66,'LeadHabitat Rhône','','co3','p1','s1','Recherche un terrain secteur Vienne sud.',2],
+    ['Famille Rey','extension','contacte','Lyon','69008',56,25,46000,61,'Terrain & Maison','','co3','p3','','Extension en toit-terrasse, contraintes PLU à vérifier.',11],
+    ['Olivier Charpin','construction','devis','Vénissieux','69200',57,108,262000,71,'Page de capture — Bâti Drôme Maisons','','co3','','','Maison contemporaine, toit plat, terrain de 480 m².',15],
+    ['Nathalie Pons','reno','rdv','Annonay','07100',58,90,38400,68,'Réno-Direct Leads','','co3','p2','s3','Audit énergétique réalisé (classe E). Visite technique à caler.',4],
+    ['Lucas Moulin','construction','perdu','Nyons','26110',59,95,198000,35,'LeadHabitat Rhône','','co2','p1','','Projet reporté : financement refusé.',52],
+    ['Amandine Colin','reno','signe','Valence','26000',60,70,26900,84,'Formulaire site Bâti Drôme','','co1','','s2','Isolation des murs par l\'extérieur, aides déduites du devis.',29],
+    ['Yannick Rolland','construction','contacte','Die','26150',61,120,254000,60,'Terrain & Maison','','co2','p3','','Maison bois sur terrain en pente.',7],
+    ['SCI Les Terrasses du Rhône','autre','devis','Tournon-sur-Rhône','07300',62,280,410000,70,'Prospection web — Promoteur / lotisseur','','co3','','','Deux maisons jumelées pour un promoteur local.',20],
+    ['Fabienne Lopez','extension','nouveau','Portes-lès-Valence','26800',63,22,41000,57,'Formulaire site Bâti Drôme','','','','s2','Agrandissement du séjour (22 m²).',0],
+    ['Romain Chevalier','reno','devis','Loriol-sur-Drôme','26270',64,110,54300,73,'Réno-Direct Leads','','co2','p2','s3','Toiture + isolation, maison de 1975.',14],
+    ['Christine et Paul Meunier','construction','signe','Montélimar','26200',65,138,301000,91,'LeadHabitat Rhône','','co2','p1','s1','Maison de plain-pied 138 m², signée après deux RDV.',72],
+    ['Damien Roche','construction','nouveau','Crest','26400',66,104,219000,64,'LeadHabitat Rhône','','','p1','s1','Terrain en cours d\'achat, souhaite un premier chiffrage.',1],
+    ['Laetitia Guérin','reno','contacte','Romans-sur-Isère','26100',67,82,29700,59,'Apporteur — Atelier Lignes & Volumes','a4','co1','','','Réaménagement des combles en deux chambres.',10],
+    ['Kevin Masson','extension','perdu','Saint-Vallier','26240',68,30,58000,38,'Apporteur — Paysages de la Valloire','a5','co1','','','Projet abandonné (mutation professionnelle).',44],
+    ['Sandrine Aubert','construction','rdv','Saint-Marcellin','38160',69,112,232000,75,'Terrain & Maison','','co3','p3','','Terrain de 900 m², souhaite une maison bioclimatique.',6],
+    ['Famille N\'Diaye','reno','nouveau','Privas','07000',70,120,44000,62,'Réno-Direct Leads','','co3','p2','s3','Changement de chauffage (fioul → PAC).',2],
+    ['Bruno Lacroix','construction','devis','Valence','26000',71,126,274000,77,'Apporteur — Agence Immo Rhône-Vercors','a1','co1','','','Devis de 274 000 € transmis, réponse attendue sous 15 jours.',25]
+  ];
+  var clients=C.map(function(r,i){
+    var slug=obDemoNorm(r[0]).split(' ').filter(function(w){return w!=='et';});
+    var email=(r[0].indexOf('SCI')===0)?'contact@terrasses-du-rhone.fr':(slug[0]+'.'+slug[slug.length-1]+'@exemple.fr');
+    return {id:'cl'+(i+1),nom:r[0],type:r[1],statut:r[2],ville:r[3],cp:r[4],tel:obDemoTel(r[5],r[0].indexOf('SCI')===0||i%9===5),email:email,
+      surface:String(r[6]),montant:String(r[7]),score:String(r[8]),source:r[9],apporteur:r[10],commercial:r[11],provId:r[12],srcId:r[13],notes:r[14],
+      created:ago(r[15],i%7+1),updated:ago(Math.max(0,r[15]-3),i%5)};
+  });
+  var notifs=[
+    {id:'n1',app:'a3',titre:'RDV planifié',msg:'M. et Mme Dumas — jeudi 14 h à l\'agence de Montélimar.',date:ago(1,2)},
+    {id:'n2',app:'a4',titre:'Chantier livré',msg:'Extension Chazal réceptionnée sans réserve.',date:ago(3,5)},
+    {id:'n3',app:'a1',titre:'Devis envoyé',msg:'Dossier Lacroix : devis de 274 000 € transmis au client.',date:ago(5,1)},
+    {id:'n4',app:'a1',titre:'Devis signé — commission débloquée',msg:'Dossier Roux (Chabeuil) signé — commission de 3 % débloquée.',date:ago(20,4)},
+    {id:'n5',app:'a5',titre:'Invitation envoyée',msg:'Lien d\'inscription transmis · commission 300 € fixe.',date:ago(30,6)},
+    {id:'n6',app:'a2',titre:'Devis signé — commission débloquée',msg:'Dossier Bouvier (Romans-sur-Isère) signé.',date:ago(60,3)}
+  ];
+  var lp=[
+    {id:'lp1',name:'Bâti Drôme Maisons',created:ago(90),cfg:{brand:'Bâti Drôme Maisons',logo:'🏡',tel:'04 65 71 10 26',ville:'Drôme & Ardèche',cprim:'#1F4FBF',cacc:'#12A37A',
+      headline:'Faites construire votre maison dans la Drôme',sub:'Étude de faisabilité et chiffrage offerts. Un conseiller local vous rappelle sous 24 h.',cta:'Recevoir mon étude',redirect:'',endpoint:''}},
+    {id:'lp2',name:'Rénov\'Énergie Drôme',created:ago(40),cfg:{brand:'Rénov\'Énergie Drôme',logo:'🏠',tel:'04 65 71 10 27',ville:'Valence et alentours',cprim:'#0F766E',cacc:'#2563EB',
+      headline:'Rénovez votre maison, divisez vos factures',sub:'Audit, isolation, pompe à chaleur : un seul interlocuteur, aides déduites du devis.',cta:'Être rappelé',redirect:'',endpoint:''}}
+  ];
+  return {clients:clients,apporteurs:app,comm:comm,prov:prov,sources:src,lp:lp,notifs:notifs};
+}
+
+/* Boîte mail de démonstration : e-mails entrants et réponses rédigées par l'IA */
+function obDemoMails(){
+  return [
+    {id:101,from:'Claire Roux',addr:'claire.roux@exemple.fr',subj:'Demande de devis — maison plain-pied 110 m² à Chabeuil',theme:'Demande de devis',state:'auto',
+     reply:'Bonjour Madame Roux,\n\nMerci pour votre demande. Pour une maison de plain-pied d\'environ 110 m² à Chabeuil, nos réalisations récentes se situent entre 205 000 et 245 000 € selon les finitions et le terrain.\n\nJulien Faure, votre conseiller sur le secteur, vous propose un rendez-vous au bureau de Valence ou directement sur votre terrain : mardi 10 h ou jeudi 17 h30 ?\n\nBien cordialement,\nBâti Drôme'},
+    {id:102,from:'Agence Immo Rhône-Vercors',addr:'contact@immo-rhone-vercors.fr',subj:'Acquéreur d\'un terrain à Étoile — dispo pour un RDV ?',theme:'Prise de RDV',state:'manual',
+     reply:'Bonjour,\n\nMerci pour la mise en relation ! Nous pouvons rencontrer vos acquéreurs dès cette semaine : jeudi 14 h ou vendredi 9 h30 à notre bureau de Valence, ou sur le terrain à Étoile-sur-Rhône si c\'est plus simple pour eux.\n\nComme convenu, vous serez notifiés à chaque étape du dossier.\n\nBien cordialement,\nJulien Faure — Bâti Drôme'},
+    {id:103,from:'Thomas Girard',addr:'thomas.girard@exemple.fr',subj:'Quels délais pour une extension de 30 m² ?',theme:'Délais & planning',state:'new',
+     draft:'Bonjour Monsieur Girard,\n\nPour une extension de 30 m², comptez en général :\n— 3 à 4 semaines pour l\'étude et le dépôt de la déclaration préalable (ou du permis au-delà de 40 m² en zone urbaine) ;\n— 1 à 2 mois d\'instruction en mairie ;\n— 8 à 10 semaines de travaux une fois l\'autorisation obtenue.\n\nNous pouvons passer voir votre maison la semaine prochaine pour affiner le planning et vous remettre un chiffrage. Quel créneau vous arrange ?\n\nBien cordialement,\nBâti Drôme'},
+    {id:104,from:'Nadia Bensaïd',addr:'nadia.bensaid@exemple.fr',subj:'Aides MaPrimeRénov\' pour l\'isolation de mes combles',theme:'Aides & financement',state:'new',
+     draft:'Bonjour Madame Bensaïd,\n\nOui, l\'isolation des combles peut être financée en partie par MaPrimeRénov\' et les certificats d\'économie d\'énergie, selon vos revenus et votre logement. En tant qu\'entreprise RGE, nous montons le dossier avec vous et déduisons les aides directement du devis.\n\nPour vous donner un montant précis, il nous faut la surface des combles, l\'année de construction et votre dernier avis d\'imposition. Souhaitez-vous que nous vous appelions pour faire le point ?\n\nBien cordialement,\nBâti Drôme'},
+    {id:105,from:'Pierre Lambert',addr:'pierre.lambert@exemple.fr',subj:'Relance : devis rénovation salle de bain',theme:'Suivi de devis',state:'auto',
+     reply:'Bonjour Monsieur Lambert,\n\nVotre devis de rénovation de salle de bain vous a été envoyé le 2 septembre ; vous le retrouverez en pièce jointe. Il reste valable jusqu\'au 2 novembre.\n\nSi vous le souhaitez, Sophie Marchand peut vous appeler pour en parler : dites-nous simplement le meilleur moment.\n\nBien cordialement,\nBâti Drôme'}
+  ];
+}
+
+/* Leads particuliers remontés par le réseau de partenaires (Prospection › Clients B2C) */
+function obDemoPartnerLeads(){
+  return [
+    ['Justine et Adrien Morin','construction','Beaumont-lès-Valence','26760',80,700,236000,'Terrain de 700 m² signé chez le notaire, cherche un constructeur pour un plain-pied.'],
+    ['Michel Barthélemy','reno','Montélimar','26200',81,110,35000,'Maison des années 70 : isolation + menuiseries, veut un devis avant l\'hiver.'],
+    ['Famille Cordier','extension','Livron-sur-Drôme','26250',82,35,55000,'Extension de 35 m² pour une chambre et une salle d\'eau.'],
+    ['Pauline Sauvage','construction','Crest','26400',83,95,212000,'Primo-accédante, financement pré-accordé, terrain en lotissement.'],
+    ['Rachid Amrani','reno','Valence','26000',84,65,18500,'Rénovation complète d\'une salle de bain + remplacement chaudière.'],
+    ['Coralie Fontaine','extension',"Tain-l'Hermitage",'26600',85,28,47000,'Véranda maçonnée + ouverture sur séjour.'],
+    ['Denis Gauthier','construction','Pierrelatte','26700',86,128,248000,'Maison R+1 avec garage, terrain de 1 100 m².'],
+    ['Émilie Vasseur','reno','Die','26150',87,140,62000,'Maison de village : toiture, isolation et chauffage.']
+  ].map(function(r){
+    return {_src:'PART',type:r[1],commune:r[2],cp:r[3],tel:obDemoTel(r[4]),email:obDemoNorm(r[0]).split(' ')[0]+'.'+obDemoNorm(r[0]).split(' ').pop()+'@exemple.fr',
+      surface:r[5],prix:r[6],nom:r[0],source:'Réseau partenaires ONIQ',notes:r[7]};
+  });
+}
+
+/* Nouveaux leads « reçus » par les sources connectées lors d'un « Récupérer » */
+var OB_DEMO_POOL={
+  externe:[['Jérôme Castel','construction','Valence','26000',90,112,231000,'Terrain acheté en juin, projet de plain-pied.'],['Aurélie Brun','reno','Montélimar','26200',91,88,29000,'Isolation + PAC, DPE F.'],['Famille Tessier','construction','Chabeuil','26120',92,124,259000,'Maison R+1, 4 chambres.'],['Vincent Mercier','extension','Romans-sur-Isère','26100',93,30,49000,'Extension cuisine ouverte.'],['Léa Carpentier','reno','Crest','26400',94,76,24500,'Menuiseries + VMC double flux.']],
+  inbound:[['Marion Jacquet','extension','Bourg-lès-Valence','26500',95,26,43000,'Formulaire site : agrandissement salon.'],['Stéphane Reynaud','reno','Saint-Marcel-lès-Valence','26320',96,92,33000,'Formulaire site : rénovation énergétique.'],['Anaïs Delorme','construction','Portes-lès-Valence','26800',97,102,218000,'Formulaire site : a déjà un terrain.']],
+  autre:[['Julie Besson','reno','Guilherand-Granges','07500',98,70,21000,'Salle de bain PMR.'],['Franck Olivier','construction','Tournon-sur-Rhône','07300',99,118,244000,'Maison avec sous-sol.']]
+};
+function obDemoIncoming(s){
+  var pool=OB_DEMO_POOL[s.type]||OB_DEMO_POOL.autre, k=obKey('pull-'+s.id), i=0;
+  try{i=parseInt(localStorage.getItem(k)||'0',10)||0;}catch(e){i=(s.__pull||0);}
+  var n=Math.min(pool.length-i,(i===0?2:1+(obDemoHash(s.id+i)%2)));
+  var out=[];
+  for(var j=0;j<n;j++){var r=pool[i+j];out.push({nom:r[0],type:r[1],ville:r[2],cp:r[3],tel:obDemoTel(r[4]),email:obDemoNorm(r[0]).split(' ')[0]+'.'+obDemoNorm(r[0]).split(' ').pop()+'@exemple.fr',surface:String(r[5]),budget:String(r[6]),message:r[7]});}
+  try{localStorage.setItem(k,String(i+Math.max(n,0)));}catch(e){s.__pull=i+Math.max(n,0);}
+  return out;
+}
+
+/* Prospection B2B simulée : entreprises fictives crédibles par métier et par zone */
+var OB_DEMO_B2B={
+  'Agence immo':['Agence du Parc','{V} Habitat Transactions','Immo Rhône-Vercors','Cabinet Deloche Immobilier','Comptoir Immobilier {V}',"L'Adresse Sud Rhône"],
+  'Notaire':['Office notarial du Vieux Pont','Étude Arnaud & Associés','SCP Clavel-Roussin, notaires','Office notarial des Terrasses'],
+  'Courtier crédit':['{V} Courtage Habitat','Crédit Conseil Rhône','Cap Financement Immo','Horizon Prêt Courtage'],
+  'Architecte':['Atelier Pierre & Lumière','Traits d\'Union Architectes','Studio Archi {V}','Atelier Méridienne'],
+  "Maître d'œuvre / BET":['BET Structures Drôme','Maîtrise d\'œuvre Delmas','Ingébat Conseil','Cabinet MOE des Baronnies'],
+  'Promoteur / lotisseur':['Les Terrasses du Rhône Promotion','Rhône Foncier Aménagement','Domaine des Vergers Promotion'],
+  'Paysagiste':['Jardins de la Valloire','Vert Horizon Paysage','Au Fil des Saisons Paysagiste','Terre & Pierre Paysage'],
+  'Cuisiniste / agenceur':['Atelier Cuisine & Bois {V}','Agencement Rhône Design','Cuisines du Vercors'],
+  'Constructeur (CMI)':['Maisons du Soleil Drômois','Demeures de la Plaine','Habitat Rhône-Vallée'],
+  'Aménageur / lotisseur':['Aménagement Val de Drôme','Terres & Lotissements du Rhône'],
+  'Terrassier / TP':['Terrassement Blanc & Fils','TP Chabert Travaux','Rhône Terrassement Services']
+};
+var OB_DEMO_RAISONS=['Très active localement, nombreux avis clients récents','Travaille déjà avec des constructeurs de maisons individuelles','Dirigeant joignable en direct, structure de 3 à 5 personnes',
+  'Spécialisée maisons individuelles et terrains à bâtir','Présente sur les salons habitat de la Drôme','Clientèle de primo-accédants, bon volume de dossiers'];
+function obDemoProspects(label,secteur,region){
+  var V=String(region||'Valence').replace(/\s*\(.*$/,'');
+  if(/^\d{5}$/.test(V)){var cm=OB_DEMO_COMMUNES.filter(function(c){return c.codesPostaux.indexOf(V)>=0;})[0];V=cm?cm.nom:'Drôme';}
+  var noms=OB_DEMO_B2B[label];
+  if(!noms){var q=String(secteur||label||'').trim();var Q=q.charAt(0).toUpperCase()+q.slice(1);noms=[Q+' {V}',Q+' du Rhône','Atelier '+Q+' Drôme','Groupe '+Q+' Vallée'];}
+  var voisins=OB_DEMO_COMMUNES.filter(function(c){return c.codeDepartement==='26';}).map(function(c){return c.nom;});
+  return noms.map(function(n,i){
+    var nom=n.replace('{V}',V), h=obDemoHash(nom+label), slug=obDemoNorm(nom).replace(/ /g,'-');
+    var sansTel=(h%6===0), mobile=(h%2===0);
+    return {nom:nom,ville:(i%3===2?voisins[h%voisins.length]:V),tel:sansTel?'':obDemoTel(h%100,!mobile),email:(h%3===0?'':'contact@'+slug+'.fr'),
+      site:'www.'+slug+'.fr',score:String(58+h%37),raison:OB_DEMO_RAISONS[h%OB_DEMO_RAISONS.length]};
+  });
+}
+
+/* Effet « l'IA écrit » : un court temps de réflexion puis frappe progressive */
+function obDemoType(el,text,done){
+  if(!el)return;
+  var isField=('value' in el)&&(el.tagName==='TEXTAREA'||el.tagName==='INPUT');
+  var i=0, txt=String(text||'');
+  function set(v){if(isField)el.value=v;else el.textContent=v;}
+  set('');el.classList.add('ia-ecrit');if(!isField)el.classList.add('curseur-ia');
+  clearInterval(el.__ty);
+  setTimeout(function(){
+    el.__ty=setInterval(function(){
+      if(!document.body.contains(el)){clearInterval(el.__ty);return;}
+      i=Math.min(txt.length,i+3+Math.floor(Math.random()*3));set(txt.slice(0,i));
+      if(isField)el.scrollTop=el.scrollHeight;
+      if(i>=txt.length){clearInterval(el.__ty);el.classList.remove('ia-ecrit');el.classList.remove('curseur-ia');if(done)done();}
+    },16);
+  },650);
+}
+function obDemoThinking(msg){return '<div class="ia-pense"><i></i><i></i><i></i><span>'+obEsc(msg||'L\'IA réfléchit…')+'</span></div>';}
+
+/* ── Données : initialisation, rendu des leads partenaires, réinitialisation ── */
+function obDemoSeed(force){
+  var d=obDemoData(), ok=true;
+  try{
+    if(!force&&localStorage.getItem(obKey('seeded'))===OB_DEMO_VERSION)return true;
+    ['clients','apporteurs','comm','prov','sources','lp','notifs'].forEach(function(k){localStorage.setItem(obKey(k),JSON.stringify(d[k]));});
+    localStorage.setItem(obKey('seeded'),OB_DEMO_VERSION);
+  }catch(e){ok=false;}
+  if(!ok){ /* stockage indisponible : données en mémoire seulement */
+    OB_CLIENTS=d.clients;OB_APPORTEURS=d.apporteurs;OB_COMM=d.comm;OB_PROV=d.prov;OB_SOURCES=d.sources;OB_LP=d.lp;window.__obDemoNotifs=d.notifs;
+  }
+  return ok;
+}
+function obRenderPartnerLeads(){
+  var box=document.getElementById('ob-leads-b2c');if(!box)return;
+  var n=0;
+  box.innerHTML=OB_LASTLEADS.map(function(l,i){
+    var deja=OB_CLIENTS.some(function(c){return c.tel&&c.tel===l.tel;});if(!deja)n++;
+    var sub=[l.cp?(l.commune+' '+l.cp):l.commune,l.surface?(l.surface+' m²'):'',l.tel,l.notes].filter(Boolean).join(' · ');
+    return '<div class="row"><span class="tag t-neu">'+clTypeLabel(l.type)+'</span><div style="flex:1;min-width:0"><div class="nm">'+obEsc(l.nom)+'</div><div class="mt">'+obEsc(sub)+'</div></div>'
+      +(l.prix?'<span class="montant">'+obFmt(l.prix)+' €</span>':'')
+      +(deja?'<span class="tag t-ok">Dans le CRM</span>':'<button class="btn btn-fort sm" onclick="obAddLeadIdx('+i+')">+ CRM</button>')+'</div>';
+  }).join('');
+  var cnt=document.getElementById('b2c-count');if(cnt)cnt.textContent=n?(n+' lead'+(n>1?'s':'')+' disponible'+(n>1?'s':'')+' à ajouter.'):'Tous les leads proposés sont déjà dans ton CRM.';
+}
+function obDemoReset(){
+  try{
+    var k=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(key&&key.indexOf(OB_DEMO_PREFIX)===0)k.push(key);}
+    k.forEach(function(x){localStorage.removeItem(x);});
+  }catch(e){}
+  obDemoSeed(true);
+  obToast('Démo réinitialisée — données d\'origine rechargées',true);
+  setTimeout(function(){location.reload();},450);
+}
+function obDemoA11y(){
+  document.querySelectorAll('.nav-i, .seg b, .mt-auto').forEach(function(el){
+    if(el.hasAttribute('tabindex'))return;el.setAttribute('tabindex','0');el.setAttribute('role','button');
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}});
+  });
+}
+function obDemoBoot(){
+  oqApplyTheme(oqTheme());
+  OB_UID='demo';OB_COMPANY='Bâti Drôme';
+  obDemoSeed(false);
+  obLoad();
+  if(!OB_CLIENTS.length&&!OB_COMM.length&&!OB_APPORTEURS.length){var d=obDemoData();OB_CLIENTS=d.clients;OB_APPORTEURS=d.apporteurs;OB_COMM=d.comm;OB_PROV=d.prov;OB_SOURCES=d.sources;OB_LP=d.lp;}
+  obApplyCompany();
+  OB_MAILS=obDemoMails();OB_RULES=null;
+  obMailConnected('Gmail','contact@batidrome-demo.fr',true);
+  OB_LASTLEADS=obDemoPartnerLeads();
+  OB_GEO.b2b=OB_DEMO_COMMUNES[0];
+  obInitRenderAll();appFillSelects();appRenderNotifs();obRenderPartnerLeads();
+  go('dash');
+  obDemoA11y();
+}
+obDemoBoot();
+</script>
+</body></html>
