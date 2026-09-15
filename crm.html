@@ -2850,7 +2850,7 @@ window.addEventListener('beforeunload',function(e){
 });
 
 async function engrenageAppel(corps){
-  var r=await appelle(URL_BASE+'/functions/v1/prospection',
+  var r=await appelle(URL_BASE+'/functions/v1/Prospection',
     {method:'POST',headers:entetes(),body:JSON.stringify(corps||{})});
   var j=null; try{ j=await r.json(); }catch(e){}
   if(!r.ok||(j&&j.erreur))
@@ -4757,12 +4757,12 @@ async function fonctionLead(){
   if(FONCTION_LEAD)return FONCTION_LEAD;
   try{
     var r=await lire('ls_reglages','select=valeur&cle=eq.fonction_lead&limit=1');
-    FONCTION_LEAD=String((r[0]||{}).valeur||'').trim()||'lead';
-  }catch(e){ FONCTION_LEAD='lead'; }
+    FONCTION_LEAD=String((r[0]||{}).valeur||'').trim()||'Lead';
+  }catch(e){ FONCTION_LEAD='Lead'; }
   return FONCTION_LEAD;
 }
 async function poserFonctionLead(nom){
-  nom=String(nom||'').trim().replace(/^\/+|\/+$/g,'').replace(/[^A-Za-z0-9_-]/g,'')||'lead';
+  nom=String(nom||'').trim().replace(/^\/+|\/+$/g,'').replace(/[^A-Za-z0-9_-]/g,'')||'Lead';
   var r=await appelle(URL_BASE+'/rest/v1/ls_reglages',{method:'POST',
     headers:entetes({'Prefer':'resolution=merge-duplicates'}),
     body:JSON.stringify({cle:'fonction_lead',valeur:nom,maj_le:new Date().toISOString()})});
@@ -4805,7 +4805,7 @@ function etiquettePharow(cle){
    par exemple les entreprises qui recrutent. */
 function lienPharow(src,fonction,cle){
   if(!src||!src.jeton)return '';
-  return URL_BASE+'/functions/v1/'+encodeURIComponent(fonction||'lead')
+  return URL_BASE+'/functions/v1/'+encodeURIComponent(fonction||'Lead')
     +'?jeton='+encodeURIComponent(src.jeton)+'&vers=prospection'
     +(cle?'&campagne='+encodeURIComponent(cle):'')
     +'&apikey='+encodeURIComponent(CLE);
@@ -4851,7 +4851,7 @@ function criteresModele(cle){
    c’est le code NAF de chaque fiche qui la range dans la bonne
    campagne, pas quatre liens à ne pas confondre. */
 async function chargerPharow(){
-  var ph={src:null,lien:'',fonction:'lead',fiches:0,avecMail:0,nominatives:0,entres:0};
+  var ph={src:null,lien:'',fonction:'Lead',fiches:0,avecMail:0,nominatives:0,entres:0};
   ph.fonction=await fonctionLead();
   try{ var l=await lire('ls_sources','select=*&nom=eq.Pharow&limit=1'); ph.src=l[0]||null; }catch(e){}
   if(ph.src&&ph.src.jeton)ph.lien=lienPharow(ph.src,ph.fonction);
